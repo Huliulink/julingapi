@@ -62,7 +62,6 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
-import { useActualTheme } from '../../context/Theme';
 
 const RegisterForm = () => {
   let navigate = useNavigate();
@@ -111,7 +110,6 @@ const RegisterForm = () => {
 
   const logo = getLogo();
   const systemName = getSystemName();
-  const actualTheme = useActualTheme();
 
   let affCode = new URLSearchParams(window.location.search).get('aff');
   if (affCode) {
@@ -735,16 +733,17 @@ const RegisterForm = () => {
   };
 
   return (
-    <div
-      className='relative overflow-hidden flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8'
-      style={{
-        backgroundImage: `url(${actualTheme === 'dark' ? '/loginhei.svg' : '/loginbai.svg'})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      <div className='w-full max-w-sm mt-[60px] flex-1 flex flex-col justify-center'>
+    <div className='relative overflow-hidden bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8'>
+      {/* 背景模糊晕染球 */}
+      <div
+        className='blur-ball blur-ball-indigo'
+        style={{ top: '-80px', right: '-80px', transform: 'none' }}
+      />
+      <div
+        className='blur-ball blur-ball-teal'
+        style={{ top: '50%', left: '-120px' }}
+      />
+      <div className='w-full max-w-sm mt-[60px]'>
         {showEmailRegister ||
         !(
           status.github_oauth ||
@@ -768,14 +767,6 @@ const RegisterForm = () => {
             />
           </div>
         )}
-      </div>
-      <div className='w-full text-center pb-6 pt-4'>
-        <p className='text-xs text-gray-500 dark:text-gray-400'>
-          &copy; 2026 知来API. All rights reserved.
-        </p>
-        <p className='text-xs text-gray-400 dark:text-gray-500 mt-1'>
-          我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。
-        </p>
       </div>
     </div>
   );

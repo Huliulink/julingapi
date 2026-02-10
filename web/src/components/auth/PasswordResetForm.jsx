@@ -31,7 +31,6 @@ import { Button, Card, Form, Typography } from '@douyinfe/semi-ui';
 import { IconMail } from '@douyinfe/semi-icons';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useActualTheme } from '../../context/Theme';
 
 const { Text, Title } = Typography;
 
@@ -51,7 +50,6 @@ const PasswordResetForm = () => {
 
   const logo = getLogo();
   const systemName = getSystemName();
-  const actualTheme = useActualTheme();
 
   useEffect(() => {
     let status = localStorage.getItem('status');
@@ -106,16 +104,17 @@ const PasswordResetForm = () => {
   }
 
   return (
-    <div
-      className='relative overflow-hidden flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8'
-      style={{
-        backgroundImage: `url(${actualTheme === 'dark' ? '/loginhei.svg' : '/loginbai.svg'})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      <div className='w-full max-w-sm mt-[60px] flex-1 flex flex-col justify-center'>
+    <div className='relative overflow-hidden bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8'>
+      {/* 背景模糊晕染球 */}
+      <div
+        className='blur-ball blur-ball-indigo'
+        style={{ top: '-80px', right: '-80px', transform: 'none' }}
+      />
+      <div
+        className='blur-ball blur-ball-teal'
+        style={{ top: '50%', left: '-120px' }}
+      />
+      <div className='w-full max-w-sm mt-[60px]'>
         <div className='flex flex-col items-center'>
           <div className='w-full max-w-md'>
             <div className='flex items-center justify-center mb-6 gap-2'>
@@ -186,14 +185,6 @@ const PasswordResetForm = () => {
             )}
           </div>
         </div>
-      </div>
-      <div className='w-full text-center pb-6 pt-4'>
-        <p className='text-xs text-gray-500 dark:text-gray-400'>
-          &copy; 2026 知来API. All rights reserved.
-        </p>
-        <p className='text-xs text-gray-400 dark:text-gray-500 mt-1'>
-          我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。
-        </p>
       </div>
     </div>
   );
