@@ -771,7 +771,7 @@ const RegisterForm = () => {
       </div>
       <div className='w-full text-center pb-6 pt-4'>
         <p className='text-xs text-gray-500 dark:text-gray-400'>
-          &copy; 2026 知来API. All rights reserved.
+          &copy; 2026 聚灵API. All rights reserved.
         </p>
         <p className='text-xs text-gray-400 dark:text-gray-500 mt-1'>
           我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。
