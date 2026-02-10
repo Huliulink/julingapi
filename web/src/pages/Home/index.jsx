@@ -282,27 +282,27 @@ const Home = () => {
               <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
                 {[
                   {
-                    title: t('企业级稳定'),
+                    title: t('安全稳定'),
                     desc: t('多通道智能调度与容灾策略，自动重试与限流保护，保障关键业务稳定运行。'),
-                    icon: '🛡️',
+                    img: '安全稳定.svg',
                     bg: isDark ? 'bg-[#1e293b]' : 'bg-white',
                   },
                   {
                     title: t('零改造接入'),
                     desc: t('完全兼容主流协议与 SDK，一套 Key 即可访问主流厂商与热门模型。'),
-                    icon: '⚡',
+                    img: '统一接口.svg',
                     bg: isDark ? 'bg-[#1e293b]' : 'bg-white',
                   },
                   {
                     title: t('按量计费更省'),
                     desc: t('灵会计费与多档套餐，源头直供价格，更低成本释放更强模型能力。'),
-                    icon: '💳',
+                    img: '价格优惠.svg',
                     bg: isDark ? 'bg-[#1e293b]' : 'bg-white',
                   }
                 ].map((item, idx) => (
                   <div key={idx} className={`p-8 rounded-2xl border shadow-sm flex flex-col items-start hover:-translate-y-1 transition-transform duration-300 ${item.bg} ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-                    <div className='w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-2xl mb-6 text-blue-500'>
-                      {item.icon}
+                    <div className='w-14 h-14 mb-6'>
+                      <img src={`/zhuye/${item.img}`} alt={item.title} className='w-full h-full object-contain' />
                     </div>
                     <h3 className={`text-xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {item.title}
@@ -321,20 +321,53 @@ const Home = () => {
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='grid grid-cols-2 md:grid-cols-4 gap-8'>
                 {[
-                  { num: '40+', label: t('支持模型供应商') },
-                  { num: '99.9%', label: t('服务可用性') },
-                  { num: '<100ms', label: t('平均响应延迟') },
-                  { num: '24/7', label: t('技术支持') },
-                ].map((stat, idx) => (
-                  <div key={idx} className='text-center'>
-                    <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                      {stat.num}
+                  { value: 40, suffix: '+', label: t('支持模型供应商') },
+                  { value: 99.9, suffix: '%', decimals: 1, label: t('服务可用性') },
+                  { value: 100, prefix: '<', suffix: 'ms', label: t('平均响应延迟') },
+                  { value: 24, suffix: '/7', label: t('技术支持') },
+                ].map((stat, idx) => {
+                  // Simple CountUp Component logic inline or separated
+                  const CountUp = ({ end, duration = 2000, prefix = '', suffix = '', decimals = 0 }) => {
+                    const [count, setCount] = useState(0);
+
+                    useEffect(() => {
+                      let startTime;
+                      let animationFrame;
+
+                      const animate = (timestamp) => {
+                        if (!startTime) startTime = timestamp;
+                        const progress = timestamp - startTime;
+                        const percentage = Math.min(progress / duration, 1);
+                        // Ease out quart
+                        const ease = 1 - Math.pow(1 - percentage, 4);
+
+                        setCount(end * ease);
+
+                        if (progress < duration) {
+                          animationFrame = requestAnimationFrame(animate);
+                        }
+                      };
+
+                      animationFrame = requestAnimationFrame(animate);
+                      return () => cancelAnimationFrame(animationFrame);
+                    }, [end, duration]);
+
+                    return (
+                      <span>{prefix}{count.toFixed(decimals)}{suffix}</span>
+                    );
+                  };
+
+                  return (
+                    <div key={idx} className='text-center'>
+                      <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+                        <CountUp end={stat.value} suffix={stat.suffix} prefix={stat.prefix} decimals={stat.decimals} />
+                      </div>
+                      <div className={`text-sm font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        {stat.label}
+                      </div>
                     </div>
-                    <div className={`text-sm font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      {stat.label}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -374,11 +407,11 @@ const Home = () => {
                   { component: <Hunyuan.Color key='hunyuan' size={32} />, name: 'Hunyuan' },
                   { component: <Xinference.Color key='xinference' size={32} />, name: 'Xinference' },
                 ].map((item, idx) => (
-                  <div key={idx} className={`flex flex-col items-center justify-center gap-3 p-4 rounded-xl border transition-all duration-300 hover:scale-105 hover:shadow-lg ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-600' : 'bg-white border-gray-100'}`}>
+                  <div key={idx} className={`flex flex-col items-center justify-center gap-3 p-4 rounded-xl border transition-all duration-300 hover:scale-105 hover:shadow-lg bg-white border-gray-100`}>
                     <div className='flex items-center justify-center'>
                       {item.component}
                     </div>
-                    <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{item.name}</span>
+                    <span className={`text-xs font-medium text-gray-600`}>{item.name}</span>
                   </div>
                 ))}
               </div>
@@ -388,16 +421,16 @@ const Home = () => {
           {/* Payment Methods */}
           <div className={`py-20 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-4xl mx-auto px-4 text-center'>
-              <h3 className={`text-lg font-semibold mb-8 tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <h3 className={`text-xl font-bold mb-10 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {t('支持多种支付方式')}
               </h3>
-              <div className='flex flex-wrap items-center justify-center gap-8 opacity-80 hover:opacity-100 transition-opacity'>
+              <div className='flex flex-wrap items-center justify-center gap-8 md:gap-12'>
                 {['visa', 'mastercard', 'pay-alipay', 'WechatPay_', 'paypal', 'Bitcoin', 'USDT', 'union_pay'].map((name) => (
                   <img
                     key={name}
                     src={`/payment/${name}.svg`}
                     alt={name}
-                    className='h-12 md:h-14 object-contain grayscale hover:grayscale-0 transition-all duration-300'
+                    className='h-16 md:h-20 object-contain hover:scale-110 transition-transform duration-300'
                   />
                 ))}
               </div>

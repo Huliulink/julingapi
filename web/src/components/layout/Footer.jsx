@@ -45,19 +45,31 @@ const FooterBar = () => {
       >
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20'>
           {/* Main grid */}
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-12'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 mb-12'>
+            {/* Logo & Copyright (New Section) */}
+            <div className='lg:col-span-3 space-y-6'>
+              <div className='flex items-center gap-2'>
+                <img src='/logo.png' alt='Logo' className='h-10 w-auto' />
+                <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>聚灵API</span>
+              </div>
+              <div className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                <p>&copy; {currentYear} {t('聚灵API')}.</p>
+                <p>All rights reserved.</p>
+              </div>
+            </div>
+
             {/* About section */}
-            <div className='lg:col-span-4 space-y-6'>
+            <div className='lg:col-span-3 space-y-6'>
               <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('关于我们')}
               </h3>
               <p className={`leading-relaxed text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                {t('知来API 专注于为开发者提供稳定高速的一站式大语言模型 API 中转服务，支持 OpenAI GPT、Anthropic Claude、Midjourney、Google Gemini 等主流 LLM，统一鉴权、灵活计费、智能负载均衡，助你低成本接入多模型 AI 能力。')}
+                {t('聚灵API 专注于为开发者提供稳定高速的一站式大语言模型 API 中转服务，支持 OpenAI GPT、Anthropic Claude、Midjourney、Google Gemini 等主流 LLM，统一鉴权、灵活计费、智能负载均衡，助你低成本接入多模型 AI 能力。')}
               </p>
             </div>
 
             {/* Quick links */}
-            <div className='lg:col-span-3'>
+            <div className='lg:col-span-2'>
               <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('快速链接')}
               </h3>
@@ -81,14 +93,14 @@ const FooterBar = () => {
             </div>
 
             {/* QR codes */}
-            <div className='lg:col-span-5 grid grid-cols-2 gap-8'>
+            <div className='lg:col-span-4 grid grid-cols-2 gap-4'>
               <div className='flex flex-col items-center justify-center'>
                 <div className='text-center'>
-                  <div className={`p-4 rounded-lg shadow-xl inline-block transition-all hover:scale-105 ${isDark ? 'bg-gray-900' : 'bg-white shadow-lg'}`}>
+                  <div className={`p-4 rounded-lg shadow-xl inline-block transition-all hover:scale-105 bg-white`}>
                     <img
                       src='https://image.177911.com/image/qrcode_for_gh_3674cdc88ed6_258.jpg'
                       alt={t('企业微信')}
-                      className='w-32 h-32 object-cover rounded-lg'
+                      className='w-24 h-24 object-cover rounded-lg'
                     />
                   </div>
                   <p className={`mt-4 font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -98,11 +110,11 @@ const FooterBar = () => {
               </div>
               <div className='flex flex-col items-center justify-center'>
                 <div className='text-center'>
-                  <div className={`p-4 rounded-lg shadow-xl inline-block transition-all hover:scale-105 ${isDark ? 'bg-gray-900' : 'bg-white shadow-lg'}`}>
+                  <div className={`p-4 rounded-lg shadow-xl inline-block transition-all hover:scale-105 bg-white`}>
                     <img
                       src='https://image.177911.com/image/personal-wechat.jpg'
                       alt={t('微信客服')}
-                      className='w-32 h-32 object-cover rounded-lg'
+                      className='w-24 h-24 object-cover rounded-lg'
                     />
                   </div>
                   <p className={`mt-4 font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -116,10 +128,7 @@ const FooterBar = () => {
           {/* Copyright */}
           <div className={`border-t pt-8 ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
             <div className='text-center'>
-              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                &copy; {currentYear} {t('知来API')}. All rights reserved.
-              </p>
-              <p className={`text-xs mt-2 ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+              <p className={`text-xs ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
                 {t('我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。')}
               </p>
             </div>
