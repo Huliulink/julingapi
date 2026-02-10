@@ -330,7 +330,7 @@ const Home = () => {
           </div>
 
           {/* Features Section */}
-          <div className={`py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`relative z-10 py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -369,7 +369,7 @@ const Home = () => {
           </div>
 
           {/* Stats Section */}
-          <div className={`py-12 border-y ${isDark ? 'bg-black border-gray-900' : 'bg-white border-gray-100'}`}>
+          <div className={`relative z-10 py-12 border-y ${isDark ? 'bg-black border-gray-900' : 'bg-white border-gray-100'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='grid grid-cols-2 md:grid-cols-4 gap-8'>
                 <div className='text-center'>
@@ -401,7 +401,7 @@ const Home = () => {
           </div>
 
           {/* Supported Models Section */}
-          <div className={`py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`relative z-10 py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -540,7 +540,7 @@ const Home = () => {
           </div>
 
           {/* Payment Methods */}
-          <div className={`py-20 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`relative z-10 py-20 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 text-center'>
               <h3 className={`text-lg font-semibold mb-8 tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 {t('支持多种支付方式')}
@@ -559,7 +559,9 @@ const Home = () => {
           </div>
 
           {/* Footer */}
-          <FooterBar />
+          <div className='relative z-10'>
+            <FooterBar />
+          </div>
         </div>
 
       ) : (
