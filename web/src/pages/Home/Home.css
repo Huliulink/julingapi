@@ -54,6 +54,18 @@
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+}
+
+.home-container::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(46, 92, 246, 0.06), rgba(46, 92, 246, 0.06) 1px, transparent 1px, transparent 32px),
+    repeating-linear-gradient(90deg, rgba(46, 92, 246, 0.06), rgba(46, 92, 246, 0.06) 1px, transparent 1px, transparent 32px);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .container-custom {
@@ -126,18 +138,6 @@
   /* Dark gradient */
 }
 
-.title-section::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(0deg, rgba(46, 92, 246, 0.06), rgba(46, 92, 246, 0.06) 1px, transparent 1px, transparent 32px),
-    repeating-linear-gradient(90deg, rgba(46, 92, 246, 0.06), rgba(46, 92, 246, 0.06) 1px, transparent 1px, transparent 32px);
-  mask-image: radial-gradient(circle at 50% 20%, rgba(0, 0, 0, 0.9), transparent 70%);
-  -webkit-mask-image: radial-gradient(circle at 50% 20%, rgba(0, 0, 0, 0.9), transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
 
 .chips {
   display: inline-flex;

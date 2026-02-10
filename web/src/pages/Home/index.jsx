@@ -102,21 +102,21 @@ const Home = () => {
             <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
               <div className="app-head">
                 <div className="app-icon"><img src="/zhuye/Chatgpt.svg" alt="ChatGPT" /></div>
-                <div className="app-name">ChatGPT</div>
+                <div className="app-name">ChatGPT API</div>
               </div>
               <div className="app-desc">智能对话与写作辅助，支持多轮交互。</div>
             </a>
             <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
               <div className="app-head">
                 <div className="app-icon"><img src="/zhuye/Claude.svg" alt="Claude" /></div>
-                <div className="app-name">Claude</div>
+                <div className="app-name">Claude API</div>
               </div>
               <div className="app-desc">长文本分析与各种代码逻辑推理能力。</div>
             </a>
             <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
               <div className="app-head">
                 <div className="app-icon"><img src="/zhuye/Midjourney.svg" alt="Midjourney" /></div>
-                <div className="app-name">Midjourney</div>
+                <div className="app-name">Midjourney API</div>
               </div>
               <div className="app-desc">高质量AI绘画，生成艺术级图像作品。</div>
             </a>
