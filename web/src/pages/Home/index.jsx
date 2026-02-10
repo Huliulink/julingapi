@@ -109,40 +109,40 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Apps Section */}
+          {/* Core Models Section */}
           <section className="apps">
             <div className="apps-grid">
               <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
                 <div className="app-head">
-                  <div className="app-icon"><img src="https://image.177911.com/image/ChatGPT@2x.png" alt="ChatGPT" /></div>
+                  <div className="app-icon"><img src="/zhuye/Chatgpt.svg" alt="ChatGPT" /></div>
                   <div className="app-name">ChatGPT</div>
                 </div>
                 <div className="app-desc">智能对话与写作辅助，支持多轮交互。</div>
               </a>
               <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
                 <div className="app-head">
-                  <div className="app-icon"><img src="https://image.177911.com/image/Claude@2x.png" alt="Claude" /></div>
+                  <div className="app-icon"><img src="/zhuye/Claude.svg" alt="Claude" /></div>
                   <div className="app-name">Claude</div>
                 </div>
                 <div className="app-desc">长文本分析与各种代码逻辑推理能力。</div>
               </a>
               <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
                 <div className="app-head">
-                  <div className="app-icon"><img src="https://image.177911.com/image/Midjourney@2x.png" alt="Midjourney" /></div>
+                  <div className="app-icon"><img src="/zhuye/Midjourney.svg" alt="Midjourney" /></div>
                   <div className="app-name">Midjourney</div>
                 </div>
                 <div className="app-desc">高质量AI绘画，生成艺术级图像作品。</div>
               </a>
               <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
                 <div className="app-head">
-                  <div className="app-icon"><img src="https://image.177911.com/image/Sora@2x.png" alt="Sora" /></div>
+                  <div className="app-icon"><img src="/zhuye/Sora_modle.svg" alt="Sora" /></div>
                   <div className="app-name">Sora</div>
                 </div>
                 <div className="app-desc">文本生成视频，创造逼真的动态场景。</div>
               </a>
               <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
                 <div className="app-head">
-                  <div className="app-icon"><img src="https://image.177911.com/image/Gemini@2x.png" alt="Gemini" /></div>
+                  <div className="app-icon"><img src="/zhuye/gemini-ai.svg" alt="Gemini" /></div>
                   <div className="app-name">Gemini</div>
                 </div>
                 <div className="app-desc">谷歌多模态大模型，处理文本图像视频。</div>
@@ -296,43 +296,78 @@ const Home = () => {
           </section>
 
           {/* Supported Models Section */}
-          <section className="supported-models">
-            <h2 className="advantages-title">支持数百种主流模型</h2>
-            <div className="supported-models-title">覆盖 OpenAI, Claude, Google, Midjourney 等全球顶尖大模型</div>
+          <section className="supported-models" id="supported-models">
+            <h2 className="advantages-title">支持的模型</h2>
+            <p className="advantages-subtitle">统一网关深度兼容主流与新锐模型厂商，持续扩容与适配，随时即用。</p>
             <div className="models-container">
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/ChatGPT@2x.png" alt="GPT-4" />
-                <span className="model-name">GPT-4o</span>
+              <div className="model-logo" title="OpenAI">
+                <img src="/aisvg/openai.svg" alt="OpenAI" /><span className="model-name">OpenAI</span>
+              </div>
+              <div className="model-logo" title="Anthropic Claude">
+                <img src="/aisvg/Claude.svg" alt="Claude" /><span className="model-name">Anthropic</span>
+              </div>
+              <div className="model-logo" title="Google Gemini">
+                <img src="/aisvg/gemini.svg" alt="Gemini" /><span className="model-name">Google</span>
+              </div>
+              <div className="model-logo" title="DeepSeek">
+                <img src="/aisvg/DeepSeek.svg" alt="DeepSeek" /><span className="model-name">DeepSeek</span>
+              </div>
+              <div className="model-logo" title="阿里通义 Qwen">
+                <img src="/aisvg/Qwen.svg" alt="Qwen" /><span className="model-name">Qwen</span>
+              </div>
+              <div className="model-logo" title="Midjourney">
+                <img src="/zhuye/Midjourney.svg" alt="Midjourney" /><span className="model-name">Midjourney</span>
+              </div>
+              <div className="model-logo" title="讯飞星火">
+                <img src="/aisvg/spark-color.svg" alt="Spark" /><span className="model-name">Spark</span>
+              </div>
+              <div className="model-logo" title="月之暗面 Moonshot">
+                <img src="/aisvg/moonshot.png" alt="Moonshot" /><span className="model-name">Moonshot</span>
+              </div>
+              <div className="model-logo" title="MiniMax">
+                <img src="/aisvg/MiniMax.svg" alt="Minimax" /><span className="model-name">Minimax</span>
+              </div>
+              <div className="model-logo" title="智谱 GLM">
+                <img src="/aisvg/zhipu.svg" alt="Zhipu" /><span className="model-name">Zhipu</span>
+              </div>
+              <div className="model-logo" title="xAI Grok">
+                <img src="/aisvg/XAI.svg" alt="Grok" /><span className="model-name">Grok (xAI)</span>
+              </div>
+              <div className="model-logo" title="Suno">
+                <img src="/aisvg/suno.svg" alt="Suno" /><span className="model-name">Suno</span>
+              </div>
+              <div className="model-logo" title="Hunyuan">
+                <img src="/aisvg/hunyuan.svg" alt="Hunyuan" /><span className="model-name">Hunyuan</span>
+              </div>
+              <div className="model-logo" title="Perplexity">
+                <img src="/aisvg/perplexity.svg" alt="Perplexity" /><span className="model-name">Perplexity</span>
+              </div>
+              <div className="model-logo" title="Mistral">
+                <img src="/aisvg/mistral.svg" alt="Mistral" /><span className="model-name">Mistral</span>
+              </div>
+              <div className="model-logo" title="Yi">
+                <img src="/aisvg/yi-color.svg" alt="Yi" /><span className="model-name">Yi</span>
+              </div>
+              <div className="model-logo" title="可灵">
+                <img src="/aisvg/kling-color.svg" alt="可灵" /><span className="model-name">可灵</span>
+              </div>
+              <div className="model-logo" title="Flux">
+                <img src="/aisvg/flux.svg" alt="Flux" /><span className="model-name">Flux</span>
+              </div>
+              <div className="model-logo" title="Luma">
+                <img src="/aisvg/luma-color.svg" alt="Luma" /><span className="model-name">Luma</span>
+              </div>
+              <div className="model-logo" title="Runway">
+                <img src="/aisvg/runway.svg" alt="Runway" /><span className="model-name">Runway</span>
+              </div>
+              <a className="model-logo" title="更多..." href="#">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="8" stroke="#CBD5E1" fill="none"></circle>
+                  <circle cx="9" cy="12" r="1.5" fill="#94A3B8"></circle>
+                  <circle cx="12" cy="12" r="1.5" fill="#94A3B8"></circle>
+                  <circle cx="15" cy="12" r="1.5" fill="#94A3B8"></circle>
+                </svg><span class="model-name">更多...</span>
               </a>
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/Claude@2x.png" alt="Claude 3.5" />
-                <span className="model-name">Claude 3.5</span>
-              </a>
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/Gemini@2x.png" alt="Gemini 1.5" />
-                <span className="model-name">Gemini 1.5</span>
-              </a>
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/Midjourney@2x.png" alt="Midjourney" />
-                <span className="model-name">Midjourney</span>
-              </a>
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/Sora@2x.png" alt="Sora" />
-                <span className="model-name">Sora</span>
-              </a>
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/Dalle@2x.png" alt="DALL·E 3" />
-                <span className="model-name">DALL·E 3</span>
-              </a>
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/Bing@2x.png" alt="Bing" />
-                <span className="model-name">Bing</span>
-              </a>
-              <a onClick={(e) => e.preventDefault()} className="model-logo">
-                <img src="https://image.177911.com/image/Meta@2x.png" alt="Llama 3" />
-                <span className="model-name">Llama 3</span>
-              </a>
-              {/* Additional rows can be added here following the same pattern */}
             </div>
           </section>
 
@@ -394,7 +429,7 @@ const Home = () => {
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center dark:text-gray-100">支持的 API 格式</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* API Card 1 */}
+                  {/* API Card 1: OpenAI Chat */}
                   <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
                     <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -410,7 +445,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* API Card 2 */}
+                  {/* API Card 2: OpenAI Response */}
                   <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
                     <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -426,7 +461,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* API Card 3 */}
+                  {/* API Card 3: Claude */}
                   <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
                     <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -442,7 +477,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* API Card 4 */}
+                  {/* API Card 4: Gemini */}
                   <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
                     <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -458,7 +493,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* API Card 5 */}
+                  {/* API Card 5: Image Gen */}
                   <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
                     <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -474,7 +509,39 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* API Card 6 */}
+                  {/* API Card 6: Edit Image (Added based on Reference HTML) */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-pink-500 to-pink-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-square-pen w-6 h-6 text-white"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">编辑图片</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">图像编辑和处理，支持图片修改和优化</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-pink-50 p-3 rounded-lg border border-pink-200 dark:bg-pink-900/20 dark:border-pink-800">
+                        <code className="px-2 py-1 bg-pink-100 text-pink-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-pink-900 dark:text-pink-300">/v1/images/edits</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 7: Video (Added based on Reference HTML) */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video w-6 h-6 text-white"><path d="m22 8-6 4 6 4V8Z"></path><rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect></svg>
+                        <h4 className="text-lg font-semibold text-white">视频接口</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">视频处理和生成，支持视频创建和编辑</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-red-50 p-3 rounded-lg border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+                        <code className="px-2 py-1 bg-red-100 text-red-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-red-900 dark:text-red-300">/v1/videos</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 8: Text Embed */}
                   <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
                     <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -489,6 +556,55 @@ const Home = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* API Card 9: Suno Music */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-music w-6 h-6 text-white"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <h4 className="text-lg font-semibold text-white">Suno 音乐</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">Suno AI 音乐生成，支持文本到音乐的创作</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-cyan-50 p-3 rounded-lg border border-cyan-200 dark:bg-cyan-900/20 dark:border-cyan-800">
+                        <code className="px-2 py-1 bg-cyan-100 text-cyan-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-cyan-900 dark:text-cyan-300">/suno/submit/music</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 10: Midjourney */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-palette w-6 h-6 text-white"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">Midjourney 绘图</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">Midjourney AI 绘图，支持高质量图像生成</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-fuchsia-50 p-3 rounded-lg border border-fuchsia-200 dark:bg-fuchsia-900/20 dark:border-fuchsia-800">
+                        <code className="px-2 py-1 bg-fuchsia-100 text-fuchsia-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-fuchsia-900 dark:text-fuchsia-300">/mj/submit/imagine</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 11: Support More */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-slate-500 to-slate-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-network w-6 h-6 text-white"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">支持更多API</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">支持更多API接口和高级功能</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-slate-50 p-3 rounded-lg border border-slate-200 dark:bg-slate-900/20 dark:border-slate-800">
+                        <code className="px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-slate-900 dark:text-slate-300">/v1/custom/*</code>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
 
                 <div className="mt-12 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 overflow-hidden dark:from-gray-800 dark:to-gray-800 dark:border-gray-700">
