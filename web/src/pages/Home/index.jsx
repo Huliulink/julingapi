@@ -151,7 +151,36 @@ const Home = () => {
   }, [endpointItems.length]);
 
   return (
-    <div className='w-full overflow-x-hidden'>
+    <div className={`w-full overflow-x-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
+      <style>{`
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shine {
+            0% { background-position: -100% 0; }
+            100% { background-position: 100% 0; }
+        }
+        @keyframes floatPulse {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .shine-text {
+            background: linear-gradient(90deg, #000000 0%, #333333 40%, #666666 50%, #333333 60%, #000000 100%);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3.2s ease-in-out infinite 1s;
+        }
+        .dark .shine-text {
+             background: linear-gradient(90deg, #ffffff 0%, #cccccc 40%, #999999 50%, #cccccc 60%, #ffffff 100%);
+             background-size: 200% 100%;
+             -webkit-background-clip: text;
+             background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        `}</style>
       <NoticeModal
         visible={noticeVisible}
         onClose={() => setNoticeVisible(false)}
@@ -160,108 +189,113 @@ const Home = () => {
       {homePageContentLoaded && homePageContent === '' ? (
         <div className='w-full overflow-x-hidden'>
           {/* Hero Section */}
-          <div className={`w-full min-h-[520px] md:min-h-[600px] relative overflow-hidden ${isDark ? 'bg-[#141618]' : 'bg-[#f7f8fb]'}`}>
-            <div className='flex items-center justify-center h-full px-4 py-20 md:py-28 mt-10'>
-              <div className='flex flex-col items-center justify-center text-center max-w-4xl mx-auto'>
-                <h1
-                  className={`text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 ${isDark ? 'text-gray-100' : 'text-gray-900'} ${isChinese ? 'tracking-wide' : ''}`}
-                >
-                  {t('统一的')}
-                  <br />
-                  <span className='shine-text'>{t('大模型接口网关')}</span>
-                </h1>
-                <p className={`text-base md:text-lg max-w-xl mt-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('更好的价格，更好的稳定性，只需要将模型基址替换为：')}
-                </p>
+          <div className={`w-full min-h-[600px] relative overflow-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 items-center'>
+                {/* Left Column: Text */}
+                <div className='text-left' style={{ animation: 'fadeInUp 0.6s ease both' }}>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border mb-6 ${isDark ? 'border-gray-800 bg-gray-900/50 text-gray-300' : 'border-gray-200 bg-gray-50 text-gray-600'}`}>
+                    <span className={`w-2 h-2 rounded-full animate-pulse ${isDark ? 'bg-white' : 'bg-black'}`}></span>
+                    <span className='text-xs font-medium'>{t('稳定 · 高效 · 易用')}</span>
+                  </div>
 
-                {/* Base URL input */}
-                <div className='flex flex-col md:flex-row items-center justify-center gap-4 w-full mt-6 max-w-md'>
-                  <Input
-                    readonly
-                    value={serverAddress}
-                    className='flex-1 !rounded-full'
-                    size={isMobile ? 'default' : 'large'}
-                    suffix={
-                      <div className='flex items-center gap-2'>
-                        <ScrollList
-                          bodyHeight={32}
-                          style={{ border: 'unset', boxShadow: 'unset' }}
-                        >
-                          <ScrollItem
-                            mode='wheel'
-                            cycled={true}
-                            list={endpointItems}
-                            selectedIndex={endpointIndex}
-                            onSelect={({ index }) => setEndpointIndex(index)}
-                          />
-                        </ScrollList>
+                  <h1 className={`text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 ${isDark ? 'text-white' : 'text-gray-900'} ${isChinese ? 'tracking-wide' : ''}`}>
+                    {t('统一的')}
+                    <br />
+                    <span className='shine-text'>{t('大模型接口网关')}</span>
+                  </h1>
+
+                  <p className={`text-lg md:text-xl mb-8 leading-relaxed max-w-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {t('更好的价格，更好的稳定性。只需要将模型基址替换，即可无缝接入全球主流 AI 模型。')}
+                  </p>
+
+                  <div className='flex flex-col sm:flex-row gap-4 mb-10'>
+                    <div className='flex-1 max-w-md'>
+                      <Input
+                        readonly
+                        value={serverAddress}
+                        className={`!rounded-full h-12 text-base ${isDark ? '!bg-gray-900 !border-gray-800' : ''}`}
+                        suffix={
+                          <div className='flex items-center gap-2 mr-1'>
+                            <Button
+                              type='primary'
+                              theme='solid'
+                              onClick={handleCopyBaseURL}
+                              icon={<IconCopy />}
+                              className='!rounded-full !h-8 !px-3 !bg-black hover:!bg-gray-800 dark:!bg-white dark:!text-black dark:hover:!bg-gray-200'
+                            >
+                              {t('复制')}
+                            </Button>
+                          </div>
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className='flex flex-wrap gap-4'>
+                    <Link to='/console'>
+                      <Button
+                        theme='solid'
+                        type='primary'
+                        size='large'
+                        className='!rounded-full px-8 h-12 text-base font-semibold shadow-lg !bg-black hover:!bg-gray-800 dark:!bg-white dark:!text-black dark:hover:!bg-gray-200'
+                        icon={<IconPlay />}
+                      >
+                        {t('立即开始')}
+                      </Button>
+                    </Link>
+                    {isDemoSiteMode && statusState?.status?.version ? (
+                      <Button
+                        size='large'
+                        className={`!rounded-full px-8 h-12 text-base font-semibold border ${isDark ? '!bg-transparent !text-white !border-gray-700 hover:!bg-gray-800' : '!bg-white !text-gray-900 !border-gray-200 hover:!bg-gray-50'}`}
+                        icon={<IconGithubLogo />}
+                        onClick={() => window.open('https://github.com/QuantumNous/new-api', '_blank')}
+                      >
+                        GitHub
+                      </Button>
+                    ) : (
+                      docsLink && (
                         <Button
-                          type='primary'
-                          onClick={handleCopyBaseURL}
-                          icon={<IconCopy />}
-                          className='!rounded-full'
-                        />
-                      </div>
-                    }
-                  />
+                          size='large'
+                          className={`!rounded-full px-8 h-12 text-base font-semibold border ${isDark ? '!bg-transparent !text-white !border-gray-700 hover:!bg-gray-800' : '!bg-white !text-gray-900 !border-gray-200 hover:!bg-gray-50'}`}
+                          icon={<IconFile />}
+                          onClick={() => window.open(docsLink, '_blank')}
+                        >
+                          {t('文档')}
+                        </Button>
+                      )
+                    )}
+                  </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className='flex flex-row gap-4 justify-center items-center mt-8'>
-                  <Link to='/console'>
-                    <Button
-                      theme='solid'
-                      type='primary'
-                      size={isMobile ? 'default' : 'large'}
-                      className='!rounded-3xl px-8 py-2'
-                      icon={<IconPlay />}
-                    >
-                      {t('获取密钥')}
-                    </Button>
-                  </Link>
-                  {isDemoSiteMode && statusState?.status?.version ? (
-                    <Button
-                      size={isMobile ? 'default' : 'large'}
-                      className='flex items-center !rounded-3xl px-6 py-2'
-                      icon={<IconGithubLogo />}
-                      onClick={() =>
-                        window.open(
-                          'https://github.com/QuantumNous/new-api',
-                          '_blank',
-                        )
-                      }
-                    >
-                      {statusState.status.version}
-                    </Button>
-                  ) : (
-                    docsLink && (
-                      <Button
-                        size={isMobile ? 'default' : 'large'}
-                        className='flex items-center !rounded-3xl px-6 py-2'
-                        icon={<IconFile />}
-                        onClick={() => window.open(docsLink, '_blank')}
-                      >
-                        {t('文档')}
-                      </Button>
-                    )
-                  )}
+                {/* Right Column: Image */}
+                <div className='relative lg:h-[600px] flex items-center justify-center' style={{ animation: 'fadeInUp 0.8s ease both 0.2s' }}>
+                  <div className='relative w-full max-w-lg aspect-square'>
+                    {/* Background Glow */}
+                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] blur-[100px] rounded-full pointing-events-none ${isDark ? 'bg-white/5' : 'bg-black/5'}`}></div>
+                    <img
+                      src={isDark ? '/loginhei.svg' : '/loginbai.svg'}
+                      alt="Hero Visual"
+                      className='relative z-10 w-full h-full object-contain drop-shadow-2xl animate-[floatPulse_6s_ease-in-out_infinite]'
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Features Section */}
-          <div className={`py-16 md:py-20 ${isDark ? 'bg-[#1a1d21]' : 'bg-white'}`}>
-            <div className='max-w-6xl mx-auto px-4'>
-              <div className='text-center mb-12'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+          <div className={`py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <div className='text-center mb-16'>
+                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {t('为什么选择我们')}
                 </h2>
-                <p className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('企业级 API 中转服务，稳定可靠')}
+                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {t('企业级 API 中转服务，稳定可靠，为您的业务保驾护航')}
                 </p>
               </div>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
                 {[
                   { icon: '🔒', title: t('安全稳定'), desc: t('企业级安全防护，数据加密传输，99.9% 可用性保障，让您的业务无忧运行。') },
                   { icon: '⚡', title: t('极速响应'), desc: t('全球多节点部署，智能路由选择，毫秒级响应延迟，确保最佳使用体验。') },
@@ -272,13 +306,15 @@ const Home = () => {
                 ].map((feature, idx) => (
                   <div
                     key={idx}
-                    className={`rounded-2xl border p-7 transition-all duration-200 hover:-translate-y-1 ${isDark ? 'bg-[#22262b] border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-blue-200 hover:shadow-lg'}`}
+                    className={`group p-8 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-700' : 'bg-white border-gray-100 hover:border-gray-300'}`}
                   >
-                    <div className='text-3xl mb-4'>{feature.icon}</div>
-                    <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-3xl mb-6 transition-transform group-hover:scale-110 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+                      {feature.icon}
+                    </div>
+                    <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {feature.title}
                     </h3>
-                    <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p className={`leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                       {feature.desc}
                     </p>
                   </div>
@@ -288,23 +324,20 @@ const Home = () => {
           </div>
 
           {/* Stats Section */}
-          <div className={`py-12 ${isDark ? 'bg-[#141618]' : 'bg-[#f7f8fb]'}`}>
-            <div className='max-w-6xl mx-auto px-4'>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+          <div className={`py-12 border-y ${isDark ? 'bg-black border-gray-900' : 'bg-white border-gray-100'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <div className='grid grid-cols-2 md:grid-cols-4 gap-8'>
                 {[
                   { num: '40+', label: t('支持模型供应商') },
                   { num: '99.9%', label: t('服务可用性') },
                   { num: '<100ms', label: t('平均响应延迟') },
                   { num: '24/7', label: t('技术支持') },
                 ].map((stat, idx) => (
-                  <div
-                    key={idx}
-                    className={`rounded-2xl border p-5 text-center ${isDark ? 'bg-[#22262b] border-gray-700' : 'bg-white border-gray-200'}`}
-                  >
-                    <div className='text-3xl md:text-4xl font-extrabold text-blue-500 mb-2'>
+                  <div key={idx} className='text-center'>
+                    <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
                       {stat.num}
                     </div>
-                    <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <div className={`text-sm font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                       {stat.label}
                     </div>
                   </div>
@@ -314,17 +347,21 @@ const Home = () => {
           </div>
 
           {/* Supported Models Section */}
-          <div className={`py-16 md:py-20 ${isDark ? 'bg-[#1a1d21]' : 'bg-white'}`}>
-            <div className='max-w-6xl mx-auto px-4'>
-              <div className='text-center mb-12'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+          <div className={`py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <div className='text-center mb-16'>
+                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {t('支持众多的大模型供应商')}
                 </h2>
-                <p className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('一个接口，接入全球主流 AI 模型')}
-                </p>
+                <div className='flex flex-wrap justify-center gap-3'>
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${isDark ? 'bg-gray-900 border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>OpenAI</span>
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${isDark ? 'bg-gray-900 border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>Claude</span>
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${isDark ? 'bg-gray-900 border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>Gemini</span>
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${isDark ? 'bg-gray-900 border-gray-800 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>Midjourney</span>
+                </div>
               </div>
-              <div className='flex flex-wrap items-center justify-center gap-4 md:gap-6 lg:gap-8 max-w-5xl mx-auto'>
+
+              <div className='grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-4 gap-y-8'>
                 {[
                   <Moonshot key='moonshot' size={40} />,
                   <OpenAI key='openai' size={40} />,
@@ -347,49 +384,8 @@ const Home = () => {
                   <Hunyuan.Color key='hunyuan' size={40} />,
                   <Xinference.Color key='xinference' size={40} />,
                 ].map((icon, idx) => (
-                  <div key={idx} className='w-10 h-10 md:w-12 md:h-12 flex items-center justify-center'>
+                  <div key={idx} className={`flex items-center justify-center p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-600' : 'bg-white border-gray-100 hover:shadow-lg'}`}>
                     {icon}
-                  </div>
-                ))}
-                <div className='w-10 h-10 md:w-12 md:h-12 flex items-center justify-center'>
-                  <Text className='!text-xl md:!text-2xl font-bold'>40+</Text>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* API Formats Section */}
-          <div className={`py-16 md:py-20 ${isDark ? 'bg-[#141618]' : 'bg-[#f7f8fb]'}`}>
-            <div className='max-w-6xl mx-auto px-4'>
-              <div className='text-center mb-12'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-                  {t('支持的 API 格式')}
-                </h2>
-                <p className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('支持多种 API 格式和功能，无缝对接您的应用')}
-                </p>
-              </div>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {[
-                  { title: 'OpenAI Chat', endpoint: '/v1/chat/completions', color: 'blue' },
-                  { title: 'OpenAI Responses', endpoint: '/v1/responses', color: 'teal' },
-                  { title: 'Claude Messages', endpoint: '/v1/messages', color: 'blue' },
-                  { title: 'Gemini', endpoint: '/v1beta/models/', color: 'green' },
-                  { title: t('图像生成'), endpoint: '/v1/images/generations', color: 'gray' },
-                  { title: t('文本嵌入'), endpoint: '/v1/embeddings', color: 'gray' },
-                ].map((api, idx) => (
-                  <div
-                    key={idx}
-                    className={`rounded-xl border overflow-hidden ${isDark ? 'bg-[#22262b] border-gray-700' : 'bg-white border-gray-200'}`}
-                  >
-                    <div className='bg-blue-600 px-5 py-3'>
-                      <h4 className='text-base font-semibold text-white'>{api.title}</h4>
-                    </div>
-                    <div className='p-5'>
-                      <code className={`text-sm font-mono px-3 py-1.5 rounded ${isDark ? 'bg-gray-800 text-blue-300' : 'bg-blue-50 text-blue-700'}`}>
-                        {api.endpoint}
-                      </code>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -397,18 +393,18 @@ const Home = () => {
           </div>
 
           {/* Payment Methods */}
-          <div className={`py-12 ${isDark ? 'bg-[#1a1d21]' : 'bg-white'}`}>
+          <div className={`py-20 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-4xl mx-auto px-4 text-center'>
-              <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+              <h3 className={`text-lg font-semibold mb-8 tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 {t('支持多种支付方式')}
               </h3>
-              <div className='flex flex-wrap items-center justify-center gap-4'>
+              <div className='flex flex-wrap items-center justify-center gap-8 opacity-80 hover:opacity-100 transition-opacity'>
                 {['visa', 'mastercard', 'pay-alipay', 'WechatPay_', 'paypal', 'Bitcoin', 'USDT', 'union_pay'].map((name) => (
                   <img
                     key={name}
                     src={`/payment/${name}.svg`}
                     alt={name}
-                    className='h-8 md:h-10 object-contain'
+                    className='h-12 md:h-14 object-contain grayscale hover:grayscale-0 transition-all duration-300'
                   />
                 ))}
               </div>

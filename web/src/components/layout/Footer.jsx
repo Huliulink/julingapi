@@ -41,14 +41,14 @@ const FooterBar = () => {
   const customFooter = useMemo(
     () => (
       <footer
-        className={`border-t ${isDark ? 'bg-[#1c1f23] border-gray-700' : 'bg-gradient-to-b from-gray-50 to-gray-100 border-gray-200'}`}
+        className={`border-t ${isDark ? 'bg-black border-gray-900' : 'bg-white border-gray-100'}`}
       >
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20'>
           {/* Main grid */}
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-12'>
             {/* About section */}
             <div className='lg:col-span-4 space-y-6'>
-              <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+              <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('关于我们')}
               </h3>
               <p className={`leading-relaxed text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -58,7 +58,7 @@ const FooterBar = () => {
 
             {/* Quick links */}
             <div className='lg:col-span-3'>
-              <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+              <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {t('快速链接')}
               </h3>
               <ul className='space-y-3'>
@@ -84,7 +84,7 @@ const FooterBar = () => {
             <div className='lg:col-span-5 grid grid-cols-2 gap-8'>
               <div className='flex flex-col items-center justify-center'>
                 <div className='text-center'>
-                  <div className={`p-4 rounded-lg shadow-md inline-block ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className={`p-4 rounded-lg shadow-xl inline-block transition-all hover:scale-105 ${isDark ? 'bg-gray-900' : 'bg-white shadow-lg'}`}>
                     <img
                       src='https://image.177911.com/image/qrcode_for_gh_3674cdc88ed6_258.jpg'
                       alt={t('企业微信')}
@@ -98,7 +98,7 @@ const FooterBar = () => {
               </div>
               <div className='flex flex-col items-center justify-center'>
                 <div className='text-center'>
-                  <div className={`p-4 rounded-lg shadow-md inline-block ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className={`p-4 rounded-lg shadow-xl inline-block transition-all hover:scale-105 ${isDark ? 'bg-gray-900' : 'bg-white shadow-lg'}`}>
                     <img
                       src='https://image.177911.com/image/personal-wechat.jpg'
                       alt={t('微信客服')}
@@ -114,12 +114,12 @@ const FooterBar = () => {
           </div>
 
           {/* Copyright */}
-          <div className={`border-t pt-8 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className={`border-t pt-8 ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
             <div className='text-center'>
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 &copy; {currentYear} {t('知来API')}. All rights reserved.
               </p>
-              <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              <p className={`text-xs mt-2 ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
                 {t('我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。')}
               </p>
             </div>
