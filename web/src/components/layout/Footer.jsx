@@ -50,7 +50,7 @@ const FooterBar = () => {
             <div className='lg:col-span-4 space-y-6'>
               <div className='flex items-center gap-3 mb-3'>
                 <img
-                  src='/logo.png'
+                  src='https://image.177911.com/image/logo.png'
                   alt='Logo'
                   className='w-10 h-10 object-contain'
                 />
