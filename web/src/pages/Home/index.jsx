@@ -21,7 +21,7 @@ import React, { useContext, useEffect, useState, useRef } from 'react';
 import {
   Button,
 } from '@douyinfe/semi-ui';
-import { API, showError } from '../../helpers';
+import { API, showError, copy, showSuccess } from '../../helpers';
 import { useIsMobile } from '../../hooks/common/useIsMobile';
 import { StatusContext } from '../../context/Status';
 import { useActualTheme } from '../../context/Theme';
@@ -32,9 +32,12 @@ import {
   IconBolt,
   IconCoinMoneyStroked,
   IconLink,
-  IconBarChartStroked,
+  IconBarChartVStroked,
   IconSettingStroked,
   IconPlay,
+  IconKey,
+  IconCode,
+  IconRefresh,
 } from '@douyinfe/semi-icons';
 import { Link } from 'react-router-dom';
 import NoticeModal from '../../components/layout/NoticeModal';
@@ -109,6 +112,8 @@ const Home = () => {
   const [noticeVisible, setNoticeVisible] = useState(false);
   const isMobile = useIsMobile();
   const isChinese = i18n.language.startsWith('zh');
+  const serverAddress =
+    statusState?.status?.server_address || `${window.location.origin}`;
 
   const displayHomePageContent = async () => {
     setHomePageContent(localStorage.getItem('home_page_content') || '');
@@ -240,6 +245,98 @@ const Home = () => {
             </div>
           </div>
 
+          {/* Quick Start Section */}
+          <div className={`py-24 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <div className='text-center mb-16'>
+                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {t('快速开始')}
+                </h2>
+                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {t('只需三步，即可接入全球主流 AI 模型')}
+                </p>
+              </div>
+
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-8 mb-16'>
+                {[
+                  {
+                    step: '01',
+                    icon: <IconKey size='extra-large' />,
+                    title: t('获取 API Key'),
+                    desc: t('注册并登录后，在控制台创建你的专属 API Key'),
+                  },
+                  {
+                    step: '02',
+                    icon: <IconRefresh size='extra-large' />,
+                    title: t('替换 Base URL'),
+                    desc: t('将官方接口地址替换为我们的中转地址'),
+                  },
+                  {
+                    step: '03',
+                    icon: <IconCode size='extra-large' />,
+                    title: t('开始使用'),
+                    desc: t('使用任意兼容 OpenAI 的客户端或代码即可调用'),
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative p-8 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-black border-gray-800 hover:border-gray-700' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <div className={`absolute top-4 right-4 text-5xl font-extrabold ${isDark ? 'text-gray-800' : 'text-gray-100'}`}>
+                      {item.step}
+                    </div>
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-5 ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                      {item.icon}
+                    </div>
+                    <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {item.title}
+                    </h3>
+                    <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {item.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Code Example */}
+              <div className={`rounded-2xl overflow-hidden border ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
+                <div className={`flex items-center justify-between px-5 py-3 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+                  <div className='flex items-center gap-2'>
+                    <div className='flex gap-1.5'>
+                      <span className='w-3 h-3 rounded-full bg-red-500'></span>
+                      <span className='w-3 h-3 rounded-full bg-yellow-500'></span>
+                      <span className='w-3 h-3 rounded-full bg-green-500'></span>
+                    </div>
+                    <span className={`text-sm font-medium ml-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>cURL</span>
+                  </div>
+                  <Button
+                    size='small'
+                    theme='borderless'
+                    className={`!text-xs ${isDark ? '!text-gray-400 hover:!text-white' : '!text-gray-500 hover:!text-gray-900'}`}
+                    onClick={async () => {
+                      const code = `curl ${serverAddress}/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'`;
+                      const ok = await copy(code);
+                      if (ok) showSuccess(t('已复制到剪切板'));
+                    }}
+                  >
+                    {t('复制')}
+                  </Button>
+                </div>
+                <pre className={`p-5 text-sm leading-relaxed overflow-x-auto ${isDark ? 'bg-[#0d0d0d] text-gray-300' : 'bg-white text-gray-800'}`}>
+                  <code>{`curl ${serverAddress}/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'`}</code>
+                </pre>
+              </div>
+            </div>
+          </div>
+
           {/* Features Section */}
           <div className={`py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -257,7 +354,7 @@ const Home = () => {
                   { icon: <IconBolt size='extra-large' />, title: t('极速响应'), desc: t('全球多节点部署，智能路由选择，毫秒级响应延迟，确保最佳使用体验。') },
                   { icon: <IconCoinMoneyStroked size='extra-large' />, title: t('价格优惠'), desc: t('按量计费，无最低消费，价格远低于官方直连，为您节省大量成本。') },
                   { icon: <IconLink size='extra-large' />, title: t('统一接口'), desc: t('一个接口对接 40+ 大模型供应商，无需分别适配，大幅降低开发成本。') },
-                  { icon: <IconBarChartStroked size='extra-large' />, title: t('智能负载'), desc: t('智能负载均衡与故障转移，自动切换最优通道，保障服务连续性。') },
+                  { icon: <IconBarChartVStroked size='extra-large' />, title: t('智能负载'), desc: t('智能负载均衡与故障转移，自动切换最优通道，保障服务连续性。') },
                   { icon: <IconSettingStroked size='extra-large' />, title: t('灵活计费'), desc: t('支持按量、按次、包月等多种计费方式，满足不同场景的使用需求。') },
                 ].map((feature, idx) => (
                   <div
