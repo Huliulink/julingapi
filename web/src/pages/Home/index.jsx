@@ -703,7 +703,7 @@ const Home = () => {
                 <div className="lg:col-span-3 space-y-6">
                   <div>
                     <div className="flex items-center gap-3 mb-3">
-                      <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+                      <img src="/image/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">关于我们</h3>
                     </div>
                     <p className="text-gray-600 leading-relaxed text-sm dark:text-gray-400">聚灵API 专注于为开发者提供稳定高速的一站式大语言模型 API 中转服务，支持 OpenAI GPT、Anthropic Claude、Midjourney、Google Gemini、阿里云百炼、腾讯混元等主流 LLM，统一鉴权、灵活计费、智能负载均衡，助你低成本接入多模型 AI 能力。</p>
