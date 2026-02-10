@@ -351,19 +351,19 @@ const Home = () => {
               </div>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
                 {[
-                  { icon: <IconShield size='extra-large' />, title: t('安全稳定'), desc: t('企业级安全防护，数据加密传输，99.9% 可用性保障，让您的业务无忧运行。') },
-                  { icon: <IconBolt size='extra-large' />, title: t('极速响应'), desc: t('全球多节点部署，智能路由选择，毫秒级响应延迟，确保最佳使用体验。') },
-                  { icon: <IconCoinMoneyStroked size='extra-large' />, title: t('价格优惠'), desc: t('按量计费，无最低消费，价格远低于官方直连，为您节省大量成本。') },
-                  { icon: <IconLink size='extra-large' />, title: t('统一接口'), desc: t('一个接口对接 40+ 大模型供应商，无需分别适配，大幅降低开发成本。') },
-                  { icon: <IconBarChartVStroked size='extra-large' />, title: t('智能负载'), desc: t('智能负载均衡与故障转移，自动切换最优通道，保障服务连续性。') },
-                  { icon: <IconSettingStroked size='extra-large' />, title: t('灵活计费'), desc: t('支持按量、按次、包月等多种计费方式，满足不同场景的使用需求。') },
+                  { icon: '/zhuye/安全稳定.svg', title: t('安全稳定'), desc: t('企业级安全防护，数据加密传输，99.9% 可用性保障，让您的业务无忧运行。') },
+                  { icon: '/zhuye/极速响应.svg', title: t('极速响应'), desc: t('全球多节点部署，智能路由选择，毫秒级响应延迟，确保最佳使用体验。') },
+                  { icon: '/zhuye/价格优惠.svg', title: t('价格优惠'), desc: t('按量计费，无最低消费，价格远低于官方直连，为您节省大量成本。') },
+                  { icon: '/zhuye/统一接口.svg', title: t('统一接口'), desc: t('一个接口对接 40+ 大模型供应商，无需分别适配，大幅降低开发成本。') },
+                  { icon: '/zhuye/智能负载.svg', title: t('智能负载'), desc: t('智能负载均衡与故障转移，自动切换最优通道，保障服务连续性。') },
+                  { icon: '/zhuye/灵活计费.svg', title: t('灵活计费'), desc: t('支持按量、按次、包月等多种计费方式，满足不同场景的使用需求。') },
                 ].map((feature, idx) => (
                   <div
                     key={idx}
                     className={`group p-8 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-700' : 'bg-white border-gray-100 hover:border-gray-300'}`}
                   >
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                      {feature.icon}
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+                      <img src={feature.icon} alt={feature.title} className='w-8 h-8 object-contain' />
                     </div>
                     <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {feature.title}
@@ -448,6 +448,102 @@ const Home = () => {
                     <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{item.name}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* API Formats Section */}
+          <div className={`relative z-10 py-24 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <div className='text-center mb-16'>
+                <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {t('我们支持的 API 格式')}
+                </h2>
+              </div>
+
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5'>
+                {[
+                  {
+                    title: t('OpenAI 对话接口'),
+                    desc: t('OpenAI 聊天对话接口，支持多轮对话'),
+                    endpoint: '/v1/chat/completions',
+                  },
+                  {
+                    title: t('OpenAI 响应式接口'),
+                    desc: t('OpenAI 响应式接口，支持实时流式响应处理'),
+                    endpoint: '/v1/responses',
+                  },
+                  {
+                    title: t('Claude 格式'),
+                    desc: t('Anthropic Claude 模型调用，支持多轮对话和高级推理'),
+                    endpoint: '/v1/messages',
+                  },
+                  {
+                    title: t('Gemini 格式'),
+                    desc: t('Google Gemini 模型调用，支持多模态内容处理'),
+                    endpoint: '/v1beta/models/',
+                  },
+                  {
+                    title: t('生图接口'),
+                    desc: t('DALL-E 图像生成，支持文本到图像的转换'),
+                    endpoint: '/v1/images/generations',
+                  },
+                  {
+                    title: t('编辑图片'),
+                    desc: t('图像编辑和处理，支持图片修改和优化'),
+                    endpoint: '/v1/images/edits',
+                  },
+                  {
+                    title: t('视频接口'),
+                    desc: t('视频处理和生成，支持视频创建和编辑'),
+                    endpoint: '/v1/videos',
+                  },
+                  {
+                    title: t('文本嵌入'),
+                    desc: t('文本向量化处理，支持语义搜索和相似度计算'),
+                    endpoint: '/v1/embeddings',
+                  },
+                  {
+                    title: t('Suno 音乐'),
+                    desc: t('Suno AI 音乐生成，支持文本到音乐的创作'),
+                    endpoint: '/suno/submit/music',
+                  },
+                  {
+                    title: t('Midjourney 绘图'),
+                    desc: t('Midjourney AI 绘图，支持高质量图像生成'),
+                    endpoint: '/mj/submit/imagine',
+                  },
+                  {
+                    title: t('支持更多 API'),
+                    desc: t('支持更多 API 接口和高级功能'),
+                    endpoint: '/v1/custom/*',
+                  },
+                ].map((api, idx) => (
+                  <div
+                    key={idx}
+                    className={`group p-5 rounded-xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isDark ? 'bg-black border-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <h4 className={`text-sm font-bold mb-1.5 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {api.title}
+                    </h4>
+                    <p className={`text-xs leading-relaxed mb-3 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      {api.desc}
+                    </p>
+                    <code className={`text-xs px-2.5 py-1 rounded-md font-mono ${isDark ? 'bg-gray-900 text-blue-400' : 'bg-gray-100 text-blue-600'}`}>
+                      {api.endpoint}
+                    </code>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom note */}
+              <div className={`mt-12 text-center max-w-2xl mx-auto p-8 rounded-2xl border border-dashed ${isDark ? 'border-gray-800' : 'border-gray-300'}`}>
+                <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {t('还有更多接口和功能')}
+                </h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {t('除了上述接口外，我们的平台还支持更多高级功能和定制化接口。无论您需要什么样的 AI 能力，我们都能为您提供完整的解决方案。')}
+                </p>
               </div>
             </div>
           </div>
