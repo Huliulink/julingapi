@@ -166,12 +166,6 @@ const Home = () => {
     displayHomePageContent().then();
   }, []);
 
-  // Stats with count-up
-  const stat1 = useCountUp('40', 2000, '+');
-  const stat2 = useCountUp('99.9', 2000, '%');
-  const stat3 = useCountUp('70', 2000, 'ms');
-  const stat4 = useCountUp('7', 1500, '/24');
-
   return (
     <div className={`w-full overflow-x-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
       <style>{`
@@ -214,7 +208,7 @@ const Home = () => {
           <img
             src={isDark ? '/loginhei.svg' : '/loginbai.svg'}
             alt=''
-            className='absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none select-none z-0'
+            className='fixed inset-0 w-full h-full object-cover pointer-events-none select-none z-0'
           />
           {/* Hero Section */}
           <div className={`w-full min-h-[600px] relative overflow-hidden ${isDark ? 'bg-transparent' : 'bg-transparent'}`}>
@@ -292,10 +286,7 @@ const Home = () => {
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('快速开始')}
-                </h2>
-                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('与主流 AIGC 应用深度打通，开箱即用，持续适配更多生态。')}
+                  {t('生态适配')}
                 </p>
               </div>
 
@@ -381,27 +372,27 @@ const Home = () => {
           <div className={`py-12 border-y ${isDark ? 'bg-black border-gray-900' : 'bg-white border-gray-100'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='grid grid-cols-2 md:grid-cols-4 gap-8'>
-                <div ref={stat1.ref} className='text-center'>
+                <div className='text-center'>
                   <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    {stat1.count}
+                    40+
                   </div>
                   <div className='text-sm font-medium text-gray-500'>{t('支持模型供应商')}</div>
                 </div>
-                <div ref={stat2.ref} className='text-center'>
+                <div className='text-center'>
                   <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    {stat2.count}
+                    99.9%
                   </div>
                   <div className='text-sm font-medium text-gray-500'>{t('服务可用性')}</div>
                 </div>
-                <div ref={stat3.ref} className='text-center'>
+                <div className='text-center'>
                   <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    {'<'}{stat3.count}
+                    &lt;70ms
                   </div>
                   <div className='text-sm font-medium text-gray-500'>{t('平均响应延迟')}</div>
                 </div>
-                <div ref={stat4.ref} className='text-center'>
+                <div className='text-center'>
                   <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    {stat4.count}
+                    7/24
                   </div>
                   <div className='text-sm font-medium text-gray-500'>{t('技术支持')}</div>
                 </div>
@@ -560,7 +551,7 @@ const Home = () => {
                     key={name}
                     src={`/payment/${name}.svg`}
                     alt={name}
-                    className='h-16 md:h-20 flex-shrink-0 object-contain transition-all duration-300 hover:scale-110'
+                    className='h-16 md:h-20 flex-shrink-0 object-contain'
                   />
                 ))}
               </div>
