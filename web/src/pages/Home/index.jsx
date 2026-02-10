@@ -285,12 +285,7 @@ const Home = () => {
                       <line x1="150" y1="163" x2="27" y2="92"></line>
                     </g>
                     <polygon className="radar-data" points="150,35 260,100 250,225 150,290 80,210 50,110"></polygon>
-                    <circle className="radar-dot" cx="150" cy="35"></circle>
-                    <circle className="radar-dot" cx="260" cy="100"></circle>
-                    <circle className="radar-dot" cx="250" cy="225"></circle>
-                    <circle className="radar-dot" cx="150" cy="290"></circle>
-                    <circle className="radar-dot" cx="80" cy="210"></circle>
-                    <circle className="radar-dot" cx="50" cy="110"></circle>
+
                     <text x="150" y="10" textAnchor="middle" className="radar-label l1">响应速度</text>
                     <text x="290" y="90" textAnchor="middle" className="radar-label l2">稳定性</text>
                     <text x="290" y="250" textAnchor="middle" className="radar-label l3">价格优势</text>
