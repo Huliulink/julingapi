@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Avatar, Button, Typography } from '@douyinfe/semi-ui';
 import { IconArrowRight } from '@douyinfe/semi-icons';
 import { API } from '../../helpers/api';
 import { showError, showNotice } from '../../helpers/utils';
-import { ThemeContext } from '../../context/Theme';
+import { useActualTheme } from '../../context/Theme';
 import { marked } from 'marked';
 import './Home.css'; // Import the extracted styles
 
@@ -11,7 +11,7 @@ const Home = () => {
   const [statusState, setStatusState] = useState({});
   const [homePageContent, setHomePageContent] = useState('');
   const [homePageContentLoaded, setHomePageContentLoaded] = useState(false);
-  const { theme } = useContext(ThemeContext);
+  const theme = useActualTheme();
   const isDark = theme === 'dark';
 
   const displayStatus = async () => {
