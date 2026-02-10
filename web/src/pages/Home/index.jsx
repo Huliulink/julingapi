@@ -21,7 +21,7 @@ import React, { useContext, useEffect, useState, useRef } from 'react';
 import {
   Button,
 } from '@douyinfe/semi-ui';
-import { API, showError, copy, showSuccess } from '../../helpers';
+import { API, showError } from '../../helpers';
 import { useIsMobile } from '../../hooks/common/useIsMobile';
 import { StatusContext } from '../../context/Status';
 import { useActualTheme } from '../../context/Theme';
@@ -112,8 +112,6 @@ const Home = () => {
   const [noticeVisible, setNoticeVisible] = useState(false);
   const isMobile = useIsMobile();
   const isChinese = i18n.language.startsWith('zh');
-  const serverAddress =
-    statusState?.status?.server_address || `${window.location.origin}`;
 
   const displayHomePageContent = async () => {
     setHomePageContent(localStorage.getItem('home_page_content') || '');
@@ -171,8 +169,8 @@ const Home = () => {
   // Stats with count-up
   const stat1 = useCountUp('40', 2000, '+');
   const stat2 = useCountUp('99.9', 2000, '%');
-  const stat3 = useCountUp('100', 2000, 'ms');
-  const stat4 = useCountUp('24', 1500, '/7');
+  const stat3 = useCountUp('70', 2000, 'ms');
+  const stat4 = useCountUp('7', 1500, '/24');
 
   return (
     <div className={`w-full overflow-x-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
@@ -211,15 +209,15 @@ const Home = () => {
         isMobile={isMobile}
       />
       {homePageContentLoaded && homePageContent === '' ? (
-        <div className='w-full overflow-x-hidden'>
-          {/* Hero Section with SVG Background */}
-          <div className={`w-full min-h-[600px] relative overflow-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
-            {/* SVG Background */}
-            <img
-              src={isDark ? '/loginhei.svg' : '/loginbai.svg'}
-              alt=''
-              className='absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none select-none'
-            />
+        <div className='w-full overflow-x-hidden relative'>
+          {/* SVG Background - covers entire page */}
+          <img
+            src={isDark ? '/loginhei.svg' : '/loginbai.svg'}
+            alt=''
+            className='absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none select-none z-0'
+          />
+          {/* Hero Section */}
+          <div className={`w-full min-h-[600px] relative overflow-hidden ${isDark ? 'bg-transparent' : 'bg-transparent'}`}>
             <div className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-40 text-center'>
               <div style={{ animation: 'fadeInUp 0.6s ease both' }}>
                 <h1 className={`text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -230,23 +228,12 @@ const Home = () => {
                 <p className={`text-lg md:text-xl mb-10 leading-relaxed max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   {t('面向企业与创作者的轻量网关方案。更快的响应，更稳的通道，更低的成本，一次接入，使用 300+ 模型与生态能力。')}
                 </p>
-                <Link to='/console'>
-                  <Button
-                    theme='solid'
-                    type='primary'
-                    size='large'
-                    className='!rounded-full px-10 h-12 text-base font-semibold shadow-lg !bg-black hover:!bg-gray-800 dark:!bg-white dark:!text-black dark:hover:!bg-gray-200'
-                    icon={<IconPlay />}
-                  >
-                    {t('立即开始')}
-                  </Button>
-                </Link>
               </div>
             </div>
           </div>
 
           {/* Quick Start Section */}
-          <div className={`py-24 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+          <div className={`relative z-10 py-24 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -297,42 +284,56 @@ const Home = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
 
-              {/* Code Example */}
-              <div className={`rounded-2xl overflow-hidden border ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-                <div className={`flex items-center justify-between px-5 py-3 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
-                  <div className='flex items-center gap-2'>
-                    <div className='flex gap-1.5'>
-                      <span className='w-3 h-3 rounded-full bg-red-500'></span>
-                      <span className='w-3 h-3 rounded-full bg-yellow-500'></span>
-                      <span className='w-3 h-3 rounded-full bg-green-500'></span>
-                    </div>
-                    <span className={`text-sm font-medium ml-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>cURL</span>
-                  </div>
-                  <Button
-                    size='small'
-                    theme='borderless'
-                    className={`!text-xs ${isDark ? '!text-gray-400 hover:!text-white' : '!text-gray-500 hover:!text-gray-900'}`}
-                    onClick={async () => {
-                      const code = `curl ${serverAddress}/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello!"}]}'`;
-                      const ok = await copy(code);
-                      if (ok) showSuccess(t('已复制到剪切板'));
-                    }}
+          {/* Ecosystem Section */}
+          <div className={`relative z-10 py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <div className='text-center mb-16'>
+                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {t('快速开始')}
+                </h2>
+                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {t('与主流 AIGC 应用深度打通，开箱即用，持续适配更多生态。')}
+                </p>
+              </div>
+
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6'>
+                {[
+                  {
+                    name: t('全能 AI'),
+                    desc: t('一站式 AI 对话、AI 绘画、AI 音乐、AI 视频、文档分析、联网检索等功能。'),
+                  },
+                  {
+                    name: 'OpenWebUI',
+                    desc: t('本地/私有化部署界面，统一管理与调用不同模型与会话。'),
+                  },
+                  {
+                    name: 'LobeChat',
+                    desc: t('企业级 RAG 检索增强，支持 PDF/网页/数据库多源接入。'),
+                  },
+                  {
+                    name: t('GPT 画图'),
+                    desc: t('轻量级部署，聚合 gpt-4o、Sora-image、gpt-image-1。'),
+                  },
+                  {
+                    name: 'NextChat',
+                    desc: t('基于 ChatGPT-Next-Web 框架开发，轻量级部署。'),
+                  },
+                ].map((app, idx) => (
+                  <div
+                    key={idx}
+                    className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-700' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}
                   >
-                    {t('复制')}
-                  </Button>
-                </div>
-                <pre className={`p-5 text-sm leading-relaxed overflow-x-auto ${isDark ? 'bg-[#0d0d0d] text-gray-300' : 'bg-white text-gray-800'}`}>
-                  <code>{`curl ${serverAddress}/v1/chat/completions \\
-  -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -d '{
-    "model": "gpt-4o",
-    "messages": [
-      {"role": "user", "content": "Hello!"}
-    ]
-  }'`}</code>
-                </pre>
+                    <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {app.name}
+                    </h3>
+                    <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {app.desc}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -453,17 +454,17 @@ const Home = () => {
 
           {/* Payment Methods */}
           <div className={`py-20 ${isDark ? 'bg-black' : 'bg-white'}`}>
-            <div className='max-w-4xl mx-auto px-4 text-center'>
+            <div className='max-w-7xl mx-auto px-4 text-center'>
               <h3 className={`text-lg font-semibold mb-8 tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 {t('支持多种支付方式')}
               </h3>
-              <div className='flex flex-wrap items-center justify-center gap-10'>
+              <div className='flex items-center justify-center gap-6 lg:gap-10 flex-nowrap overflow-x-auto'>
                 {['visa', 'mastercard', 'pay-alipay', 'WechatPay_', 'paypal', 'Bitcoin', 'USDT', 'union_pay'].map((name) => (
                   <img
                     key={name}
                     src={`/payment/${name}.svg`}
                     alt={name}
-                    className='h-16 md:h-20 object-contain transition-all duration-300 hover:scale-110'
+                    className='h-16 md:h-20 flex-shrink-0 object-contain transition-all duration-300 hover:scale-110'
                   />
                 ))}
               </div>
