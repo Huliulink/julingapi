@@ -373,28 +373,28 @@ const Home = () => {
           </section>
 
           {/* Quick Start Section */}
-          <div className="bg-gradient-to-b from-white to-indigo-50/50 py-16 md:py-20 dark:from-gray-900 dark:to-gray-800">
+          <div className="bg-gradient-to-b from-white to-blue-50/30 py-16 md:py-20 dark:from-gray-900 dark:to-gray-800">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 dark:text-gray-100">快速开始使用</h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400">支持多种 API 格式和功能，无缝对接您的应用</p>
               </div>
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8 dark:bg-gray-800 dark:border-gray-700">
-                <div className="bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-3">
+                <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3">
                   <h3 className="text-base font-semibold text-white flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles w-4 h-4"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
                     格式调用
                   </h3>
                 </div>
                 <div className="p-4 space-y-3">
-                  <div className="flex items-start gap-3 p-3 bg-gradient-to-b from-white to-indigo-50/50 rounded-lg border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                  <div className="flex items-start gap-3 p-3 bg-gradient-to-b from-white to-blue-50/30 rounded-lg border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
                     <div className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-xs">1</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-gray-700 font-medium text-sm mb-1 dark:text-gray-300">原地址：</p>
                       <code className="px-2 py-1 bg-gray-100 text-gray-600 rounded font-mono text-xs line-through inline-block dark:bg-gray-700 dark:text-gray-400">https://api.openai.com</code>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-gradient-to-b from-white to-indigo-50/50 rounded-lg border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                  <div className="flex items-start gap-3 p-3 bg-gradient-to-b from-white to-blue-50/30 rounded-lg border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
                     <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">2</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-gray-700 font-medium text-sm mb-2 dark:text-gray-300">新地址：</p>
@@ -423,7 +423,7 @@ const Home = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 p-2.5 bg-gradient-to-b from-white to-indigo-50/50 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                  <div className="flex items-center gap-2 p-2.5 bg-gradient-to-b from-white to-blue-50/30 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                     <div className="flex-shrink-0 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">!</div>
                     <p className="text-amber-800 text-xs dark:text-amber-200"><span className="font-semibold">提示：</span>完全兼容国内外主流API格式</p>
                   </div>
@@ -434,8 +434,8 @@ const Home = () => {
                 <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center dark:text-gray-100">支持的 API 格式</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* API Card 1: OpenAI Chat */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle w-6 h-6 text-white"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
                         <h4 className="text-lg font-semibold text-white">OpenAI对话接口</h4>
@@ -451,8 +451,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 2: OpenAI Response */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-network w-6 h-6 text-white"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
                         <h4 className="text-lg font-semibold text-white">OpenAI 响应式接口</h4>
@@ -468,8 +468,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 3: Claude */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain w-6 h-6 text-white"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path></svg>
                         <h4 className="text-lg font-semibold text-white">Claude 格式</h4>
@@ -485,8 +485,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 4: Gemini */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap w-6 h-6 text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                         <h4 className="text-lg font-semibold text-white">Gemini 格式</h4>
@@ -502,8 +502,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 5: Image Gen */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-image w-6 h-6 text-white"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
                         <h4 className="text-lg font-semibold text-white">生图接口</h4>
@@ -519,8 +519,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 6: Edit Image (Added based on Reference HTML) */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-pink-500 to-pink-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-square-pen w-6 h-6 text-white"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"></path></svg>
                         <h4 className="text-lg font-semibold text-white">编辑图片</h4>
@@ -536,8 +536,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 7: Video (Added based on Reference HTML) */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video w-6 h-6 text-white"><path d="m22 8-6 4 6 4V8Z"></path><rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect></svg>
                         <h4 className="text-lg font-semibold text-white">视频接口</h4>
@@ -553,8 +553,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 8: Text Embed */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-cpu w-6 h-6 text-white"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path></svg>
                         <h4 className="text-lg font-semibold text-white">文本嵌入</h4>
@@ -570,8 +570,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 9: Suno Music */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-music w-6 h-6 text-white"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                         <h4 className="text-lg font-semibold text-white">Suno 音乐</h4>
@@ -587,8 +587,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 10: Midjourney */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-palette w-6 h-6 text-white"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
                         <h4 className="text-lg font-semibold text-white">Midjourney 绘图</h4>
@@ -604,8 +604,8 @@ const Home = () => {
                   </div>
 
                   {/* API Card 11: Support More */}
-                  <div className="bg-gradient-to-b from-white to-indigo-50/50 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                    <div className="bg-gradient-to-r from-slate-500 to-slate-600 px-6 py-4">
+                  <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
                       <div className="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-network w-6 h-6 text-white"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
                         <h4 className="text-lg font-semibold text-white">支持更多API</h4>
@@ -622,7 +622,7 @@ const Home = () => {
 
                 </div>
 
-                <div className="mt-12 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 overflow-hidden dark:from-gray-800 dark:to-gray-800 dark:border-gray-700">
+                <div className="mt-12 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 overflow-hidden dark:from-gray-800 dark:to-gray-800 dark:border-gray-700">
                   <div className="p-8 md:p-10">
                     <div className="flex items-start gap-4 md:gap-6">
                       <div className="flex-shrink-0">
@@ -660,7 +660,7 @@ const Home = () => {
                   </div>
                   <div className="flex mb-4 gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#FFFF00' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#f7d13b' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     ))}
                   </div>
                   <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">知来聚合API帮助我们显著提升了客户服务效率，智能对话系统让客服团队工作量减少了60%。</p>
@@ -676,7 +676,7 @@ const Home = () => {
                   </div>
                   <div className="flex mb-4 gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#FFFF00' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#f7d13b' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     ))}
                   </div>
                   <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">作为一名设计师，知来聚合API的图像生成功能给了我无限创作灵感，大大提升了工作效率。</p>
@@ -692,7 +692,7 @@ const Home = () => {
                   </div>
                   <div className="flex mb-4 gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#FFFF00' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#f7d13b' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     ))}
                   </div>
                   <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">企业版的私有化部署方案完美满足了我们对数据安全的严格要求，技术支持也非常专业。</p>
