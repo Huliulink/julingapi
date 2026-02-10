@@ -17,26 +17,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import {
   Button,
-  Typography,
-  Input,
-  ScrollList,
-  ScrollItem,
 } from '@douyinfe/semi-ui';
-import { API, showError, copy, showSuccess } from '../../helpers';
+import { API, showError } from '../../helpers';
 import { useIsMobile } from '../../hooks/common/useIsMobile';
-import { API_ENDPOINTS } from '../../constants/common.constant';
 import { StatusContext } from '../../context/Status';
 import { useActualTheme } from '../../context/Theme';
 import { marked } from 'marked';
 import { useTranslation } from 'react-i18next';
 import {
-  IconGithubLogo,
+  IconShield,
+  IconBolt,
+  IconCoinMoneyStroked,
+  IconLink,
+  IconBarChartStroked,
+  IconSettingStroked,
   IconPlay,
-  IconFile,
-  IconCopy,
 } from '@douyinfe/semi-icons';
 import { Link } from 'react-router-dom';
 import NoticeModal from '../../components/layout/NoticeModal';
@@ -64,7 +62,42 @@ import {
   Xinference,
 } from '@lobehub/icons';
 
-const { Text } = Typography;
+// Custom hook for count-up animation
+const useCountUp = (end, duration = 2000, suffix = '') => {
+  const [count, setCount] = useState('0');
+  const ref = useRef(null);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [started]);
+
+  useEffect(() => {
+    if (!started) return;
+    const numericEnd = parseFloat(end.replace(/[^0-9.]/g, ''));
+    const prefix = end.startsWith('<') ? '<' : '';
+    const startTime = performance.now();
+    const animate = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = eased * numericEnd;
+      if (end.includes('.')) {
+        setCount(prefix + current.toFixed(1) + suffix);
+      } else {
+        setCount(prefix + Math.floor(current) + suffix);
+      }
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [started, end, duration, suffix]);
+
+  return { count, ref };
+};
 
 const Home = () => {
   const { t, i18n } = useTranslation();
@@ -75,12 +108,6 @@ const Home = () => {
   const [homePageContent, setHomePageContent] = useState('');
   const [noticeVisible, setNoticeVisible] = useState(false);
   const isMobile = useIsMobile();
-  const isDemoSiteMode = statusState?.status?.demo_site_enabled || false;
-  const docsLink = statusState?.status?.docs_link || '';
-  const serverAddress =
-    statusState?.status?.server_address || `${window.location.origin}`;
-  const endpointItems = API_ENDPOINTS.map((e) => ({ value: e }));
-  const [endpointIndex, setEndpointIndex] = useState(0);
   const isChinese = i18n.language.startsWith('zh');
 
   const displayHomePageContent = async () => {
@@ -112,13 +139,6 @@ const Home = () => {
     setHomePageContentLoaded(true);
   };
 
-  const handleCopyBaseURL = async () => {
-    const ok = await copy(serverAddress);
-    if (ok) {
-      showSuccess(t('已复制到剪切板'));
-    }
-  };
-
   useEffect(() => {
     const checkNoticeAndShow = async () => {
       const lastCloseDate = localStorage.getItem('notice_close_date');
@@ -143,12 +163,11 @@ const Home = () => {
     displayHomePageContent().then();
   }, []);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setEndpointIndex((prev) => (prev + 1) % endpointItems.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [endpointItems.length]);
+  // Stats with count-up
+  const stat1 = useCountUp('40', 2000, '+');
+  const stat2 = useCountUp('99.9', 2000, '%');
+  const stat3 = useCountUp('100', 2000, 'ms');
+  const stat4 = useCountUp('24', 1500, '/7');
 
   return (
     <div className={`w-full overflow-x-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
@@ -188,127 +207,71 @@ const Home = () => {
       />
       {homePageContentLoaded && homePageContent === '' ? (
         <div className='w-full overflow-x-hidden'>
-          {/* Hero Section */}
-          <div
-            className={`w-full relative overflow-hidden flex flex-col items-center justify-center text-center pt-32 pb-20 ${isDark ? 'bg-black' : 'bg-white'}`}
-            style={{
-              backgroundImage: `url(${isDark ? '/loginhei.svg' : '/loginbai.svg'})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center top',
-              backgroundRepeat: 'no-repeat'
-            }}
-          >
-            <div className='max-w-4xl mx-auto px-4 relative z-10'>
-              <h1 className={`text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 ${isDark ? 'text-white' : 'text-gray-900'} tracking-wide`}>
-                {t('聚灵API · 专业大模型中转平台')}
-              </h1>
-
-              <p className={`text-lg md:text-xl leading-relaxed max-w-3xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                {t('面向企业与创作者的轻量网关方案。更快的响应，更稳的通道，更低的成本，一次接入，使用 300+ 模型与生态能力。')}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Start Section */}
-          <div className={`py-16 ${isDark ? 'bg-black' : 'bg-white'}`}>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='text-center mb-12'>
-                <h2 className={`text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('快速开始')}
-                </h2>
-                <p className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('与主流 AIGC 应用深度打通，开箱即用，持续适配更多生态。')}
+          {/* Hero Section with SVG Background */}
+          <div className={`w-full min-h-[600px] relative overflow-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
+            {/* SVG Background */}
+            <img
+              src={isDark ? '/loginhei.svg' : '/loginbai.svg'}
+              alt=''
+              className='absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none select-none'
+            />
+            <div className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-40 text-center'>
+              <div style={{ animation: 'fadeInUp 0.6s ease both' }}>
+                <h1 className={`text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <span className='shine-text'>{t('聚灵API')}</span>
+                  <span className={`mx-3 ${isDark ? 'text-gray-600' : 'text-gray-300'}`}>·</span>
+                  <span>{t('专业大模型中转平台')}</span>
+                </h1>
+                <p className={`text-lg md:text-xl mb-10 leading-relaxed max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {t('面向企业与创作者的轻量网关方案。更快的响应，更稳的通道，更低的成本，一次接入，使用 300+ 模型与生态能力。')}
                 </p>
-              </div>
-
-              <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6'>
-                {[
-                  {
-                    title: t('全能AI'),
-                    desc: t('一站式AI对话、AI绘画、AI音乐、AI视频、文档分析、联网搜索等功能。'),
-                    icon: '🤖',
-                    color: 'from-purple-500 to-indigo-500',
-                    bg: isDark ? 'bg-indigo-950/30' : 'bg-indigo-50',
-                    border: isDark ? 'border-indigo-800' : 'border-indigo-100'
-                  },
-                  {
-                    title: 'OpenWebUI',
-                    desc: t('本地/私有化部署界面，统一管理和调用不同模型与对话。'),
-                    icon: '🌐',
-                    color: 'from-blue-400 to-cyan-400',
-                    bg: isDark ? 'bg-blue-950/30' : 'bg-blue-50',
-                    border: isDark ? 'border-blue-800' : 'border-blue-100'
-                  },
-                  {
-                    title: 'LobeChat',
-                    desc: t('企业级 RAG 检索增强，支持 PDF/网页/数据库多源接入。'),
-                    icon: '💬',
-                    color: 'from-orange-400 to-amber-400',
-                    bg: isDark ? 'bg-orange-950/30' : 'bg-orange-50',
-                    border: isDark ? 'border-orange-800' : 'border-orange-100'
-                  },
-                  {
-                    title: t('GPT画图'),
-                    desc: t('轻量级部署，聚合gpt-4o、Sora-image、gpt-image-1。'),
-                    icon: '🎨',
-                    color: 'from-yellow-400 to-orange-400',
-                    bg: isDark ? 'bg-yellow-950/30' : 'bg-yellow-50',
-                    border: isDark ? 'border-yellow-800' : 'border-yellow-100'
-                  },
-                  {
-                    title: 'NextChat',
-                    desc: t('基于 ChatGPT-Next-Web 框架开发，轻量级部署。'),
-                    icon: '🚀',
-                    color: 'from-emerald-400 to-green-400',
-                    bg: isDark ? 'bg-emerald-950/30' : 'bg-emerald-50',
-                    border: isDark ? 'border-emerald-800' : 'border-emerald-100'
-                  }
-                ].map((item, idx) => (
-                  <div key={idx} className={`rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${item.bg} ${item.border}`}>
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-2xl mb-4 bg-white/10`}>
-                      {item.icon}
-                    </div>
-                    <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>{item.title}</h3>
-                    <p className={`text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{item.desc}</p>
-                  </div>
-                ))}
+                <Link to='/console'>
+                  <Button
+                    theme='solid'
+                    type='primary'
+                    size='large'
+                    className='!rounded-full px-10 h-12 text-base font-semibold shadow-lg !bg-black hover:!bg-gray-800 dark:!bg-white dark:!text-black dark:hover:!bg-gray-200'
+                    icon={<IconPlay />}
+                  >
+                    {t('立即开始')}
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
 
           {/* Features Section */}
-          <div className={`py-16 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
+              <div className='text-center mb-16'>
+                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {t('为什么选择我们')}
+                </h2>
+                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {t('企业级 API 中转服务，稳定可靠，为您的业务保驾护航')}
+                </p>
+              </div>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
                 {[
-                  {
-                    title: t('安全稳定'),
-                    desc: t('多通道智能调度与容灾策略，自动重试与限流保护，保障关键业务稳定运行。'),
-                    img: '安全稳定.svg',
-                    bg: isDark ? 'bg-[#1e293b]' : 'bg-white',
-                  },
-                  {
-                    title: t('零改造接入'),
-                    desc: t('完全兼容主流协议与 SDK，一套 Key 即可访问主流厂商与热门模型。'),
-                    img: '统一接口.svg',
-                    bg: isDark ? 'bg-[#1e293b]' : 'bg-white',
-                  },
-                  {
-                    title: t('按量计费更省'),
-                    desc: t('灵会计费与多档套餐，源头直供价格，更低成本释放更强模型能力。'),
-                    img: '价格优惠.svg',
-                    bg: isDark ? 'bg-[#1e293b]' : 'bg-white',
-                  }
-                ].map((item, idx) => (
-                  <div key={idx} className={`p-8 rounded-2xl border shadow-sm flex flex-col items-start hover:-translate-y-1 transition-transform duration-300 ${item.bg} ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-                    <div className='w-14 h-14 mb-6'>
-                      <img src={`/zhuye/${item.img}`} alt={item.title} className='w-full h-full object-contain' />
+                  { icon: <IconShield size='extra-large' />, title: t('安全稳定'), desc: t('企业级安全防护，数据加密传输，99.9% 可用性保障，让您的业务无忧运行。') },
+                  { icon: <IconBolt size='extra-large' />, title: t('极速响应'), desc: t('全球多节点部署，智能路由选择，毫秒级响应延迟，确保最佳使用体验。') },
+                  { icon: <IconCoinMoneyStroked size='extra-large' />, title: t('价格优惠'), desc: t('按量计费，无最低消费，价格远低于官方直连，为您节省大量成本。') },
+                  { icon: <IconLink size='extra-large' />, title: t('统一接口'), desc: t('一个接口对接 40+ 大模型供应商，无需分别适配，大幅降低开发成本。') },
+                  { icon: <IconBarChartStroked size='extra-large' />, title: t('智能负载'), desc: t('智能负载均衡与故障转移，自动切换最优通道，保障服务连续性。') },
+                  { icon: <IconSettingStroked size='extra-large' />, title: t('灵活计费'), desc: t('支持按量、按次、包月等多种计费方式，满足不同场景的使用需求。') },
+                ].map((feature, idx) => (
+                  <div
+                    key={idx}
+                    className={`group p-8 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-700' : 'bg-white border-gray-100 hover:border-gray-300'}`}
+                  >
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                      {feature.icon}
                     </div>
-                    <h3 className={`text-xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {item.title}
+                    <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {feature.title}
                     </h3>
-                    <p className={`text-base leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {item.desc}
+                    <p className={`leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {feature.desc}
                     </p>
                   </div>
                 ))}
@@ -320,54 +283,30 @@ const Home = () => {
           <div className={`py-12 border-y ${isDark ? 'bg-black border-gray-900' : 'bg-white border-gray-100'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='grid grid-cols-2 md:grid-cols-4 gap-8'>
-                {[
-                  { value: 40, suffix: '+', label: t('支持模型供应商') },
-                  { value: 99.9, suffix: '%', decimals: 1, label: t('服务可用性') },
-                  { value: 100, prefix: '<', suffix: 'ms', label: t('平均响应延迟') },
-                  { value: 24, suffix: '/7', label: t('技术支持') },
-                ].map((stat, idx) => {
-                  // Simple CountUp Component logic inline or separated
-                  const CountUp = ({ end, duration = 2000, prefix = '', suffix = '', decimals = 0 }) => {
-                    const [count, setCount] = useState(0);
-
-                    useEffect(() => {
-                      let startTime;
-                      let animationFrame;
-
-                      const animate = (timestamp) => {
-                        if (!startTime) startTime = timestamp;
-                        const progress = timestamp - startTime;
-                        const percentage = Math.min(progress / duration, 1);
-                        // Ease out quart
-                        const ease = 1 - Math.pow(1 - percentage, 4);
-
-                        setCount(end * ease);
-
-                        if (progress < duration) {
-                          animationFrame = requestAnimationFrame(animate);
-                        }
-                      };
-
-                      animationFrame = requestAnimationFrame(animate);
-                      return () => cancelAnimationFrame(animationFrame);
-                    }, [end, duration]);
-
-                    return (
-                      <span>{prefix}{count.toFixed(decimals)}{suffix}</span>
-                    );
-                  };
-
-                  return (
-                    <div key={idx} className='text-center'>
-                      <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                        <CountUp end={stat.value} suffix={stat.suffix} prefix={stat.prefix} decimals={stat.decimals} />
-                      </div>
-                      <div className={`text-sm font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        {stat.label}
-                      </div>
-                    </div>
-                  );
-                })}
+                <div ref={stat1.ref} className='text-center'>
+                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+                    {stat1.count}
+                  </div>
+                  <div className='text-sm font-medium text-gray-500'>{t('支持模型供应商')}</div>
+                </div>
+                <div ref={stat2.ref} className='text-center'>
+                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+                    {stat2.count}
+                  </div>
+                  <div className='text-sm font-medium text-gray-500'>{t('服务可用性')}</div>
+                </div>
+                <div ref={stat3.ref} className='text-center'>
+                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+                    {'<'}{stat3.count}
+                  </div>
+                  <div className='text-sm font-medium text-gray-500'>{t('平均响应延迟')}</div>
+                </div>
+                <div ref={stat4.ref} className='text-center'>
+                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+                    {stat4.count}
+                  </div>
+                  <div className='text-sm font-medium text-gray-500'>{t('技术支持')}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -379,39 +318,36 @@ const Home = () => {
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {t('支持众多的大模型供应商')}
                 </h2>
-                <div className='flex flex-wrap justify-center gap-3'>
-                  {/* Chips removed as requested */}
-                </div>
               </div>
 
-              <div className='grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-4 gap-y-10'>
+              <div className='grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-10 gap-x-4 gap-y-8'>
                 {[
-                  { component: <OpenAI key='openai' size={32} />, name: 'OpenAI' },
-                  { component: <Claude.Color key='claude' size={32} />, name: 'Claude' },
-                  { component: <Gemini.Color key='gemini' size={32} />, name: 'Gemini' },
-                  { component: <Midjourney key='midjourney' size={32} />, name: 'Midjourney' },
-                  { component: <Moonshot key='moonshot' size={32} />, name: 'Moonshot' },
-                  { component: <XAI key='xai' size={32} />, name: 'xAI' },
-                  { component: <Zhipu.Color key='zhipu' size={32} />, name: 'Zhipu' },
-                  { component: <Volcengine.Color key='volcengine' size={32} />, name: 'Volcengine' },
-                  { component: <Cohere.Color key='cohere' size={32} />, name: 'Cohere' },
-                  { component: <Suno key='suno' size={32} />, name: 'Suno' },
-                  { component: <Minimax.Color key='minimax' size={32} />, name: 'Minimax' },
-                  { component: <Wenxin.Color key='wenxin' size={32} />, name: 'Wenxin' },
-                  { component: <Spark.Color key='spark' size={32} />, name: 'Spark' },
-                  { component: <Qingyan.Color key='qingyan' size={32} />, name: 'Qingyan' },
-                  { component: <DeepSeek.Color key='deepseek' size={32} />, name: 'DeepSeek' },
-                  { component: <Qwen.Color key='qwen' size={32} />, name: 'Qwen' },
-                  { component: <Grok key='grok' size={32} />, name: 'Grok' },
-                  { component: <AzureAI.Color key='azureai' size={32} />, name: 'Azure AI' },
-                  { component: <Hunyuan.Color key='hunyuan' size={32} />, name: 'Hunyuan' },
-                  { component: <Xinference.Color key='xinference' size={32} />, name: 'Xinference' },
+                  { icon: <Moonshot size={40} />, name: 'Moonshot' },
+                  { icon: <OpenAI size={40} />, name: 'OpenAI' },
+                  { icon: <XAI size={40} />, name: 'xAI' },
+                  { icon: <Zhipu.Color size={40} />, name: 'Zhipu' },
+                  { icon: <Volcengine.Color size={40} />, name: 'Volcengine' },
+                  { icon: <Cohere.Color size={40} />, name: 'Cohere' },
+                  { icon: <Claude.Color size={40} />, name: 'Claude' },
+                  { icon: <Gemini.Color size={40} />, name: 'Gemini' },
+                  { icon: <Suno size={40} />, name: 'Suno' },
+                  { icon: <Minimax.Color size={40} />, name: 'Minimax' },
+                  { icon: <Wenxin.Color size={40} />, name: 'Wenxin' },
+                  { icon: <Spark.Color size={40} />, name: 'Spark' },
+                  { icon: <Qingyan.Color size={40} />, name: 'Qingyan' },
+                  { icon: <DeepSeek.Color size={40} />, name: 'DeepSeek' },
+                  { icon: <Qwen.Color size={40} />, name: 'Qwen' },
+                  { icon: <Midjourney size={40} />, name: 'Midjourney' },
+                  { icon: <Grok size={40} />, name: 'Grok' },
+                  { icon: <AzureAI.Color size={40} />, name: 'Azure AI' },
+                  { icon: <Hunyuan.Color size={40} />, name: 'Hunyuan' },
+                  { icon: <Xinference.Color size={40} />, name: 'Xinference' },
                 ].map((item, idx) => (
-                  <div key={idx} className={`flex flex-col items-center justify-center gap-3 p-4 rounded-xl border transition-all duration-300 hover:scale-105 hover:shadow-lg bg-white border-gray-100`}>
-                    <div className='flex items-center justify-center'>
-                      {item.component}
+                  <div key={idx} className='flex flex-col items-center gap-2'>
+                    <div className={`flex items-center justify-center p-4 rounded-xl border transition-all duration-300 hover:scale-105 bg-white ${isDark ? 'border-gray-700 hover:border-gray-500' : 'border-gray-100 hover:shadow-lg'}`}>
+                      {item.icon}
                     </div>
-                    <span className={`text-xs font-medium text-gray-600`}>{item.name}</span>
+                    <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{item.name}</span>
                   </div>
                 ))}
               </div>
@@ -421,16 +357,16 @@ const Home = () => {
           {/* Payment Methods */}
           <div className={`py-20 ${isDark ? 'bg-black' : 'bg-white'}`}>
             <div className='max-w-4xl mx-auto px-4 text-center'>
-              <h3 className={`text-xl font-bold mb-10 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <h3 className={`text-lg font-semibold mb-8 tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 {t('支持多种支付方式')}
               </h3>
-              <div className='flex flex-wrap items-center justify-center gap-8 md:gap-12'>
+              <div className='flex flex-wrap items-center justify-center gap-10'>
                 {['visa', 'mastercard', 'pay-alipay', 'WechatPay_', 'paypal', 'Bitcoin', 'USDT', 'union_pay'].map((name) => (
                   <img
                     key={name}
                     src={`/payment/${name}.svg`}
                     alt={name}
-                    className='h-16 md:h-20 object-contain hover:scale-110 transition-transform duration-300'
+                    className='h-16 md:h-20 object-contain transition-all duration-300 hover:scale-110'
                   />
                 ))}
               </div>
