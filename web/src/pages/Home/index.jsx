@@ -167,7 +167,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className={`w-full overflow-x-hidden ${isDark ? 'bg-black' : 'bg-white'}`}>
+    <div className={`w-full overflow-x-hidden ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
       <style>{`
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -205,11 +205,7 @@ const Home = () => {
       {homePageContentLoaded && homePageContent === '' ? (
         <div className='w-full overflow-x-hidden relative'>
           {/* SVG Background - covers entire page */}
-          <img
-            src={isDark ? '/loginhei.svg' : '/loginbai.svg'}
-            alt=''
-            className='fixed inset-0 w-full h-full object-cover pointer-events-none select-none z-0'
-          />
+
           {/* Hero Section */}
           <div className={`w-full min-h-[600px] relative overflow-hidden ${isDark ? 'bg-transparent' : 'bg-transparent'}`}>
             <div className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-40 text-center'>
@@ -227,7 +223,7 @@ const Home = () => {
           </div>
 
           {/* Quick Start Section */}
-          <div className={`relative z-10 py-24 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -282,7 +278,7 @@ const Home = () => {
           </div>
 
           {/* Ecosystem Section */}
-          <div className={`relative z-10 py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -330,7 +326,7 @@ const Home = () => {
           </div>
 
           {/* Features Section */}
-          <div className={`relative z-10 py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -369,7 +365,7 @@ const Home = () => {
           </div>
 
           {/* Stats Section */}
-          <div className={`relative z-10 py-12 border-y ${isDark ? 'bg-black border-gray-900' : 'bg-white border-gray-100'}`}>
+          <div className={`py-12 border-y ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='grid grid-cols-2 md:grid-cols-4 gap-8'>
                 <div className='text-center'>
@@ -401,7 +397,7 @@ const Home = () => {
           </div>
 
           {/* Supported Models Section */}
-          <div className={`relative z-10 py-24 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -444,7 +440,7 @@ const Home = () => {
           </div>
 
           {/* API Formats Section */}
-          <div className={`relative z-10 py-24 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
               <div className='text-center mb-16'>
                 <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -540,7 +536,7 @@ const Home = () => {
           </div>
 
           {/* Payment Methods */}
-          <div className={`relative z-10 py-20 ${isDark ? 'bg-black' : 'bg-white'}`}>
+          <div className={`py-20 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
             <div className='max-w-7xl mx-auto px-4 text-center'>
               <h3 className={`text-lg font-semibold mb-8 tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 {t('支持多种支付方式')}
@@ -559,9 +555,7 @@ const Home = () => {
           </div>
 
           {/* Footer */}
-          <div className='relative z-10'>
-            <FooterBar />
-          </div>
+          <FooterBar />
         </div>
 
       ) : (
