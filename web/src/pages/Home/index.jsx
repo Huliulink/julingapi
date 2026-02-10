@@ -1,577 +1,642 @@
-/*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { useContext, useEffect, useState, useRef } from 'react';
-import {
-  Button,
-} from '@douyinfe/semi-ui';
-import { API, showError } from '../../helpers';
-import { useIsMobile } from '../../hooks/common/useIsMobile';
-import { StatusContext } from '../../context/Status';
-import { useActualTheme } from '../../context/Theme';
+import React, { useContext, useEffect, useState } from 'react';
+import { Card, Avatar, Button, Typography } from '@douyinfe/semi-ui';
+import { IconArrowRight } from '@douyinfe/semi-icons';
+import { API } from '../../helpers/api';
+import { showError, showNotice } from '../../helpers/utils';
+import { ThemeContext } from '../../context/Theme';
 import { marked } from 'marked';
-import { useTranslation } from 'react-i18next';
-import {
-  IconShield,
-  IconBolt,
-  IconCoinMoneyStroked,
-  IconLink,
-  IconBarChartVStroked,
-  IconSettingStroked,
-  IconPlay,
-  IconKey,
-  IconCode,
-  IconRefresh,
-} from '@douyinfe/semi-icons';
-import { Link } from 'react-router-dom';
-import NoticeModal from '../../components/layout/NoticeModal';
-import FooterBar from '../../components/layout/Footer';
-import {
-  Moonshot,
-  OpenAI,
-  XAI,
-  Zhipu,
-  Volcengine,
-  Cohere,
-  Claude,
-  Gemini,
-  Suno,
-  Minimax,
-  Wenxin,
-  Spark,
-  Qingyan,
-  DeepSeek,
-  Qwen,
-  Midjourney,
-  Grok,
-  AzureAI,
-  Hunyuan,
-  Xinference,
-} from '@lobehub/icons';
-
-// Custom hook for count-up animation
-const useCountUp = (end, duration = 2000, suffix = '') => {
-  const [count, setCount] = useState('0');
-  const ref = useRef(null);
-  const [started, setStarted] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
-      { threshold: 0.3 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [started]);
-
-  useEffect(() => {
-    if (!started) return;
-    const numericEnd = parseFloat(end.replace(/[^0-9.]/g, ''));
-    const prefix = end.startsWith('<') ? '<' : '';
-    const startTime = performance.now();
-    const animate = (now) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = eased * numericEnd;
-      if (end.includes('.')) {
-        setCount(prefix + current.toFixed(1) + suffix);
-      } else {
-        setCount(prefix + Math.floor(current) + suffix);
-      }
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [started, end, duration, suffix]);
-
-  return { count, ref };
-};
+import './Home.css'; // Import the extracted styles
 
 const Home = () => {
-  const { t, i18n } = useTranslation();
-  const [statusState] = useContext(StatusContext);
-  const actualTheme = useActualTheme();
-  const isDark = actualTheme === 'dark';
-  const [homePageContentLoaded, setHomePageContentLoaded] = useState(false);
+  const [statusState, setStatusState] = useState({});
   const [homePageContent, setHomePageContent] = useState('');
-  const [noticeVisible, setNoticeVisible] = useState(false);
-  const isMobile = useIsMobile();
-  const isChinese = i18n.language.startsWith('zh');
+  const [homePageContentLoaded, setHomePageContentLoaded] = useState(false);
+  const { theme } = useContext(ThemeContext);
+  const isDark = theme === 'dark';
+
+  const displayStatus = async () => {
+    try {
+      const res = await API.get('/api/status');
+      const { success, data } = res.data;
+      if (success) {
+        setStatusState(data);
+      } else {
+        showError('无法获取服务器状态');
+      }
+    } catch (error) {
+      showError(error.message);
+    }
+  };
 
   const displayHomePageContent = async () => {
     setHomePageContent(localStorage.getItem('home_page_content') || '');
-    const res = await API.get('/api/home_page_content');
-    const { success, message, data } = res.data;
-    if (success) {
-      let content = data;
-      if (!data.startsWith('https://')) {
-        content = marked.parse(data);
+    try {
+      const res = await API.get('/api/home_page_content');
+      const { success, data } = res.data;
+      if (success) {
+        setHomePageContent(data);
+        localStorage.setItem('home_page_content', data);
+      } else {
+        showError('无法获取首页内容');
       }
-      setHomePageContent(content);
-      localStorage.setItem('home_page_content', content);
-
-      // 如果内容是 URL，则发送主题模式
-      if (data.startsWith('https://')) {
-        const iframe = document.querySelector('iframe');
-        if (iframe) {
-          iframe.onload = () => {
-            iframe.contentWindow.postMessage({ themeMode: actualTheme }, '*');
-            iframe.contentWindow.postMessage({ lang: i18n.language }, '*');
-          };
-        }
-      }
-    } else {
-      showError(message);
-      setHomePageContent('加载首页内容失败...');
+      setHomePageContentLoaded(true);
+    } catch (error) {
+      showError(error.message);
+      setHomePageContentLoaded(true);
     }
-    setHomePageContentLoaded(true);
   };
 
   useEffect(() => {
-    const checkNoticeAndShow = async () => {
-      const lastCloseDate = localStorage.getItem('notice_close_date');
-      const today = new Date().toDateString();
-      if (lastCloseDate !== today) {
-        try {
-          const res = await API.get('/api/notice');
-          const { success, data } = res.data;
-          if (success && data && data.trim() !== '') {
-            setNoticeVisible(true);
-          }
-        } catch (error) {
-          console.error('获取公告失败:', error);
-        }
-      }
-    };
-
-    checkNoticeAndShow();
-  }, []);
-
-  useEffect(() => {
-    displayHomePageContent().then();
+    displayStatus();
+    displayHomePageContent();
   }, []);
 
   return (
-    <div className={`w-full overflow-x-hidden ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-      <style>{`
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shine {
-            0% { background-position: -100% 0; }
-            100% { background-position: 100% 0; }
-        }
-        @keyframes floatPulse {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-        .shine-text {
-            background: linear-gradient(90deg, #000000 0%, #333333 40%, #666666 50%, #333333 60%, #000000 100%);
-            background-size: 200% 100%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 3.2s ease-in-out infinite 1s;
-        }
-        .dark .shine-text {
-             background: linear-gradient(90deg, #ffffff 0%, #cccccc 40%, #999999 50%, #cccccc 60%, #ffffff 100%);
-             background-size: 200% 100%;
-             -webkit-background-clip: text;
-             background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        `}</style>
-      <NoticeModal
-        visible={noticeVisible}
-        onClose={() => setNoticeVisible(false)}
-        isMobile={isMobile}
-      />
+    <div className={`home-container ${isDark ? 'dark-theme' : ''}`}>
       {homePageContentLoaded && homePageContent === '' ? (
-        <div className='w-full overflow-x-hidden relative'>
-          {/* SVG Background - covers entire page */}
-
+        <>
           {/* Hero Section */}
-          <div className={`w-full min-h-[600px] relative overflow-hidden ${isDark ? 'bg-transparent' : 'bg-transparent'}`}>
-            <div className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-40 text-center'>
-              <div style={{ animation: 'fadeInUp 0.6s ease both' }}>
-                <h1 className={`text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  <span className='shine-text'>{t('聚灵API')}</span>
-                  <span className={`mx-3 ${isDark ? 'text-gray-600' : 'text-gray-300'}`}>·</span>
-                  <span>{t('专业大模型中转平台')}</span>
-                </h1>
-                <p className={`text-lg md:text-xl mb-10 leading-relaxed max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('面向企业与创作者的轻量网关方案。更快的响应，更稳的通道，更低的成本，一次接入，使用 300+ 模型与生态能力。')}
+          <section className="title-section container-custom" style={{ animation: 'fadeInUp .6s ease both' }}>
+            <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1.15fr .85fr', gap: '40px', alignItems: 'center' }}>
+              <div>
+                <div className="hero-badge"><span className="badge-dot"></span> 聚灵API专业的大模型中转平台 · 新用户注册送 0.2 美元</div>
+                <div className="chips" aria-label="特性标签" style={{ justifyContent: 'flex-start' }}>
+                  <span className="chip">真源头</span>
+                  <span className="chip">高稳定</span>
+                  <span className="chip">低成本</span>
+                  <span className="chip">轻松接入</span>
+                </div>
+                <h1 className="main-title" style={{ marginTop: '8px' }}>聚灵API · 专业大模型中转平台</h1>
+                <p className="subtitle" style={{ margin: 0 }}>面向企业与创作者的轻量网关方案。更快的响应，更稳的通道，更低的成本，一次接入，使用 300+ 模型与生态能力。
+                  <span className="price-inline"><span className="price-label">限时价</span><span className="price-accent">1元兑换1美刀额度</span><span className="price-chip">省87%</span></span>
                 </p>
+                <div className="button-group">
+                  <a className="button-custom button-primary" href="/token">立即开始</a>
+                  <a className="button-custom button-secondary" href="https://julingapi.apifox.cn/" target="_blank" rel="noreferrer">技术文档</a>
+                  <a className="button-custom button-secondary" href="/pricing">模型定价</a>
+                  <a className="button-custom button-secondary" href="/about">关于我们</a>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Quick Start Section */}
-          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='text-center mb-16'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('快速开始')}
-                </h2>
-                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('只需三步，即可接入全球主流 AI 模型')}
-                </p>
-              </div>
-
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-8 mb-16'>
-                {[
-                  {
-                    step: '01',
-                    icon: <IconKey size='extra-large' />,
-                    title: t('获取 API Key'),
-                    desc: t('注册并登录后，在控制台创建你的专属 API Key'),
-                  },
-                  {
-                    step: '02',
-                    icon: <IconRefresh size='extra-large' />,
-                    title: t('替换 Base URL'),
-                    desc: t('将官方接口地址替换为我们的中转地址'),
-                  },
-                  {
-                    step: '03',
-                    icon: <IconCode size='extra-large' />,
-                    title: t('开始使用'),
-                    desc: t('使用任意兼容 OpenAI 的客户端或代码即可调用'),
-                  },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`relative p-8 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-black border-gray-800 hover:border-gray-700' : 'bg-white border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <div className={`absolute top-4 right-4 text-5xl font-extrabold ${isDark ? 'text-gray-800' : 'text-gray-100'}`}>
-                      {item.step}
+              <div>
+                <div className="hero-visual">
+                  <div className="visual-frame">
+                    <div className="visual-inner">
+                      <img className="visual-img" src="https://image.177911.com/image/电脑-01.png" alt="产品代表性形象" />
                     </div>
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-5 ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                      {item.icon}
-                    </div>
-                    <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {item.title}
-                    </h3>
-                    <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {item.desc}
-                    </p>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Ecosystem Section */}
-          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='text-center mb-16'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('生态适配')}
-                </h2>
-              </div>
-
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6'>
-                {[
-                  {
-                    name: t('全能 AI'),
-                    desc: t('一站式 AI 对话、AI 绘画、AI 音乐、AI 视频、文档分析、联网检索等功能。'),
-                  },
-                  {
-                    name: 'OpenWebUI',
-                    desc: t('本地/私有化部署界面，统一管理与调用不同模型与会话。'),
-                  },
-                  {
-                    name: 'LobeChat',
-                    desc: t('企业级 RAG 检索增强，支持 PDF/网页/数据库多源接入。'),
-                  },
-                  {
-                    name: t('GPT 画图'),
-                    desc: t('轻量级部署，聚合 gpt-4o、Sora-image、gpt-image-1。'),
-                  },
-                  {
-                    name: 'NextChat',
-                    desc: t('基于 ChatGPT-Next-Web 框架开发，轻量级部署。'),
-                  },
-                ].map((app, idx) => (
-                  <div
-                    key={idx}
-                    className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-700' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {app.name}
-                    </h3>
-                    <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {app.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Features Section */}
-          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='text-center mb-16'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('为什么选择我们')}
-                </h2>
-                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('企业级 API 中转服务，稳定可靠，为您的业务保驾护航')}
-                </p>
-              </div>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-                {[
-                  { icon: '/zhuye/安全稳定.svg', title: t('安全稳定'), desc: t('企业级安全防护，数据加密传输，99.9% 可用性保障，让您的业务无忧运行。') },
-                  { icon: '/zhuye/极速响应.svg', title: t('极速响应'), desc: t('全球多节点部署，智能路由选择，毫秒级响应延迟，确保最佳使用体验。') },
-                  { icon: '/zhuye/价格优惠.svg', title: t('价格优惠'), desc: t('按量计费，无最低消费，价格远低于官方直连，为您节省大量成本。') },
-                  { icon: '/zhuye/统一接口.svg', title: t('统一接口'), desc: t('一个接口对接 40+ 大模型供应商，无需分别适配，大幅降低开发成本。') },
-                  { icon: '/zhuye/智能负载.svg', title: t('智能负载'), desc: t('智能负载均衡与故障转移，自动切换最优通道，保障服务连续性。') },
-                  { icon: '/zhuye/灵活计费.svg', title: t('灵活计费'), desc: t('支持按量、按次、包月等多种计费方式，满足不同场景的使用需求。') },
-                ].map((feature, idx) => (
-                  <div
-                    key={idx}
-                    className={`group p-8 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-[#0a0a0a] border-gray-800 hover:border-gray-700' : 'bg-white border-gray-100 hover:border-gray-300'}`}
-                  >
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
-                      <img src={feature.icon} alt={feature.title} className='w-8 h-8 object-contain' />
-                    </div>
-                    <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {feature.title}
-                    </h3>
-                    <p className={`leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {feature.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          </section>
 
           {/* Stats Section */}
-          <div className={`py-12 border-y ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-8'>
-                <div className='text-center'>
-                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    40+
-                  </div>
-                  <div className='text-sm font-medium text-gray-500'>{t('支持模型供应商')}</div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-number">99.9%</div>
+              <div className="stat-label">服务可用性</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">300+</div>
+              <div className="stat-label">支持模型</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">15ms</div>
+              <div className="stat-label">平均延迟</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">10k+</div>
+              <div className="stat-label">注册开发者</div>
+            </div>
+          </div>
+
+          {/* Apps Section */}
+          <section className="apps">
+            <div className="apps-grid">
+              <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
+                <div className="app-head">
+                  <div className="app-icon"><img src="https://image.177911.com/image/ChatGPT@2x.png" alt="ChatGPT" /></div>
+                  <div className="app-name">ChatGPT</div>
                 </div>
-                <div className='text-center'>
-                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    99.9%
-                  </div>
-                  <div className='text-sm font-medium text-gray-500'>{t('服务可用性')}</div>
+                <div className="app-desc">智能对话与写作辅助，支持多轮交互。</div>
+              </a>
+              <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
+                <div className="app-head">
+                  <div className="app-icon"><img src="https://image.177911.com/image/Claude@2x.png" alt="Claude" /></div>
+                  <div className="app-name">Claude</div>
                 </div>
-                <div className='text-center'>
-                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    &lt;70ms
-                  </div>
-                  <div className='text-sm font-medium text-gray-500'>{t('平均响应延迟')}</div>
+                <div className="app-desc">长文本分析与各种代码逻辑推理能力。</div>
+              </a>
+              <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
+                <div className="app-head">
+                  <div className="app-icon"><img src="https://image.177911.com/image/Midjourney@2x.png" alt="Midjourney" /></div>
+                  <div className="app-name">Midjourney</div>
                 </div>
-                <div className='text-center'>
-                  <div className={`text-4xl md:text-5xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
-                    7/24
+                <div className="app-desc">高质量AI绘画，生成艺术级图像作品。</div>
+              </a>
+              <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
+                <div className="app-head">
+                  <div className="app-icon"><img src="https://image.177911.com/image/Sora@2x.png" alt="Sora" /></div>
+                  <div className="app-name">Sora</div>
+                </div>
+                <div className="app-desc">文本生成视频，创造逼真的动态场景。</div>
+              </a>
+              <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
+                <div className="app-head">
+                  <div className="app-icon"><img src="https://image.177911.com/image/Gemini@2x.png" alt="Gemini" /></div>
+                  <div className="app-name">Gemini</div>
+                </div>
+                <div className="app-desc">谷歌多模态大模型，处理文本图像视频。</div>
+              </a>
+            </div>
+          </section>
+
+          {/* Features Grid */}
+          <section className="features-grid">
+            <div className="feature-box">
+              <div className="feature-head">
+                <div className="feature-icon">
+                  <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z" /></svg>
+                </div>
+                <div className="feature-title">广泛模型支持</div>
+              </div>
+              <div className="feature-desc">一站式接入 OpenAI、Claude、Google Gemini 等主流大模型，支持 GPT-4o、Claude 3.5 等最新版本。</div>
+            </div>
+            <div className="feature-box">
+              <div className="feature-head">
+                <div className="feature-icon">
+                  <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                </div>
+                <div className="feature-title">极速响应体验</div>
+              </div>
+              <div className="feature-desc">全球多节点部署，智能路由优化，确保毫秒级响应速度，为您的应用提供流畅的交互体验。</div>
+            </div>
+            <div className="feature-box">
+              <div className="feature-head">
+                <div className="feature-icon">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
+                </div>
+                <div className="feature-title">99.9% 高可用</div>
+              </div>
+              <div className="feature-desc">企业级架构设计，多级容灾备份，7x24小时实时监控，保障服务稳定运行，业务不中断。</div>
+            </div>
+            <div className="feature-box">
+              <div className="feature-head">
+                <div className="feature-icon">
+                  <svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                </div>
+                <div className="feature-title">极具竞争力价格</div>
+              </div>
+              <div className="feature-desc">源头直连，去除中间环节，提供行业领先的价格优势。支持按量付费，不设最低消费门槛。</div>
+            </div>
+            <div className="feature-box">
+              <div className="feature-head">
+                <div className="feature-icon">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                </div>
+                <div className="feature-title">隐私安全保护</div>
+              </div>
+              <div className="feature-desc">严格的数据加密传输与存储，遵守GDPR等隐私法规，承诺不存储用户对话数据，保障业务安全。</div>
+            </div>
+            <div className="feature-box">
+              <div className="feature-head">
+                <div className="feature-icon">
+                  <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
+                </div>
+                <div className="feature-title">简单易用 API</div>
+              </div>
+              <div className="feature-desc">完全兼容 OpenAI 接口格式，无需修改代码即可无缝切换。提供详细开发文档与多语言 SDK。</div>
+            </div>
+          </section>
+
+          {/* Advantages Section */}
+          <section className="advantages">
+            <h2 className="advantages-title">为什么选择聚灵API</h2>
+            <p className="advantages-subtitle">为开发者打造的最佳基础设施</p>
+            <div className="why-grid">
+              <div className="why-list">
+                <div className="why-item">
+                  <div className="why-icon">
+                    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                   </div>
-                  <div className='text-sm font-medium text-gray-500'>{t('技术支持')}</div>
+                  <div>
+                    <div className="why-title">原生接口兼容</div>
+                    <div className="why-desc">完全兼容 OpenAI 官方接口标准，现有项目无需改动代码，修改 BaseURL 和 Key 即可直接使用。</div>
+                  </div>
+                </div>
+                <div className="why-item">
+                  <div className="why-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                  </div>
+                  <div>
+                    <div className="why-title">企业级稳定性</div>
+                    <div className="why-desc">采用高可用架构设计，自动负载均衡与故障转移，确保服务在高并发场景下依然稳定可靠。</div>
+                  </div>
+                </div>
+                <div className="why-item">
+                  <div className="why-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                  </div>
+                  <div>
+                    <div className="why-title">全球节点覆盖</div>
+                    <div className="why-desc">服务器节点遍布全球主要地区，自动选择最优线路，为全球用户提供低延迟的 API 访问体验。</div>
+                  </div>
+                </div>
+                <div className="why-item">
+                  <div className="why-icon">
+                    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                  </div>
+                  <div>
+                    <div className="why-title">以及更多...</div>
+                    <div className="why-desc">支持流式响应、Function Calling、Embedding 等高级功能，满足各类复杂应用场景需求。</div>
+                  </div>
+                </div>
+              </div>
+              <div className="why-visual">
+                <div className="radar">
+                  <svg viewBox="-50 -50 400 360" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                      <linearGradient id="radarFill" x1="150" y1="0" x2="150" y2="300" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stopColor="#2E5CF6" stopOpacity="0.3"></stop>
+                        <stop offset="1" stopColor="#06B6D4" stopOpacity="0.1"></stop>
+                      </linearGradient>
+                      <linearGradient id="radarStroke" x1="150" y1="0" x2="150" y2="300" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stopColor="#2E5CF6"></stop>
+                        <stop offset="1" stopColor="#06B6D4"></stop>
+                      </linearGradient>
+                    </defs>
+                    <g className="radar-grid">
+                      <polygon points="150,20 273,92 273,235 150,307 27,235 27,92" opacity="0.3"></polygon>
+                      <polygon points="150,70 230,118 230,209 150,257 70,209 70,118" opacity="0.5"></polygon>
+                      <polygon points="150,110 185,130 185,180 150,200 115,180 115,130" opacity="0.7"></polygon>
+                      <polygon points="150,20 273,92 273,235 150,307 27,235 27,92"></polygon>
+                      <line x1="150" y1="163" x2="150" y2="20"></line>
+                      <line x1="150" y1="163" x2="273" y2="92"></line>
+                      <line x1="150" y1="163" x2="273" y2="235"></line>
+                      <line x1="150" y1="163" x2="150" y2="307"></line>
+                      <line x1="150" y1="163" x2="27" y2="235"></line>
+                      <line x1="150" y1="163" x2="27" y2="92"></line>
+                    </g>
+                    <polygon className="radar-data" points="150,35 260,100 250,225 150,290 80,210 50,110"></polygon>
+                    <circle className="radar-dot" cx="150" cy="35"></circle>
+                    <circle className="radar-dot" cx="260" cy="100"></circle>
+                    <circle className="radar-dot" cx="250" cy="225"></circle>
+                    <circle className="radar-dot" cx="150" cy="290"></circle>
+                    <circle className="radar-dot" cx="80" cy="210"></circle>
+                    <circle className="radar-dot" cx="50" cy="110"></circle>
+                    <text x="150" y="10" textAnchor="middle" className="radar-label l1">响应速度</text>
+                    <text x="290" y="90" textAnchor="middle" className="radar-label l2">稳定性</text>
+                    <text x="290" y="250" textAnchor="middle" className="radar-label l3">价格优势</text>
+                    <text x="150" y="330" textAnchor="middle" className="radar-label l4">并发能力</text>
+                    <text x="10" y="250" textAnchor="middle" className="radar-label l5">易用性</text>
+                    <text x="10" y="90" textAnchor="middle" className="radar-label l6">功能丰富</text>
+                  </svg>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Supported Models Section */}
-          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='text-center mb-16'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('支持众多的大模型供应商')}
-                </h2>
-              </div>
+          <section className="supported-models">
+            <h2 className="advantages-title">支持数百种主流模型</h2>
+            <div className="supported-models-title">覆盖 OpenAI, Claude, Google, Midjourney 等全球顶尖大模型</div>
+            <div className="models-container">
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/ChatGPT@2x.png" alt="GPT-4" />
+                <span className="model-name">GPT-4o</span>
+              </a>
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/Claude@2x.png" alt="Claude 3.5" />
+                <span className="model-name">Claude 3.5</span>
+              </a>
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/Gemini@2x.png" alt="Gemini 1.5" />
+                <span className="model-name">Gemini 1.5</span>
+              </a>
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/Midjourney@2x.png" alt="Midjourney" />
+                <span className="model-name">Midjourney</span>
+              </a>
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/Sora@2x.png" alt="Sora" />
+                <span className="model-name">Sora</span>
+              </a>
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/Dalle@2x.png" alt="DALL·E 3" />
+                <span className="model-name">DALL·E 3</span>
+              </a>
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/Bing@2x.png" alt="Bing" />
+                <span className="model-name">Bing</span>
+              </a>
+              <a onClick={(e) => e.preventDefault()} className="model-logo">
+                <img src="https://image.177911.com/image/Meta@2x.png" alt="Llama 3" />
+                <span className="model-name">Llama 3</span>
+              </a>
+              {/* Additional rows can be added here following the same pattern */}
+            </div>
+          </section>
 
-              <div className='grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-10 gap-x-4 gap-y-8'>
-                {[
-                  { icon: <Moonshot size={40} />, name: 'Moonshot' },
-                  { icon: <OpenAI size={40} />, name: 'OpenAI' },
-                  { icon: <XAI size={40} />, name: 'xAI' },
-                  { icon: <Zhipu.Color size={40} />, name: 'Zhipu' },
-                  { icon: <Volcengine.Color size={40} />, name: 'Volcengine' },
-                  { icon: <Cohere.Color size={40} />, name: 'Cohere' },
-                  { icon: <Claude.Color size={40} />, name: 'Claude' },
-                  { icon: <Gemini.Color size={40} />, name: 'Gemini' },
-                  { icon: <Suno size={40} />, name: 'Suno' },
-                  { icon: <Minimax.Color size={40} />, name: 'Minimax' },
-                  { icon: <Wenxin.Color size={40} />, name: 'Wenxin' },
-                  { icon: <Spark.Color size={40} />, name: 'Spark' },
-                  { icon: <Qingyan.Color size={40} />, name: 'Qingyan' },
-                  { icon: <DeepSeek.Color size={40} />, name: 'DeepSeek' },
-                  { icon: <Qwen.Color size={40} />, name: 'Qwen' },
-                  { icon: <Midjourney size={40} />, name: 'Midjourney' },
-                  { icon: <Grok size={40} />, name: 'Grok' },
-                  { icon: <AzureAI.Color size={40} />, name: 'Azure AI' },
-                  { icon: <Hunyuan.Color size={40} />, name: 'Hunyuan' },
-                  { icon: <Xinference.Color size={40} />, name: 'Xinference' },
-                ].map((item, idx) => (
-                  <div key={idx} className='flex flex-col items-center gap-2'>
-                    <div className={`flex items-center justify-center p-4 rounded-xl border transition-all duration-300 hover:scale-105 bg-white ${isDark ? 'border-gray-700 hover:border-gray-500' : 'border-gray-100 hover:shadow-lg'}`}>
-                      {item.icon}
+          {/* Quick Start Section */}
+          <div className="bg-gradient-to-b from-white to-indigo-50/50 py-16 md:py-20 dark:from-gray-900 dark:to-gray-800">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 dark:text-gray-100">快速开始使用</h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400">支持多种 API 格式和功能，无缝对接您的应用</p>
+              </div>
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8 dark:bg-gray-800 dark:border-gray-700">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3">
+                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles w-4 h-4"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
+                    格式调用
+                  </h3>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-indigo-50/50 rounded-lg dark:bg-indigo-900/20">
+                    <div className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-xs">1</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-700 font-medium text-sm mb-1 dark:text-gray-300">原地址：</p>
+                      <code className="px-2 py-1 bg-gray-100 text-gray-600 rounded font-mono text-xs line-through inline-block dark:bg-gray-700 dark:text-gray-400">https://api.openai.com</code>
                     </div>
-                    <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{item.name}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* API Formats Section */}
-          <div className={`py-24 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='text-center mb-16'>
-                <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('我们支持的 API 格式')}
-                </h2>
-              </div>
-
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5'>
-                {[
-                  {
-                    title: t('OpenAI 对话接口'),
-                    desc: t('OpenAI 聊天对话接口，支持多轮对话'),
-                    endpoint: '/v1/chat/completions',
-                  },
-                  {
-                    title: t('OpenAI 响应式接口'),
-                    desc: t('OpenAI 响应式接口，支持实时流式响应处理'),
-                    endpoint: '/v1/responses',
-                  },
-                  {
-                    title: t('Claude 格式'),
-                    desc: t('Anthropic Claude 模型调用，支持多轮对话和高级推理'),
-                    endpoint: '/v1/messages',
-                  },
-                  {
-                    title: t('Gemini 格式'),
-                    desc: t('Google Gemini 模型调用，支持多模态内容处理'),
-                    endpoint: '/v1beta/models/',
-                  },
-                  {
-                    title: t('生图接口'),
-                    desc: t('DALL-E 图像生成，支持文本到图像的转换'),
-                    endpoint: '/v1/images/generations',
-                  },
-                  {
-                    title: t('编辑图片'),
-                    desc: t('图像编辑和处理，支持图片修改和优化'),
-                    endpoint: '/v1/images/edits',
-                  },
-                  {
-                    title: t('视频接口'),
-                    desc: t('视频处理和生成，支持视频创建和编辑'),
-                    endpoint: '/v1/videos',
-                  },
-                  {
-                    title: t('文本嵌入'),
-                    desc: t('文本向量化处理，支持语义搜索和相似度计算'),
-                    endpoint: '/v1/embeddings',
-                  },
-                  {
-                    title: t('Suno 音乐'),
-                    desc: t('Suno AI 音乐生成，支持文本到音乐的创作'),
-                    endpoint: '/suno/submit/music',
-                  },
-                  {
-                    title: t('Midjourney 绘图'),
-                    desc: t('Midjourney AI 绘图，支持高质量图像生成'),
-                    endpoint: '/mj/submit/imagine',
-                  },
-                  {
-                    title: t('支持更多 API'),
-                    desc: t('支持更多 API 接口和高级功能'),
-                    endpoint: '/v1/custom/*',
-                  },
-                ].map((api, idx) => (
-                  <div
-                    key={idx}
-                    className={`group p-5 rounded-xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isDark ? 'bg-black border-gray-800 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <h4 className={`text-sm font-bold mb-1.5 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {api.title}
-                    </h4>
-                    <p className={`text-xs leading-relaxed mb-3 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      {api.desc}
-                    </p>
-                    <code className={`text-xs px-2.5 py-1 rounded-md font-mono ${isDark ? 'bg-gray-900 text-blue-400' : 'bg-gray-100 text-blue-600'}`}>
-                      {api.endpoint}
-                    </code>
+                  <div className="flex items-start gap-3 p-3 bg-purple-50/50 rounded-lg dark:bg-purple-900/20">
+                    <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">2</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-700 font-medium text-sm mb-2 dark:text-gray-300">新地址：</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        <div className="flex flex-col">
+                          <p className="text-gray-600 text-xs font-medium mb-1 dark:text-gray-400">香港接口：</p>
+                          <div className="flex items-center gap-1 flex-wrap bg-white p-2 rounded border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                            <code className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-mono text-xs font-semibold flex-1 min-w-0 truncate dark:bg-indigo-900 dark:text-indigo-300">https://api.26351.com</code>
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="text-gray-600 text-xs font-medium mb-1 dark:text-gray-400">空白代理接口：</p>
+                          <div className="flex items-center gap-1 flex-wrap bg-white p-2 rounded border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                            <code className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-mono text-xs font-semibold flex-1 min-w-0 truncate dark:bg-purple-900 dark:text-purple-300">https://api.26351.com</code>
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="text-gray-600 text-xs font-medium mb-1 dark:text-gray-400">美国接口：</p>
+                          <div className="flex items-center gap-1 flex-wrap bg-white p-2 rounded border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                            <code className="px-2 py-0.5 bg-green-100 text-green-700 rounded font-mono text-xs font-semibold flex-1 min-w-0 truncate dark:bg-green-900 dark:text-green-300">https://api.26351.com</code>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2 p-2.5 bg-amber-50 rounded-lg border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800">
+                    <div className="flex-shrink-0 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">!</div>
+                    <p className="text-amber-800 text-xs dark:text-amber-200"><span className="font-semibold">提示：</span>完全兼容国内外主流API格式</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Bottom note */}
-              <div className={`mt-12 text-center max-w-2xl mx-auto p-8 rounded-2xl border border-dashed ${isDark ? 'border-gray-800' : 'border-gray-300'}`}>
-                <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('还有更多接口和功能')}
-                </h3>
-                <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('除了上述接口外，我们的平台还支持更多高级功能和定制化接口。无论您需要什么样的 AI 能力，我们都能为您提供完整的解决方案。')}
-                </p>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center dark:text-gray-100">支持的 API 格式</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* API Card 1 */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle w-6 h-6 text-white"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">OpenAI对话接口</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">OpenAI 聊天对话接口，支持多轮对话</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-indigo-50 p-3 rounded-lg border border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800">
+                        <code className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-indigo-900 dark:text-indigo-300">/v1/chat/completions</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 2 */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-network w-6 h-6 text-white"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">OpenAI 响应式接口</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">OpenAI 响应式接口，支持实时流式响应处理</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-teal-50 p-3 rounded-lg border border-teal-200 dark:bg-teal-900/20 dark:border-teal-800">
+                        <code className="px-2 py-1 bg-teal-100 text-teal-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-teal-900 dark:text-teal-300">/v1/responses</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 3 */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain w-6 h-6 text-white"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">Claude 格式</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">Anthropic Claude 模型调用，支持多轮对话和高级推理</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-blue-50 p-3 rounded-lg border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                        <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-blue-900 dark:text-blue-300">/v1/messages</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 4 */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap w-6 h-6 text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        <h4 className="text-lg font-semibold text-white">Gemini 格式</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">Google Gemini 模型调用，支持多模态内容处理</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-green-50 p-3 rounded-lg border border-green-200 dark:bg-green-900/20 dark:border-green-800">
+                        <code className="px-2 py-1 bg-green-100 text-green-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-green-900 dark:text-green-300">/v1beta/models/</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 5 */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-image w-6 h-6 text-white"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">生图接口</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">DALL-E 图像生成，支持文本到图像的转换</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-purple-50 p-3 rounded-lg border border-purple-200 dark:bg-purple-900/20 dark:border-purple-800">
+                        <code className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-purple-900 dark:text-purple-300">/v1/images/generations</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* API Card 6 */}
+                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
+                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-cpu w-6 h-6 text-white"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path></svg>
+                        <h4 className="text-lg font-semibold text-white">文本嵌入</h4>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <p className="text-gray-600 text-sm dark:text-gray-400">文本向量化处理，支持语义搜索和相似度计算</p>
+                      <div className="flex items-center gap-2 flex-wrap bg-orange-50 p-3 rounded-lg border border-orange-200 dark:bg-orange-900/20 dark:border-orange-800">
+                        <code className="px-2 py-1 bg-orange-100 text-orange-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-orange-900 dark:text-orange-300">/v1/embeddings</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-12 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 overflow-hidden dark:from-gray-800 dark:to-gray-800 dark:border-gray-700">
+                  <div className="p-8 md:p-10">
+                    <div className="flex items-start gap-4 md:gap-6">
+                      <div className="flex-shrink-0">
+                        <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info h-6 w-6 text-white"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 dark:text-gray-100">还有更多接口和功能</h3>
+                        <p className="text-gray-700 mb-4 dark:text-gray-300">除了上述接口外，我们的平台还支持更多高级功能和定制化接口。无论您需要什么样的 AI 能力，我们都能为您提供完整的解决方案。</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Payment Methods */}
-          <div className={`py-20 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            <div className='max-w-7xl mx-auto px-4 text-center'>
-              <h3 className={`text-lg font-semibold mb-8 tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                {t('支持多种支付方式')}
-              </h3>
-              <div className='flex items-center justify-center gap-6 lg:gap-10 flex-nowrap overflow-x-auto'>
-                {['visa', 'mastercard', 'pay-alipay', 'WechatPay_', 'paypal', 'Bitcoin', 'USDT', 'union_pay'].map((name) => (
-                  <img
-                    key={name}
-                    src={`/payment/${name}.svg`}
-                    alt={name}
-                    className='h-16 md:h-20 flex-shrink-0 object-contain'
-                  />
-                ))}
+          {/* Success Cases Section */}
+          <div className="relative z-10 bg-white dark:bg-gray-900">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+              <div className="text-center mb-20">
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 dark:text-white">客户成功案例</h2>
+                <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed dark:text-gray-400">来自各行业的企业客户已通过我们的平台实现了业务创新和效率提升</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+                {/* Testimonial 1 */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:border-indigo-200 transition-all duration-300 hover:shadow-xl group dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500">
+                  <div className="flex items-start mb-6">
+                    <img src="https://image.177911.com/image/w-x-j-t-1.jpg" alt="张总" className="w-14 h-14 rounded-full object-cover mr-4 ring-2 ring-indigo-100 dark:ring-indigo-900" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 text-lg dark:text-white">张总</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">CEO @ 某电商平台</p>
+                    </div>
+                  </div>
+                  <div className="flex mb-4 gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 text-amber-400 fill-current"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    ))}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">知来聚合API帮助我们显著提升了客户服务效率，智能对话系统让客服团队工作量减少了60%。</p>
+                </div>
+                {/* Testimonial 2 */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:border-indigo-200 transition-all duration-300 hover:shadow-xl group dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500">
+                  <div className="flex items-start mb-6">
+                    <img src="https://image.177911.com/image/w-x-j-t-3.jpg" alt="李设计师" className="w-14 h-14 rounded-full object-cover mr-4 ring-2 ring-indigo-100 dark:ring-indigo-900" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 text-lg dark:text-white">李设计师</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">创意总监 @ 某设计公司</p>
+                    </div>
+                  </div>
+                  <div className="flex mb-4 gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 text-amber-400 fill-current"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    ))}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">作为一名设计师，知来聚合API的图像生成功能给了我无限创作灵感，大大提升了工作效率。</p>
+                </div>
+                {/* Testimonial 3 */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:border-indigo-200 transition-all duration-300 hover:shadow-xl group dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500">
+                  <div className="flex items-start mb-6">
+                    <img src="https://image.177911.com/image/w-x-j-t-2.jpg" alt="王总" className="w-14 h-14 rounded-full object-cover mr-4 ring-2 ring-indigo-100 dark:ring-indigo-900" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 text-lg dark:text-white">王总</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">CTO @ 某科技公司</p>
+                    </div>
+                  </div>
+                  <div className="flex mb-4 gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 text-amber-400 fill-current"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    ))}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">企业版的私有化部署方案完美满足了我们对数据安全的严格要求，技术支持也非常专业。</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <FooterBar />
-        </div>
+          <div className="transition-all duration-1000 opacity-100 translate-y-0">
+            <div className="relative faq-section bg-gradient-to-b from-white via-indigo-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+              {/* Particles Container */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20" style={{ minHeight: '200px' }}>
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div key={i} className="particle" style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    width: `${Math.random() * 3 + 1}px`,
+                    height: `${Math.random() * 3 + 1}px`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    color: Math.random() > 0.5 ? '#4F46E5' : '#06B6D4'
+                  }}></div>
+                ))}
+              </div>
+            </div>
 
+            <footer className="bg-gradient-to-b from-gray-50 to-gray-100 border-t border-gray-200 dark:from-gray-800 dark:to-gray-900 dark:border-gray-700">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-12">
+                  <div className="lg:col-span-3 space-y-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3 dark:text-white">关于我们</h3>
+                      <p className="text-gray-600 leading-relaxed text-sm dark:text-gray-400">知来API 专注于为开发者提供稳定高速的一站式大语言模型 API 中转服务，支持 OpenAI GPT、Anthropic Claude、Midjourney、Google Gemini、阿里云百炼、腾讯混元等主流 LLM，统一鉴权、灵活计费、智能负载均衡，助你低成本接入多模型 AI 能力。</p>
+                    </div>
+                  </div>
+                  <div className="lg:col-span-3">
+                    <h3 className="text-lg font-bold text-gray-900 mb-6 dark:text-white">快速链接</h3>
+                    <ul className="space-y-3">
+                      <li><a href="https://api.26351.com" rel="noopener noreferrer" className="text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-2 text-sm dark:text-gray-400 dark:hover:text-indigo-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>聚合API接入</a></li>
+                      <li><a href="https://www.26351.com/" rel="noopener noreferrer" className="text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-2 text-sm dark:text-gray-400 dark:hover:text-indigo-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>聚合AI按次</a></li>
+                      <li><a href="https://www.8852.com.cn/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-2 text-sm dark:text-gray-400 dark:hover:text-indigo-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>聚合AI营销</a></li>
+                      <li><a href="https://www.177911.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-2 text-sm dark:text-gray-400 dark:hover:text-indigo-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>聚合IDC</a></li>
+                    </ul>
+                  </div>
+                  <div className="lg:col-span-6 grid grid-cols-2 gap-8 md:gap-12">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-center group">
+                        <div className="bg-white p-4 rounded-lg shadow-md inline-block transform transition-transform duration-300 group-hover:scale-105 dark:bg-gray-800">
+                          <img src="https://image.177911.com/image/qrcode_for_gh_3674cdc88ed6_258.jpg" alt="企业微信" className="w-32 h-32 object-cover rounded-lg" />
+                        </div>
+                        <p className="mt-4 text-gray-700 font-medium dark:text-gray-300">企业微信</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-center group">
+                        <div className="bg-white p-4 rounded-lg shadow-md inline-block transform transition-transform duration-300 group-hover:scale-105 dark:bg-gray-800">
+                          <img src="https://image.177911.com/image/personal-wechat.jpg" alt="微信客服" className="w-32 h-32 object-cover rounded-lg" />
+                        </div>
+                        <p className="mt-4 text-gray-700 font-medium dark:text-gray-300">微信客服</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 pt-8 dark:border-gray-700">
+                  <div className="text-center">
+                    <p className="text-gray-600 text-sm dark:text-gray-400">© 2025 知来API. All rights reserved.</p>
+                    <p className="text-gray-500 text-xs mt-2 dark:text-gray-500">我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。</p>
+                  </div>
+                </div>
+              </div>
+            </footer>
+          </div>
+
+        </>
       ) : (
-        <div className='overflow-x-hidden w-full'>
-          {homePageContent.startsWith('https://') ? (
-            <iframe
-              src={homePageContent}
-              className='w-full h-screen border-none'
-            />
-          ) : (
-            <div
-              className='mt-[60px]'
-              dangerouslySetInnerHTML={{ __html: homePageContent }}
-            />
-          )}
-        </div>
+        <div style={{ fontSize: '1.2rem' }} dangerouslySetInnerHTML={{ __html: homePageContent }}></div>
       )}
     </div>
   );
