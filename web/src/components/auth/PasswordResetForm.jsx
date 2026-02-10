@@ -30,8 +30,8 @@ import Turnstile from 'react-turnstile';
 import { Button, Card, Form, Typography } from '@douyinfe/semi-ui';
 import { IconMail } from '@douyinfe/semi-icons';
 import { Link } from 'react-router-dom';
-import AuthLayout from './AuthLayout';
 import { useTranslation } from 'react-i18next';
+import { useActualTheme } from '../../context/Theme';
 
 const { Text, Title } = Typography;
 
@@ -51,6 +51,7 @@ const PasswordResetForm = () => {
 
   const logo = getLogo();
   const systemName = getSystemName();
+  const actualTheme = useActualTheme();
 
   useEffect(() => {
     let status = localStorage.getItem('status');
@@ -105,78 +106,96 @@ const PasswordResetForm = () => {
   }
 
   return (
-    <AuthLayout>
-      <div className='flex flex-col items-center'>
-        <div className='w-full max-w-md'>
-          <div className='flex items-center justify-center mb-6 gap-2'>
-            <img src={logo} alt='Logo' className='h-10 rounded-full' />
-            <Title heading={3} className='!text-gray-800'>
-              {systemName}
-            </Title>
-          </div>
-
-          <Card className='border-0 !rounded-2xl overflow-hidden'>
-            <div className='flex justify-center pt-6 pb-2'>
-              <Title heading={3} className='text-gray-800 dark:text-gray-200'>
-                {t('密码重置')}
+    <div
+      className='relative overflow-hidden flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8'
+      style={{
+        backgroundImage: `url(${actualTheme === 'dark' ? '/loginhei.svg' : '/loginbai.svg'})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <div className='w-full max-w-sm mt-[60px] flex-1 flex flex-col justify-center'>
+        <div className='flex flex-col items-center'>
+          <div className='w-full max-w-md'>
+            <div className='flex items-center justify-center mb-6 gap-2'>
+              <img src={logo} alt='Logo' className='h-10 rounded-full' />
+              <Title heading={3} className='!text-gray-800'>
+                {systemName}
               </Title>
             </div>
-            <div className='px-2 py-8'>
-              <Form className='space-y-3'>
-                <Form.Input
-                  field='email'
-                  label={t('邮箱')}
-                  placeholder={t('请输入您的邮箱地址')}
-                  name='email'
-                  value={email}
-                  onChange={handleChange}
-                  prefix={<IconMail />}
-                />
 
-                <div className='space-y-2 pt-2'>
-                  <Button
-                    theme='solid'
-                    className='w-full !rounded-full'
-                    type='primary'
-                    htmlType='submit'
-                    onClick={handleSubmit}
-                    loading={loading}
-                    disabled={disableButton}
-                  >
-                    {disableButton
-                      ? `${t('重试')} (${countdown})`
-                      : t('提交')}
-                  </Button>
-                </div>
-              </Form>
-
-              <div className='mt-6 text-center text-sm'>
-                <Text>
-                  {t('想起来了？')}{' '}
-                  <Link
-                    to='/login'
-                    className='text-blue-600 hover:text-blue-800 font-medium'
-                  >
-                    {t('登录')}
-                  </Link>
-                </Text>
+            <Card className='border-0 !rounded-2xl overflow-hidden'>
+              <div className='flex justify-center pt-6 pb-2'>
+                <Title heading={3} className='text-gray-800 dark:text-gray-200'>
+                  {t('密码重置')}
+                </Title>
               </div>
-            </div>
-          </Card>
+              <div className='px-2 py-8'>
+                <Form className='space-y-3'>
+                  <Form.Input
+                    field='email'
+                    label={t('邮箱')}
+                    placeholder={t('请输入您的邮箱地址')}
+                    name='email'
+                    value={email}
+                    onChange={handleChange}
+                    prefix={<IconMail />}
+                  />
 
-          {turnstileEnabled && (
-            <div className='flex justify-center mt-6'>
-              <Turnstile
-                sitekey={turnstileSiteKey}
-                onVerify={(token) => {
-                  setTurnstileToken(token);
-                }}
-              />
-            </div>
-          )}
+                  <div className='space-y-2 pt-2'>
+                    <Button
+                      theme='solid'
+                      className='w-full !rounded-full'
+                      type='primary'
+                      htmlType='submit'
+                      onClick={handleSubmit}
+                      loading={loading}
+                      disabled={disableButton}
+                    >
+                      {disableButton
+                        ? `${t('重试')} (${countdown})`
+                        : t('提交')}
+                    </Button>
+                  </div>
+                </Form>
+
+                <div className='mt-6 text-center text-sm'>
+                  <Text>
+                    {t('想起来了？')}{' '}
+                    <Link
+                      to='/login'
+                      className='text-blue-600 hover:text-blue-800 font-medium'
+                    >
+                      {t('登录')}
+                    </Link>
+                  </Text>
+                </div>
+              </div>
+            </Card>
+
+            {turnstileEnabled && (
+              <div className='flex justify-center mt-6'>
+                <Turnstile
+                  sitekey={turnstileSiteKey}
+                  onVerify={(token) => {
+                    setTurnstileToken(token);
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </AuthLayout>
+      <div className='w-full text-center pb-6 pt-4'>
+        <p className='text-xs text-gray-500 dark:text-gray-400'>
+          &copy; 2026 知来API. All rights reserved.
+        </p>
+        <p className='text-xs text-gray-400 dark:text-gray-500 mt-1'>
+          我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。
+        </p>
+      </div>
+    </div>
   );
 };
 

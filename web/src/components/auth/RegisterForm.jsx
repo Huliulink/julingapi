@@ -58,11 +58,11 @@ import OIDCIcon from '../common/logo/OIDCIcon';
 import LinuxDoIcon from '../common/logo/LinuxDoIcon';
 import WeChatIcon from '../common/logo/WeChatIcon';
 import TelegramLoginButton from 'react-telegram-login/src';
-import AuthLayout from './AuthLayout';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
+import { useActualTheme } from '../../context/Theme';
 
 const RegisterForm = () => {
   let navigate = useNavigate();
@@ -111,6 +111,7 @@ const RegisterForm = () => {
 
   const logo = getLogo();
   const systemName = getSystemName();
+  const actualTheme = useActualTheme();
 
   let affCode = new URLSearchParams(window.location.search).get('aff');
   if (affCode) {
@@ -734,31 +735,49 @@ const RegisterForm = () => {
   };
 
   return (
-    <AuthLayout>
-      {showEmailRegister ||
-      !(
-        status.github_oauth ||
-        status.discord_oauth ||
-        status.oidc_enabled ||
-        status.wechat_login ||
-        status.linuxdo_oauth ||
-        status.telegram_oauth
-      )
-        ? renderEmailRegisterForm()
-        : renderOAuthOptions()}
-      {renderWeChatLoginModal()}
+    <div
+      className='relative overflow-hidden flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8'
+      style={{
+        backgroundImage: `url(${actualTheme === 'dark' ? '/loginhei.svg' : '/loginbai.svg'})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <div className='w-full max-w-sm mt-[60px] flex-1 flex flex-col justify-center'>
+        {showEmailRegister ||
+        !(
+          status.github_oauth ||
+          status.discord_oauth ||
+          status.oidc_enabled ||
+          status.wechat_login ||
+          status.linuxdo_oauth ||
+          status.telegram_oauth
+        )
+          ? renderEmailRegisterForm()
+          : renderOAuthOptions()}
+        {renderWeChatLoginModal()}
 
-      {turnstileEnabled && (
-        <div className='flex justify-center mt-6'>
-          <Turnstile
-            sitekey={turnstileSiteKey}
-            onVerify={(token) => {
-              setTurnstileToken(token);
-            }}
-          />
-        </div>
-      )}
-    </AuthLayout>
+        {turnstileEnabled && (
+          <div className='flex justify-center mt-6'>
+            <Turnstile
+              sitekey={turnstileSiteKey}
+              onVerify={(token) => {
+                setTurnstileToken(token);
+              }}
+            />
+          </div>
+        )}
+      </div>
+      <div className='w-full text-center pb-6 pt-4'>
+        <p className='text-xs text-gray-500 dark:text-gray-400'>
+          &copy; 2026 知来API. All rights reserved.
+        </p>
+        <p className='text-xs text-gray-400 dark:text-gray-500 mt-1'>
+          我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。
+        </p>
+      </div>
+    </div>
   );
 };
 
