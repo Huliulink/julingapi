@@ -123,14 +123,14 @@ const Home = () => {
             <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
               <div className="app-head">
                 <div className="app-icon"><img src="/zhuye/Sora_modle.svg" alt="Sora" /></div>
-                <div className="app-name">Sora</div>
+                <div className="app-name">Sora API</div>
               </div>
               <div className="app-desc">文本生成视频，创造逼真的动态场景。</div>
             </a>
             <a href="#" className="app-card" onClick={(e) => e.preventDefault()}>
               <div className="app-head">
                 <div className="app-icon"><img src="/zhuye/gemini-ai.svg" alt="Gemini" /></div>
-                <div className="app-name">Gemini</div>
+                <div className="app-name">Gemini API</div>
               </div>
               <div className="app-desc">谷歌多模态大模型，处理文本图像视频。</div>
             </a>
