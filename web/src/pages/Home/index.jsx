@@ -642,7 +642,7 @@ const Home = () => {
                     <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#f7d13b' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                   ))}
                 </div>
-                <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">知来聚合API帮助我们显著提升了客户服务效率，智能对话系统让客服团队工作量减少了60%。</p>
+                <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">知来聚灵AI帮助我们显著提升了客户服务效率，智能对话系统让客服团队工作量减少了60%。</p>
               </div>
               {/* Testimonial 2 */}
               <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:border-indigo-200 transition-all duration-300 hover:shadow-xl group dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500">
@@ -658,7 +658,7 @@ const Home = () => {
                     <svg key={i} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star w-5 h-5 fill-current" style={{ color: '#f7d13b' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                   ))}
                 </div>
-                <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">作为一名设计师，知来聚合API的图像生成功能给了我无限创作灵感，大大提升了工作效率。</p>
+                <p className="text-gray-700 leading-relaxed text-base dark:text-gray-300">作为一名设计师，知来聚灵AI的图像生成功能给了我无限创作灵感，大大提升了工作效率。</p>
               </div>
               {/* Testimonial 3 */}
               <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:border-indigo-200 transition-all duration-300 hover:shadow-xl group dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500">
@@ -702,7 +702,10 @@ const Home = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-12">
                 <div className="lg:col-span-3 space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 dark:text-white">关于我们</h3>
+                    <div className="flex items-center gap-3 mb-3">
+                      <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">关于我们</h3>
+                    </div>
                     <p className="text-gray-600 leading-relaxed text-sm dark:text-gray-400">聚灵API 专注于为开发者提供稳定高速的一站式大语言模型 API 中转服务，支持 OpenAI GPT、Anthropic Claude、Midjourney、Google Gemini、阿里云百炼、腾讯混元等主流 LLM，统一鉴权、灵活计费、智能负载均衡，助你低成本接入多模型 AI 能力。</p>
                   </div>
                 </div>

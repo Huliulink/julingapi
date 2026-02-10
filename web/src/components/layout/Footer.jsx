@@ -70,9 +70,10 @@ const FooterBar = () => {
               </h3>
               <ul className='space-y-3'>
                 {[
-                  { href: '/console', label: t('控制台') },
-                  { href: '/pricing', label: t('模型价格') },
-                  { href: '/about', label: t('关于') },
+                  { href: 'https://www.177911.com', label: t('聚灵AI导航') },
+                  { href: 'https://www.177911.com/blog', label: t('聚灵Blog') },
+                  { href: 'https://open.177911.com/pricing', label: t('模型广场') },
+                  { href: 'https://julingapi.apifox.cn/', label: t('技术文档') },
                 ].map((link) => (
                   <li key={link.href}>
                     <a
