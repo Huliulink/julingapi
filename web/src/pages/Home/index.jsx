@@ -352,266 +352,266 @@ const Home = () => {
         </section>
 
         {/* Quick Start Section */}
-        <div className="bg-gradient-to-b from-white to-blue-50/30 py-16 md:py-20 dark:from-gray-900 dark:to-gray-800">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 dark:text-gray-100">快速开始使用</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400">支持多种 API 格式和功能，无缝对接您的应用</p>
+        <div style={{ background: isDark ? 'linear-gradient(to bottom, #111827, #1f2937)' : 'linear-gradient(to bottom, #ffffff, rgba(238,242,255,0.5))', padding: '4rem 0 5rem' }}>
+          <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '0 1rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+              <h2 style={{ fontSize: '1.875rem', fontWeight: 700, color: isDark ? '#f3f4f6' : '#111827', marginBottom: '1rem' }}>快速开始使用</h2>
+              <p style={{ fontSize: '1.125rem', color: isDark ? '#9ca3af' : '#4b5563' }}>支持多种 API 格式和功能，无缝对接您的应用</p>
             </div>
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8 dark:bg-gray-800 dark:border-gray-700">
-              <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles w-4 h-4"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
+            <div style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '1rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', marginBottom: '2rem' }}>
+              <div style={{ background: 'linear-gradient(to right, #4f46e5, #7c3aed)', padding: '0.75rem 1.5rem' }}>
+                <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
                   格式调用
                 </h3>
               </div>
-              <div className="p-4 space-y-3">
-                <div className="flex items-start gap-3 p-3 bg-gradient-to-b from-white to-blue-50/30 rounded-lg border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                  <div className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-xs">1</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-700 font-medium text-sm mb-1 dark:text-gray-300">原地址：</p>
-                    <code className="px-2 py-1 bg-gray-100 text-gray-600 rounded font-mono text-xs line-through inline-block dark:bg-gray-700 dark:text-gray-400">https://api.openai.com</code>
+              <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', background: isDark ? '#1f2937' : 'rgba(238,242,255,0.5)', borderRadius: '0.5rem' }}>
+                  <div style={{ flexShrink: 0, width: '1.5rem', height: '1.5rem', background: '#4f46e5', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>1</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ color: isDark ? '#d1d5db' : '#374151', fontWeight: 500, fontSize: '0.875rem', marginBottom: '0.25rem' }}>原地址：</p>
+                    <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#374151' : '#f3f4f6', color: isDark ? '#9ca3af' : '#4b5563', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', textDecoration: 'line-through', display: 'inline-block' }}>https://api.openai.com</code>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3 bg-gradient-to-b from-white to-blue-50/30 rounded-lg border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                  <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">2</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-700 font-medium text-sm mb-2 dark:text-gray-300">新地址：</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      <div className="flex flex-col">
-                        <p className="text-gray-600 text-xs font-medium mb-1 dark:text-gray-400">香港接口：</p>
-                        <div className="flex items-center gap-1 flex-wrap bg-white p-2 rounded border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-                          <code className="px-2 py-0.5 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 min-w-0 truncate dark:bg-gray-700 dark:text-gray-300">https://api.26351.com</code>
-                          <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('https://api.26351.com')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', background: isDark ? '#1f2937' : 'rgba(243,232,255,0.5)', borderRadius: '0.5rem' }}>
+                  <div style={{ flexShrink: 0, width: '1.5rem', height: '1.5rem', background: '#7c3aed', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>2</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ color: isDark ? '#d1d5db' : '#374151', fontWeight: 500, fontSize: '0.875rem', marginBottom: '0.5rem' }}>新地址：</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>香港接口：</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', background: isDark ? '#374151' : '#fff', padding: '0.5rem', borderRadius: '0.25rem', border: isDark ? '1px solid #4b5563' : '1px solid #e5e7eb' }}>
+                          <code style={{ padding: '0.125rem 0.5rem', background: isDark ? '#312e81' : '#e0e7ff', color: isDark ? '#a5b4fc' : '#4338ca', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>https://api.26351.com</code>
+                          <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', transition: 'all 0.2s', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('https://api.26351.com')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                         </div>
                       </div>
-                      <div className="flex flex-col">
-                        <p className="text-gray-600 text-xs font-medium mb-1 dark:text-gray-400">空白代理接口：</p>
-                        <div className="flex items-center gap-1 flex-wrap bg-white p-2 rounded border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-                          <code className="px-2 py-0.5 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 min-w-0 truncate dark:bg-gray-700 dark:text-gray-300">https://api.26351.com</code>
-                          <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('https://api.26351.com')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>空白代理接口：</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', background: isDark ? '#374151' : '#fff', padding: '0.5rem', borderRadius: '0.25rem', border: isDark ? '1px solid #4b5563' : '1px solid #e5e7eb' }}>
+                          <code style={{ padding: '0.125rem 0.5rem', background: isDark ? '#4a1d96' : '#f3e8ff', color: isDark ? '#c4b5fd' : '#7c3aed', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>https://api.26351.com</code>
+                          <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', transition: 'all 0.2s', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('https://api.26351.com')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                         </div>
                       </div>
-                      <div className="flex flex-col">
-                        <p className="text-gray-600 text-xs font-medium mb-1 dark:text-gray-400">美国接口：</p>
-                        <div className="flex items-center gap-1 flex-wrap bg-white p-2 rounded border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-                          <code className="px-2 py-0.5 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 min-w-0 truncate dark:bg-gray-700 dark:text-gray-300">https://api.26351.com</code>
-                          <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('https://api.26351.com')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>美国接口：</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', background: isDark ? '#374151' : '#fff', padding: '0.5rem', borderRadius: '0.25rem', border: isDark ? '1px solid #4b5563' : '1px solid #e5e7eb' }}>
+                          <code style={{ padding: '0.125rem 0.5rem', background: isDark ? '#064e3b' : '#dcfce7', color: isDark ? '#6ee7b7' : '#15803d', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>https://api.26351.com</code>
+                          <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', transition: 'all 0.2s', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('https://api.26351.com')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2.5 bg-gradient-to-b from-white to-blue-50/30 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                  <div className="flex-shrink-0 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold">!</div>
-                  <p className="text-amber-800 text-xs dark:text-amber-200"><span className="font-semibold">提示：</span>完全兼容国内外主流API格式</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem', background: isDark ? '#422006' : '#fffbeb', borderRadius: '0.5rem', border: isDark ? '1px solid #854d0e' : '1px solid #fde68a' }}>
+                  <div style={{ flexShrink: 0, width: '1.25rem', height: '1.25rem', background: '#f59e0b', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>!</div>
+                  <p style={{ color: isDark ? '#fde68a' : '#92400e', fontSize: '0.75rem', margin: 0 }}><span style={{ fontWeight: 600 }}>提示：</span>完全兼容国内外主流API格式</p>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center dark:text-gray-100">支持的 API 格式</h3>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: isDark ? '#f3f4f6' : '#111827', marginBottom: '2rem', textAlign: 'center' }}>支持的 API 格式</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* API Card 1: OpenAI Chat */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle w-6 h-6 text-white"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">OpenAI对话接口</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #6366f1, #4f46e5)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>OpenAI对话接口</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">OpenAI 聊天对话接口，支持多轮对话</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/chat/completions</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/chat/completions')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>OpenAI 聊天对话接口，支持多轮对话</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#312e81' : '#eef2ff', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #4338ca' : '1px solid #c7d2fe' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#3730a3' : '#e0e7ff', color: isDark ? '#a5b4fc' : '#4338ca', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/chat/completions</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', transition: 'all 0.2s', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/chat/completions')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 2: OpenAI Response */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-network w-6 h-6 text-white"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">OpenAI 响应式接口</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #14b8a6, #0d9488)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>OpenAI 响应式接口</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">OpenAI 响应式接口，支持实时流式响应处理</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/responses</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/responses')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>OpenAI 响应式接口，支持实时流式响应处理</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#134e4a' : '#f0fdfa', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #0d9488' : '1px solid #99f6e4' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#115e59' : '#ccfbf1', color: isDark ? '#5eead4' : '#0f766e', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/responses</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', transition: 'all 0.2s', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/responses')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 3: Claude */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain w-6 h-6 text-white"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">Claude 格式</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #3b82f6, #2563eb)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>Claude 格式</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">Anthropic Claude 模型调用，支持多轮对话和高级推理</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/messages</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/messages')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>Anthropic Claude 模型调用，支持多轮对话和高级推理</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#1e3a5f' : '#eff6ff', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #2563eb' : '1px solid #bfdbfe' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#1e40af' : '#dbeafe', color: isDark ? '#93c5fd' : '#1d4ed8', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/messages</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/messages')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 4: Gemini */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap w-6 h-6 text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                      <h4 className="text-lg font-semibold text-white">Gemini 格式</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #22c55e, #16a34a)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>Gemini 格式</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">Google Gemini 模型调用，支持多模态内容处理</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1beta/models/</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1beta/models/')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>Google Gemini 模型调用，支持多模态内容处理</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#052e16' : '#f0fdf4', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #16a34a' : '1px solid #bbf7d0' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#064e3b' : '#dcfce7', color: isDark ? '#86efac' : '#15803d', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1beta/models/</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1beta/models/')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 5: Image Gen */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-image w-6 h-6 text-white"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">生图接口</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #a855f7, #9333ea)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>生图接口</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">DALL-E 图像生成，支持文本到图像的转换</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/images/generations</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/images/generations')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* API Card 6: Edit Image (Added based on Reference HTML) */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-square-pen w-6 h-6 text-white"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">编辑图片</h4>
-                    </div>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">图像编辑和处理，支持图片修改和优化</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/images/edits</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/images/edits')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>DALL-E 图像生成，支持文本到图像的转换</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#3b0764' : '#faf5ff', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #9333ea' : '1px solid #e9d5ff' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#581c87' : '#f3e8ff', color: isDark ? '#d8b4fe' : '#7e22ce', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/images/generations</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/images/generations')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
-                {/* API Card 7: Video (Added based on Reference HTML) */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video w-6 h-6 text-white"><path d="m22 8-6 4 6 4V8Z"></path><rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect></svg>
-                      <h4 className="text-lg font-semibold text-white">视频接口</h4>
+                {/* API Card 6: Edit Image */}
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #ec4899, #db2777)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>编辑图片</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">视频处理和生成，支持视频创建和编辑</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/videos</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/videos')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>图像编辑和处理，支持图片修改和优化</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#500724' : '#fdf2f8', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #db2777' : '1px solid #fbcfe8' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#831843' : '#fce7f3', color: isDark ? '#f9a8d4' : '#be185d', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/images/edits</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/images/edits')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* API Card 7: Video */}
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #ef4444, #dc2626)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z"></path><rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>视频接口</h4>
+                    </div>
+                  </div>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>视频处理和生成，支持视频创建和编辑</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#450a0a' : '#fef2f2', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #dc2626' : '1px solid #fecaca' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#7f1d1d' : '#fee2e2', color: isDark ? '#fca5a5' : '#b91c1c', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/videos</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/videos')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 8: Text Embed */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-cpu w-6 h-6 text-white"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">文本嵌入</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #f97316, #ea580c)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path><path d="M2 9h2"></path><path d="M20 15h2"></path><path d="M20 9h2"></path><path d="M9 2v2"></path><path d="M9 20v2"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>文本嵌入</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">文本向量化处理，支持语义搜索和相似度计算</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/embeddings</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/embeddings')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>文本向量化处理，支持语义搜索和相似度计算</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#431407' : '#fff7ed', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #ea580c' : '1px solid #fed7aa' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#7c2d12' : '#ffedd5', color: isDark ? '#fdba74' : '#c2410c', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/embeddings</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/embeddings')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 9: Suno Music */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-music w-6 h-6 text-white"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                      <h4 className="text-lg font-semibold text-white">Suno 音乐</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #06b6d4, #0891b2)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>Suno 音乐</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">Suno AI 音乐生成，支持文本到音乐的创作</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/suno/submit/music</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/suno/submit/music')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>Suno AI 音乐生成，支持文本到音乐的创作</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#083344' : '#ecfeff', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #0891b2' : '1px solid #a5f3fc' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#164e63' : '#cffafe', color: isDark ? '#67e8f9' : '#0e7490', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/suno/submit/music</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/suno/submit/music')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 10: Midjourney */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-palette w-6 h-6 text-white"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">Midjourney 绘图</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #d946ef, #c026d3)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="white"></circle><circle cx="17.5" cy="10.5" r=".5" fill="white"></circle><circle cx="8.5" cy="7.5" r=".5" fill="white"></circle><circle cx="6.5" cy="12.5" r=".5" fill="white"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>Midjourney 绘图</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">Midjourney AI 绘图，支持高质量图像生成</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/mj/submit/imagine</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/mj/submit/imagine')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>Midjourney AI 绘图，支持高质量图像生成</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#4a044e' : '#fdf4ff', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #c026d3' : '1px solid #f0abfc' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#701a75' : '#fae8ff', color: isDark ? '#e879f9' : '#a21caf', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/mj/submit/imagine</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/mj/submit/imagine')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
                 {/* API Card 11: Support More */}
-                <div className="bg-gradient-to-b from-white to-blue-50/30 rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all dark:bg-gray-800 dark:border-gray-700">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-network w-6 h-6 text-white"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
-                      <h4 className="text-lg font-semibold text-white">支持更多API</h4>
+                <div className="api-format-card" style={{ background: isDark ? '#1f2937' : '#fff', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: isDark ? '1px solid #374151' : '1px solid #f3f4f6', overflow: 'hidden', transition: 'all 0.3s' }}>
+                  <div style={{ background: 'linear-gradient(to right, #64748b, #475569)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg>
+                      <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#fff', margin: 0 }}>支持更多API</h4>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <p className="text-gray-600 text-sm dark:text-gray-400">支持更多API接口和高级功能</p>
-                    <div className="flex items-center gap-2 flex-wrap bg-white p-3 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <code className="px-2 py-1 bg-white text-gray-700 rounded font-mono text-xs font-semibold flex-1 dark:bg-gray-700 dark:text-gray-300">/v1/custom/*</code>
-                      <button className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-all" title="复制链接" type="button" onClick={() => copyText('/v1/custom/*')}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+                  <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.875rem', margin: 0 }}>支持更多API接口和高级功能</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: isDark ? '#1e293b' : '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: isDark ? '1px solid #475569' : '1px solid #e2e8f0' }}>
+                      <code style={{ padding: '0.25rem 0.5rem', background: isDark ? '#334155' : '#f1f5f9', color: isDark ? '#94a3b8' : '#475569', borderRadius: '0.25rem', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 600, flex: 1 }}>/v1/custom/*</code>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.375rem', color: '#4f46e5', borderRadius: '0.25rem', border: 'none', background: 'none', cursor: 'pointer' }} title="复制链接" type="button" onClick={() => copyText('/v1/custom/*')}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
                     </div>
                   </div>
                 </div>
 
               </div>
 
-              <div className="mt-12 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-200 overflow-hidden dark:from-gray-800 dark:to-gray-800 dark:border-gray-700">
-                <div className="p-8 md:p-10">
-                  <div className="flex items-start gap-4 md:gap-6">
-                    <div className="flex-shrink-0">
-                      <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info h-6 w-6 text-white"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+              <div style={{ marginTop: '3rem', background: isDark ? 'linear-gradient(to right, #1e1b4b, #312e81)' : 'linear-gradient(to right, #eef2ff, #e0e7ff)', borderRadius: '1rem', border: isDark ? '1px solid #4338ca' : '1px solid #c7d2fe', overflow: 'hidden' }}>
+                <div style={{ padding: '2rem 2.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem' }}>
+                    <div style={{ flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '3rem', width: '3rem', borderRadius: '0.5rem', background: 'linear-gradient(to bottom right, #4f46e5, #7c3aed)' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 dark:text-gray-100">还有更多接口和功能</h3>
-                      <p className="text-gray-700 mb-4 dark:text-gray-300">除了上述接口外，我们的平台还支持更多高级功能和定制化接口。无论您需要什么样的 AI 能力，我们都能为您提供完整的解决方案。</p>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: isDark ? '#f3f4f6' : '#111827', marginBottom: '0.5rem' }}>还有更多接口和功能</h3>
+                      <p style={{ color: isDark ? '#d1d5db' : '#374151', marginBottom: '1rem' }}>除了上述接口外，我们的平台还支持更多高级功能和定制化接口。无论您需要什么样的 AI 能力，我们都能为您提供完整的解决方案。</p>
                     </div>
                   </div>
                 </div>
