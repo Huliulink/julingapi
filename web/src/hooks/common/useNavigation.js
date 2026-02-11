@@ -26,8 +26,10 @@ export const useNavigation = (t, docsLink, headerNavModules) => {
       home: true,
       console: true,
       pricing: true,
+      playground: true,
       docs: true,
       about: true,
+      partner: true,
     };
 
     // 使用传入的配置或默认配置
@@ -49,27 +51,33 @@ export const useNavigation = (t, docsLink, headerNavModules) => {
         itemKey: 'pricing',
         to: '/pricing',
       },
-      ...(docsLink
-        ? [
-            {
-              text: t('文档'),
-              itemKey: 'docs',
-              isExternal: true,
-              externalLink: docsLink,
-            },
-          ]
-        : []),
       {
-        text: t('关于'),
+        text: t('训练广场'),
+        itemKey: 'playground',
+        to: '/console/playground',
+      },
+      {
+        text: t('开发文档'),
+        itemKey: 'docs',
+        isExternal: true,
+        externalLink: 'https://julingapi.apifox.cn',
+      },
+      {
+        text: t('关于我们'),
         itemKey: 'about',
         to: '/about',
+      },
+      {
+        text: t('加盟代理'),
+        itemKey: 'partner',
+        to: '/partner',
       },
     ];
 
     // 根据配置过滤导航链接
     return allLinks.filter((link) => {
       if (link.itemKey === 'docs') {
-        return docsLink && modules.docs;
+        return modules.docs;
       }
       if (link.itemKey === 'pricing') {
         // 支持新的pricing配置格式

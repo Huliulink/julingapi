@@ -1,0 +1,298 @@
+.about-container {
+  margin: 0;
+  color: var(--text);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: radial-gradient(2000px 1200px at 0% 0%, rgba(46, 92, 246, 0.12), transparent 70%),
+    radial-gradient(2000px 1200px at 100% 0%, rgba(6, 182, 212, 0.12), transparent 70%),
+    var(--bg, #f7f8fb);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.about-container.dark-theme {
+  --bg: #111827;
+  --card: #1f2937;
+  --text: #f9fafb;
+  --subtext: #9ca3af;
+  --primary: #6366f1;
+  --border: rgba(255, 255, 255, 0.1);
+}
+
+/* Hero */
+.about-hero {
+  text-align: center;
+  padding: 5rem 1rem 4rem;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e3a5f 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.about-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(99, 102, 241, 0.3), transparent 60%),
+    radial-gradient(circle at 70% 50%, rgba(6, 182, 212, 0.2), transparent 60%);
+}
+
+.about-hero * { position: relative; z-index: 1; }
+
+.about-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  color: #c7d2fe;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.about-hero-badge .dot {
+  width: 8px; height: 8px;
+  background: #34d399;
+  border-radius: 50%;
+  animation: about-pulse 2s infinite;
+}
+
+@keyframes about-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.about-hero h1 {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+}
+
+.about-hero h1 span {
+  background: linear-gradient(90deg, #818cf8, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.about-hero p {
+  font-size: 1.25rem;
+  color: #c7d2fe;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Section */
+.about-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 3rem 1rem 0;
+}
+
+.about-section:last-of-type {
+  padding-bottom: 3rem;
+}
+
+.about-section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text, #1c1f23);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--primary, #4f46e5);
+  display: inline-block;
+}
+
+.about-section > p {
+  font-size: 1.05rem;
+  color: var(--subtext, #667085);
+  line-height: 1.8;
+  margin: 0 0 1.5rem;
+}
+
+/* Highlight box */
+.about-highlight {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(6, 182, 212, 0.08));
+  border-left: 4px solid var(--primary, #4f46e5);
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 12px 12px 0;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--text, #1c1f23);
+  margin-bottom: 1.5rem;
+}
+
+.dark-theme .about-highlight {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.1));
+}
+
+/* Card grid */
+.about-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.about-card {
+  background: var(--card, #fff);
+  border-radius: 16px;
+  padding: 1.75rem;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.about-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.about-card-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.about-card-icon svg {
+  width: 24px; height: 24px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.about-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--text, #1c1f23);
+}
+
+.about-card p, .about-card ul {
+  font-size: 0.9rem;
+  color: var(--subtext, #667085);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.about-card ul {
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.about-card ul li {
+  margin-bottom: 6px;
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.about-card ul li::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  top: 0.6em;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--primary, #4f46e5);
+}
+
+/* Tech list */
+.about-tech-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.about-tech-list li {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--card, #fff);
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+  font-size: 0.95rem;
+  color: var(--subtext, #667085);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.about-tech-list li strong {
+  color: var(--text, #1c1f23);
+}
+
+.about-tech-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  flex-shrink: 0;
+}
+
+/* Core service box */
+.about-core {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.06), rgba(6, 182, 212, 0.06));
+  border-radius: 20px;
+  padding: 2.5rem;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.about-core::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4f46e5, #06b6d4, #4f46e5);
+}
+
+.dark-theme .about-core {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.08));
+}
+
+.about-core-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text, #1c1f23);
+  margin-bottom: 1rem;
+}
+
+.about-core-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--primary, #4f46e5);
+  background: rgba(79, 70, 229, 0.1);
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+}
+
+.about-core-key svg {
+  width: 20px; height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.about-core > p {
+  font-size: 1rem;
+  color: var(--subtext, #667085);
+  line-height: 1.8;
+  margin: 0 0 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .about-hero h1 { font-size: 1.75rem; }
+  .about-cards { grid-template-columns: 1fr; }
+}

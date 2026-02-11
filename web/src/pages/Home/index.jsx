@@ -377,7 +377,7 @@ const Home = () => {
                   <div style={{ flexShrink: 0, width: '1.5rem', height: '1.5rem', background: '#7c3aed', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>2</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ color: isDark ? '#d1d5db' : '#374151', fontWeight: 500, fontSize: '0.875rem', marginBottom: '0.5rem' }}>新地址：</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                    <div className="base-url-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <p style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>BASE_URL 1：</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', background: isDark ? '#374151' : '#fff', padding: '0.5rem', borderRadius: '0.25rem', border: isDark ? '1px solid #4b5563' : '1px solid #e5e7eb' }}>

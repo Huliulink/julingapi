@@ -22,7 +22,9 @@ import { defineConfig, transformWithEsbuild } from 'vite';
 import pkg from '@douyinfe/vite-plugin-semi';
 import path from 'path';
 import { codeInspectorPlugin } from 'code-inspector-plugin';
+import vitePrerender from 'vite-plugin-prerender';
 const { vitePluginSemi } = pkg;
+const PuppeteerRenderer = vitePrerender.PuppeteerRenderer;
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -53,6 +55,21 @@ export default defineConfig({
     react(),
     vitePluginSemi({
       cssLayer: true,
+    }),
+    vitePrerender({
+      staticDir: path.join(__dirname, 'dist'),
+      routes: ['/', '/about', '/pricing', '/privacy-policy', '/user-agreement', '/partner'],
+      renderer: new PuppeteerRenderer({
+        renderAfterTime: 5000,
+        headless: true,
+      }),
+      minify: {
+        collapseBooleanAttributes: true,
+        collapseWhitespace: true,
+        decodeEntities: true,
+        keepClosingSlash: true,
+        sortAttributes: true,
+      },
     }),
   ],
   optimizeDeps: {
