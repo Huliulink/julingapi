@@ -37,7 +37,7 @@ const About = () => {
           <div className="about-cards">
             <div className="about-card">
               <div className="about-card-icon">
-                <img src="/about/万物安全.svg" alt="灵聚万象" />
+                <img src="/about/灵启万物.svg" alt="灵聚万象" />
               </div>
               <h3>灵聚万象</h3>
               <ul>
@@ -48,7 +48,7 @@ const About = () => {
             </div>
             <div className="about-card">
               <div className="about-card-icon">
-                <img src="/about/灵启万物.svg" alt="灵启万物" />
+                <img src="/about/万物安全.svg" alt="灵启万物" />
               </div>
               <h3>灵启万物</h3>
               <ul>
@@ -117,7 +117,7 @@ const About = () => {
           <div className="about-core">
             <h2 className="about-core-title">核心服务</h2>
             <div className="about-core-key">
-              <svg viewBox="0 0 24 24"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>
+              <svg viewBox="0 0 24 24"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4" /><path d="m21 2-9.6 9.6" /><circle cx="7.5" cy="15.5" r="5.5" /></svg>
               一个key用全球大模型
             </div>
             <p>这是聚灵API的核心价值主张。我们深知开发者在面对众多AI大模型时的困扰：不同的API接口、复杂的认证流程、分散的计费系统。因此，我们提供了革命性的解决方案——仅需一个API Key，即可无缝接入全球各大AI模型。</p>

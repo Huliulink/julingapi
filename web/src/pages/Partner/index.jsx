@@ -13,40 +13,44 @@ const Partner = () => {
         {/* Hero */}
         <section className="partner-hero">
           <div className="partner-hero-badge"><span className="dot"></span> 聚灵API 代理分销计划</div>
-          <h1>成为代理，<span>共享收益</span></h1>
-          <p>加入聚灵API代理分销计划，拥有属于自己的AI中转站。无需技术门槛，平台全程支持，轻松开启你的AI创业之路。</p>
-          <a className="partner-hero-btn" href="/register">
-            立即加入
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <h1>成为专属合伙人</h1>
+          <h2 className="partner-hero-sub">聚合力量，分享红利</h2>
+          <p>无需API货源、无需维护模型，只需要一个域名+支付接口，即刻拥有跟本站一样的API平台，零库存、零技术、零风险。站上AI风口，让财富主动敲门！</p>
+          <a className="fancy-btn" href="/register">
+            <div className="fancy-btn__line" />
+            <div className="fancy-btn__line" />
+            <span className="fancy-btn__text">立即加入</span>
+            <div className="fancy-btn__drow1" />
+            <div className="fancy-btn__drow2" />
           </a>
         </section>
 
         {/* 核心优势 */}
         <div className="partner-features">
           <div className="partner-feature-card">
-            <div className="partner-feature-icon" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
-              <svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <div className="partner-feature-icon">
+              <img src="/partner/低成本起步.svg" alt="低成本起步" />
             </div>
             <h3>低成本起步</h3>
             <p>无需部署服务器、无需维护模型渠道、无需API备货和运营</p>
           </div>
           <div className="partner-feature-card">
-            <div className="partner-feature-icon" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>
-              <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <div className="partner-feature-icon">
+              <img src="/partner/完全定制化.svg" alt="完全定制化" />
             </div>
             <h3>完全定制化</h3>
             <p>支持自定义充值价格、Logo、公告、首页、SEO、易支付接入等所有内容</p>
           </div>
           <div className="partner-feature-card">
-            <div className="partner-feature-icon" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <div className="partner-feature-icon">
+              <img src="/partner/资金透明.svg" alt="资金透明" />
             </div>
             <h3>资金透明</h3>
             <p>用户充值直接到您账户，平台仅扣除代理余额，收益实时透明可查</p>
           </div>
           <div className="partner-feature-card">
-            <div className="partner-feature-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-              <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <div className="partner-feature-icon">
+              <img src="/partner/技术支持.svg" alt="技术支持" />
             </div>
             <h3>技术支持</h3>
             <p>平台负责API渠道、服务器运维、技术迭代，您只需专注推广</p>
@@ -133,22 +137,30 @@ const Partner = () => {
           <p className="partner-section-sub">无论您是什么职业，只要有推广能力，都能轻松获得收益</p>
           <div className="partner-audience">
             <div className="partner-audience-card">
-              <div className="partner-audience-icon" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>&#x1F393;</div>
+              <div className="partner-audience-icon">
+                <img src="/partner/在校大学生.svg" alt="在校大学生" />
+              </div>
               <h3>在校大学生</h3>
               <p>课余时间充裕，通过简单推广获取额外收入，覆盖日常生活开销</p>
             </div>
             <div className="partner-audience-card">
-              <div className="partner-audience-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #db2777)' }}>&#x1F4F1;</div>
+              <div className="partner-audience-icon">
+                <img src="/partner/自媒体博主.svg" alt="自媒体博主" />
+              </div>
               <h3>自媒体博主</h3>
               <p>利用粉丝基础，文章或视频中自然植入，实现内容变现</p>
             </div>
             <div className="partner-audience-card">
-              <div className="partner-audience-icon" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>&#x1F4BB;</div>
+              <div className="partner-audience-icon">
+                <img src="/partner/项目拥有者.svg" alt="项目拥有者" />
+              </div>
               <h3>项目拥有者</h3>
               <p>通过独立站、应用或开源项目推广，轻松实现收益最大化</p>
             </div>
             <div className="partner-audience-card">
-              <div className="partner-audience-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>&#x2615;</div>
+              <div className="partner-audience-icon">
+                <img src="/partner/自由职业者.svg" alt="自由职业者" />
+              </div>
               <h3>自由职业者</h3>
               <p>时间自主安排，灵活参与分销，增加收入来源渠道</p>
             </div>
@@ -224,9 +236,12 @@ const Partner = () => {
           <div className="partner-cta">
             <h2>立即加入聚灵API代理分销计划</h2>
             <p>零门槛、高佣金、永久绑定，开启你的被动收入之旅</p>
-            <a className="partner-hero-btn" href="/register">
-              免费注册，立即开始
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            <a className="fancy-btn fancy-btn--light" href="/register">
+              <div className="fancy-btn__line" />
+              <div className="fancy-btn__line" />
+              <span className="fancy-btn__text">免费注册，立即开始</span>
+              <div className="fancy-btn__drow1" />
+              <div className="fancy-btn__drow2" />
             </a>
           </div>
         </section>

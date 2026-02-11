@@ -43,7 +43,7 @@
 /* Hero */
 .about-hero {
   text-align: center;
-  padding: 5rem 1rem 4rem;
+  padding: 80px 1rem 4rem;
   position: relative;
   z-index: 1;
 }
@@ -311,7 +311,7 @@
 
 @media (max-width: 768px) {
   .about-hero h1 { font-size: 1.75rem; }
-  .about-hero { padding: 3rem 1rem 2.5rem; }
+  .about-hero { padding: 80px 1rem 2.5rem; }
   .about-cards { grid-template-columns: repeat(2, 1fr); }
   .about-section { padding: 2rem 1rem 0; }
   .about-section-title { font-size: 1.4rem; }
