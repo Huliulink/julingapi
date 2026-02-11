@@ -236,17 +236,11 @@ const Partner = () => {
           <div className="partner-cta">
             <h2>立即加入聚灵API代理分销计划</h2>
             <p>零门槛、高佣金、永久绑定，开启你的被动收入之旅</p>
-            <a className="fancy-btn fancy-btn--light" href="/register">
-              <div className="fancy-btn__line" />
-              <div className="fancy-btn__line" />
-              <span className="fancy-btn__text">免费注册，立即开始</span>
-              <div className="fancy-btn__drow1" />
-              <div className="fancy-btn__drow2" />
-            </a>
+            <a className="partner-cta-btn" href="/register">免费注册，立即开始</a>
           </div>
         </section>
+        <FooterBar />
       </div>
-      <FooterBar />
     </>
   );
 };

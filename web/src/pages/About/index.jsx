@@ -147,8 +147,8 @@ const About = () => {
             <p>通过聚灵API，开发者可以专注于AI应用的创新与开发，而无需为复杂的基础设施集成而烦恼。我们让AI开发变得更简单、更高效。</p>
           </div>
         </section>
+        <FooterBar />
       </div>
-      <FooterBar />
     </>
   );
 };

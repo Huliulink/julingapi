@@ -690,6 +690,24 @@
   margin: 0 0 2rem;
 }
 
+.partner-cta-btn {
+  display: inline-block;
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 999px;
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.partner-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}
+
 @media (max-width: 768px) {
   .partner-hero h1 { font-size: 1.75rem; }
   .partner-hero { padding: 80px 1rem 2.5rem; }

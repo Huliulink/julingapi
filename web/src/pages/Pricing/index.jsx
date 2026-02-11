@@ -22,10 +22,10 @@ import ModelPricingPage from '../../components/table/model-pricing/layout/Pricin
 import FooterBar from '../../components/layout/Footer';
 
 const Pricing = () => (
-  <>
+  <div>
     <ModelPricingPage />
     <FooterBar />
-  </>
+  </div>
 );
 
 export default Pricing;
