@@ -20,12 +20,19 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import ModelPricingPage from '../../components/table/model-pricing/layout/PricingPage';
 import FooterBar from '../../components/layout/Footer';
+import { useActualTheme } from '../../context/Theme';
+import './Pricing.css';
 
-const Pricing = () => (
-  <div>
-    <ModelPricingPage />
-    <FooterBar />
-  </div>
-);
+const Pricing = () => {
+  const theme = useActualTheme();
+  const isDark = theme === 'dark';
+
+  return (
+    <div className={`pricing-container ${isDark ? 'dark-theme' : ''}`}>
+      <ModelPricingPage />
+      <FooterBar />
+    </div>
+  );
+};
 
 export default Pricing;

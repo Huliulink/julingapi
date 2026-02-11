@@ -23,11 +23,11 @@ const Partner = () => {
     },
     {
       q: '合伙人(代理商)有等级之分吗？',
-      a: '初级合伙人零门槛，只需一个域名即可快速加入。如果您有更大流量和推广计划，可联系我们申请更高级别的合伙人权限，享受更低成本。'
+      a: '为确保我们的合伙人能获得全力支持并实现收益最大化，我们现已设立全新的合伙人计划。您只需投入500元的诚意合作费，即可正式成为我们的授权合伙人，尊享专属代理网站+优势代理价格+全方位运营支持。'
     },
     {
       q: '成为合伙人(代理商)需要缴纳保证金(加盟费)吗？',
-      a: '不需要缴纳任何保证金，只需要保证自己账户的余额足够即可，因为您的用户充值将从您的余额扣除成本费用。'
+      a: ' 成为代理需一次性缴纳500元代理费，此费用用于开通代理权限并享受后续的各项支持与服务。'
     }
   ];
 
@@ -88,42 +88,42 @@ const Partner = () => {
           <div className="partner-benefits">
             <div className="partner-benefit-card">
               <div className="partner-benefit-icon" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
-                <svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
               </div>
               <h3>高额佣金</h3>
               <p>推荐用户消费即可获得最高20%的持续佣金，用户每次充值你都有收益，长期被动收入。</p>
             </div>
             <div className="partner-benefit-card">
               <div className="partner-benefit-icon" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
               </div>
               <h3>实时追踪</h3>
               <p>专属合伙人后台，实时查看推广数据、用户消费、佣金明细，一切收益透明可见。</p>
             </div>
             <div className="partner-benefit-card">
               <div className="partner-benefit-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
               </div>
               <h3>专属客服</h3>
               <p>一对一专属客服支持，解答推广疑问，协助解决技术问题，助你高效推广。</p>
             </div>
             <div className="partner-benefit-card">
               <div className="partner-benefit-icon" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-                <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
               </div>
               <h3>推广素材</h3>
               <p>提供专业的推广素材、文案模板和营销工具，降低推广难度，提升转化效果。</p>
             </div>
             <div className="partner-benefit-card">
               <div className="partner-benefit-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #db2777)' }}>
-                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
               </div>
               <h3>品牌保障</h3>
               <p>聚灵API拥有稳定的服务和良好的口碑，99.9%可用性让你推广无后顾之忧。</p>
             </div>
             <div className="partner-benefit-card">
               <div className="partner-benefit-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
-                <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
               </div>
               <h3>阶梯奖励</h3>
               <p>推广业绩达到阶梯目标可获得额外奖励，业绩越高佣金比例越高，上不封顶。</p>
@@ -226,28 +226,28 @@ const Partner = () => {
           <div className="partner-rules">
             <div className="partner-rule-card">
               <div className="partner-rule-icon" style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
-                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
               </div>
               <h3>用户归属</h3>
               <p>用户通过您的代理域名注册，即与您建立代理关系，成为您的下级用户</p>
             </div>
             <div className="partner-rule-card">
               <div className="partner-rule-icon" style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)' }}>
-                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
               </div>
               <h3>自由定价</h3>
               <p>您可以自由设置充值价格，用户按您的定价购买，资金直达您的账户</p>
             </div>
             <div className="partner-rule-card">
               <div className="partner-rule-icon" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-                <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
               </div>
               <h3>自动结算</h3>
               <p>系统自动扣除成本费用，剩余部分即为您的利润，资金流转透明可查</p>
             </div>
             <div className="partner-rule-card">
               <div className="partner-rule-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
               </div>
               <h3>灵活收款</h3>
               <p>支持易支付或兑换码收款，资金直接到您的微信/支付宝等账户</p>
@@ -273,7 +273,7 @@ const Partner = () => {
               <div className={`partner-faq-item ${openFaq === idx ? 'open' : ''}`} key={idx}>
                 <button className="partner-faq-q" onClick={() => setOpenFaq(openFaq === idx ? null : idx)}>
                   <span>{item.q}</span>
-                  <svg className="partner-faq-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+                  <svg className="partner-faq-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
                 <div className="partner-faq-a-wrap">
                   <div className="partner-faq-a">
