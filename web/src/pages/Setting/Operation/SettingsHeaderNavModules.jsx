@@ -44,10 +44,12 @@ export default function SettingsHeaderNavModules(props) {
     console: true,
     pricing: {
       enabled: true,
-      requireAuth: false, // 默认不需要登录鉴权
+      requireAuth: false,
     },
+    playground: true,
     docs: true,
     about: true,
+    partner: true,
   });
 
   // 处理顶栏模块配置变更
@@ -86,8 +88,10 @@ export default function SettingsHeaderNavModules(props) {
         enabled: true,
         requireAuth: false,
       },
+      playground: true,
       docs: true,
       about: true,
+      partner: true,
     };
     setHeaderNavModules(defaultModules);
     showSuccess(t('已重置为默认配置'));
@@ -138,9 +142,13 @@ export default function SettingsHeaderNavModules(props) {
         if (typeof modules.pricing === 'boolean') {
           modules.pricing = {
             enabled: modules.pricing,
-            requireAuth: false, // 默认不需要登录鉴权
+            requireAuth: false,
           };
         }
+
+        // 向后兼容：旧配置可能缺少 playground 和 partner
+        if (modules.playground === undefined) modules.playground = true;
+        if (modules.partner === undefined) modules.partner = true;
 
         setHeaderNavModules(modules);
       } catch (error) {
@@ -152,8 +160,10 @@ export default function SettingsHeaderNavModules(props) {
             enabled: true,
             requireAuth: false,
           },
+          playground: true,
           docs: true,
           about: true,
+          partner: true,
         };
         setHeaderNavModules(defaultModules);
       }
@@ -176,7 +186,12 @@ export default function SettingsHeaderNavModules(props) {
       key: 'pricing',
       title: t('模型广场'),
       description: t('模型定价，需要登录访问'),
-      hasSubConfig: true, // 标识该模块有子配置
+      hasSubConfig: true,
+    },
+    {
+      key: 'playground',
+      title: t('训练广场'),
+      description: t('在线体验和测试模型'),
     },
     {
       key: 'docs',
@@ -187,6 +202,11 @@ export default function SettingsHeaderNavModules(props) {
       key: 'about',
       title: t('关于'),
       description: t('关于系统的详细信息'),
+    },
+    {
+      key: 'partner',
+      title: t('加盟代理'),
+      description: t('合伙人代理分销计划'),
     },
   ];
 
