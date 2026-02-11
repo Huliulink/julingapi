@@ -990,6 +990,10 @@
     aspect-ratio: 4 / 3;
   }
 
+  .visual-img {
+    display: none;
+  }
+
   .features-grid {
     grid-template-columns: 1fr;
   }

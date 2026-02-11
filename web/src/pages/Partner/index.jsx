@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useActualTheme } from '../../context/Theme';
 import FooterBar from '../../components/layout/Footer';
 import './Partner.css';
@@ -6,6 +6,30 @@ import './Partner.css';
 const Partner = () => {
   const theme = useActualTheme();
   const isDark = theme === 'dark';
+  const [openFaq, setOpenFaq] = useState(null);
+
+  const faqList = [
+    {
+      q: '合伙人运作流程/收益模式是怎样的？',
+      a: '充值流程：用户在代理网站通过易支付/兑换码充值 → 平台从代理商余额扣除成本（充值金额 × 成本倍率）\n\n成本结算：充值时立即从代理商余额扣除成本，一次性结清\n\n用户消费：用户后续消费从用户自己余额扣除，与代理商无关\n\n代理利润：代理商利润 = 实际收款 - 系统扣除成本（已在收款时获得）\n\n余额说明：代理商余额用于支付给系统的成本，需要保证余额充足，用户才能充值'
+    },
+    {
+      q: '成为合伙人后能降低我的API使用成本吗？',
+      a: '代理商是平台的合作伙伴，负责分销推广本站产品，并非为了降低自身使用成本。成为代理后，您将拥有独立域名、自定义价格和完整功能的专属站点。'
+    },
+    {
+      q: '合伙人可以自定义哪些信息？',
+      a: '您可以自定义站点名称、Logo、SEO信息、首页内容、公告、页脚、帮助中心、客服联系方式等。还可以配置易支付或兑换码管理。'
+    },
+    {
+      q: '合伙人(代理商)有等级之分吗？',
+      a: '初级合伙人零门槛，只需一个域名即可快速加入。如果您有更大流量和推广计划，可联系我们申请更高级别的合伙人权限，享受更低成本。'
+    },
+    {
+      q: '成为合伙人(代理商)需要缴纳保证金(加盟费)吗？',
+      a: '不需要缴纳任何保证金，只需要保证自己账户的余额足够即可，因为您的用户充值将从您的余额扣除成本费用。'
+    }
+  ];
 
   return (
     <>
@@ -237,6 +261,27 @@ const Partner = () => {
             <h2>立即加入聚灵API代理分销计划</h2>
             <p>零门槛、高佣金、永久绑定，开启你的被动收入之旅</p>
             <a className="partner-cta-btn" href="/register">免费注册，立即开始</a>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="partner-section">
+          <h2 className="partner-section-title">常见问题</h2>
+          <p className="partner-section-sub">关于合伙人计划，您可能想了解的问题</p>
+          <div className="partner-faq-list">
+            {faqList.map((item, idx) => (
+              <div className={`partner-faq-item ${openFaq === idx ? 'open' : ''}`} key={idx}>
+                <button className="partner-faq-q" onClick={() => setOpenFaq(openFaq === idx ? null : idx)}>
+                  <span>{item.q}</span>
+                  <svg className="partner-faq-arrow" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div className="partner-faq-a-wrap">
+                  <div className="partner-faq-a">
+                    {item.a.split('\n\n').map((line, i) => <p key={i}>{line}</p>)}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
         <FooterBar />
