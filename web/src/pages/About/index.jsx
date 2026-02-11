@@ -37,7 +37,7 @@ const About = () => {
           <div className="about-cards">
             <div className="about-card">
               <div className="about-card-icon">
-                <img src="/about/灵启万物.svg" alt="灵聚万象" />
+                <img src="/about-assets/灵启万物.svg" alt="灵聚万象" />
               </div>
               <h3>灵聚万象</h3>
               <ul>
@@ -48,7 +48,7 @@ const About = () => {
             </div>
             <div className="about-card">
               <div className="about-card-icon">
-                <img src="/about/万物安全.svg" alt="灵启万物" />
+                <img src="/about-assets/万物安全.svg" alt="灵启万物" />
               </div>
               <h3>灵启万物</h3>
               <ul>
@@ -59,7 +59,7 @@ const About = () => {
             </div>
             <div className="about-card">
               <div className="about-card-icon">
-                <img src="/about/灵生无限.svg" alt="灵生无限" />
+                <img src="/about-assets/灵生无限.svg" alt="灵生无限" />
               </div>
               <h3>灵生无限</h3>
               <ul>
@@ -77,21 +77,21 @@ const About = () => {
           <div className="about-cards">
             <div className="about-card" style={{ textAlign: 'center' }}>
               <div className="about-card-icon" style={{ margin: '0 auto 1rem' }}>
-                <img src="/about/对开发者.svg" alt="对开发者" />
+                <img src="/about-assets/对开发者.svg" alt="对开发者" />
               </div>
               <h3>对开发者</h3>
               <p>提供"一站式AI能力商城"，缩短从想法到产品的距离</p>
             </div>
             <div className="about-card" style={{ textAlign: 'center' }}>
               <div className="about-card-icon" style={{ margin: '0 auto 1rem' }}>
-                <img src="/about/对企业客户.svg" alt="对企业客户" />
+                <img src="/about-assets/对企业客户.svg" alt="对企业客户" />
               </div>
               <h3>对企业客户</h3>
               <p>打造"可进化的智能中枢"，随业务需求灵活扩展AI能力</p>
             </div>
             <div className="about-card" style={{ textAlign: 'center' }}>
               <div className="about-card-icon" style={{ margin: '0 auto 1rem' }}>
-                <img src="/about/对模型提供方.svg" alt="对模型提供方" />
+                <img src="/about-assets/对模型提供方.svg" alt="对模型提供方" />
               </div>
               <h3>对模型提供方</h3>
               <p>构建"价值循环生态"，让优质算法获得应有回报</p>
@@ -124,21 +124,21 @@ const About = () => {
             <div className="about-cards">
               <div className="about-card" style={{ textAlign: 'center' }}>
                 <div className="about-card-icon" style={{ margin: '0 auto 1rem' }}>
-                  <img src="/about/日志统一.svg" alt="日志统一" />
+                  <img src="/about-assets/日志统一.svg" alt="日志统一" />
                 </div>
                 <h3>日志统一</h3>
                 <p>所有模型调用记录集中管理，便于监控和调试</p>
               </div>
               <div className="about-card" style={{ textAlign: 'center' }}>
                 <div className="about-card-icon" style={{ margin: '0 auto 1rem' }}>
-                  <img src="/about/计费统一.svg" alt="计费统一" />
+                  <img src="/about-assets/计费统一.svg" alt="计费统一" />
                 </div>
                 <h3>计费统一</h3>
                 <p>一套透明的计费体系，告别繁琐的多平台账单</p>
               </div>
               <div className="about-card" style={{ textAlign: 'center' }}>
                 <div className="about-card-icon" style={{ margin: '0 auto 1rem' }}>
-                  <img src="/about/商务统一.svg" alt="商务统一" />
+                  <img src="/about-assets/商务统一.svg" alt="商务统一" />
                 </div>
                 <h3>商务统一</h3>
                 <p>一次商务对接，享受全球大模型资源</p>

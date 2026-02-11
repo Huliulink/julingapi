@@ -53,28 +53,28 @@ const Partner = () => {
         <div className="partner-features">
           <div className="partner-feature-card">
             <div className="partner-feature-icon">
-              <img src="/partner/低成本起步.svg" alt="低成本起步" />
+              <img src="/partner-assets/低成本起步.svg" alt="低成本起步" />
             </div>
             <h3>低成本起步</h3>
             <p>无需部署服务器、无需维护模型渠道、无需API备货和运营</p>
           </div>
           <div className="partner-feature-card">
             <div className="partner-feature-icon">
-              <img src="/partner/完全定制化.svg" alt="完全定制化" />
+              <img src="/partner-assets/完全定制化.svg" alt="完全定制化" />
             </div>
             <h3>完全定制化</h3>
             <p>支持自定义充值价格、Logo、公告、首页、SEO、易支付接入等所有内容</p>
           </div>
           <div className="partner-feature-card">
             <div className="partner-feature-icon">
-              <img src="/partner/资金透明.svg" alt="资金透明" />
+              <img src="/partner-assets/资金透明.svg" alt="资金透明" />
             </div>
             <h3>资金透明</h3>
             <p>用户充值直接到您账户，平台仅扣除代理余额，收益实时透明可查</p>
           </div>
           <div className="partner-feature-card">
             <div className="partner-feature-icon">
-              <img src="/partner/技术支持.svg" alt="技术支持" />
+              <img src="/partner-assets/技术支持.svg" alt="技术支持" />
             </div>
             <h3>技术支持</h3>
             <p>平台负责API渠道、服务器运维、技术迭代，您只需专注推广</p>
@@ -162,28 +162,28 @@ const Partner = () => {
           <div className="partner-audience">
             <div className="partner-audience-card">
               <div className="partner-audience-icon">
-                <img src="/partner/在校大学生.svg" alt="在校大学生" />
+                <img src="/partner-assets/在校大学生.svg" alt="在校大学生" />
               </div>
               <h3>在校大学生</h3>
               <p>课余时间充裕，通过简单推广获取额外收入，覆盖日常生活开销</p>
             </div>
             <div className="partner-audience-card">
               <div className="partner-audience-icon">
-                <img src="/partner/自媒体博主.svg" alt="自媒体博主" />
+                <img src="/partner-assets/自媒体博主.svg" alt="自媒体博主" />
               </div>
               <h3>自媒体博主</h3>
               <p>利用粉丝基础，文章或视频中自然植入，实现内容变现</p>
             </div>
             <div className="partner-audience-card">
               <div className="partner-audience-icon">
-                <img src="/partner/项目拥有者.svg" alt="项目拥有者" />
+                <img src="/partner-assets/项目拥有者.svg" alt="项目拥有者" />
               </div>
               <h3>项目拥有者</h3>
               <p>通过独立站、应用或开源项目推广，轻松实现收益最大化</p>
             </div>
             <div className="partner-audience-card">
               <div className="partner-audience-icon">
-                <img src="/partner/自由职业者.svg" alt="自由职业者" />
+                <img src="/partner-assets/自由职业者.svg" alt="自由职业者" />
               </div>
               <h3>自由职业者</h3>
               <p>时间自主安排，灵活参与分销，增加收入来源渠道</p>
