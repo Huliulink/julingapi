@@ -195,8 +195,8 @@ const PageLayout = () => {
             <App />
           </Content>
           {isConsoleRoute && (
-            <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--semi-color-text-2)', fontSize: '13px' }}>
-              © 2026 聚灵API. All rights reserved.
+            <div style={{ textAlign: 'right', padding: '8px 16px', color: 'var(--semi-color-text-2)', fontSize: '12px' }}>
+              Copyright © 2026 聚灵API.
             </div>
           )}
         </Layout>
