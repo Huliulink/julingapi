@@ -390,6 +390,7 @@ code {
   display: flex !important;
   align-items: center !important;
   width: 100% !important;
+  border-radius: 8px !important;
 }
 
 /* 折叠状态下内部容器居中 */
