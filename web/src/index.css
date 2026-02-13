@@ -95,6 +95,16 @@ code {
   height: 44px !important;
 }
 
+.header-gradient {
+  background: linear-gradient(90deg, rgba(46, 92, 246, 0.1), rgba(6, 182, 212, 0.1)),
+    rgba(255, 255, 255, 0.75);
+}
+
+html.dark .header-gradient {
+  background: linear-gradient(90deg, rgba(46, 92, 246, 0.12), rgba(6, 182, 212, 0.12)),
+    rgba(24, 24, 27, 0.75);
+}
+
 #root
   > section
   > header
