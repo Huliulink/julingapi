@@ -65,7 +65,7 @@ code {
 /* ==================== 导航和侧边栏样式 ==================== */
 .semi-navigation-item {
   margin-bottom: 4px !important;
-  padding: 8px 12px !important;
+  padding: 12px 12px !important;
 }
 
 .semi-navigation-sub-title {
@@ -92,7 +92,7 @@ code {
 }
 
 .semi-navigation-item-collapsed {
-  height: 52px !important;
+  height: 58px !important;
 }
 
 #root
@@ -145,7 +145,7 @@ code {
   border-radius: 6px;
   margin: 3px 8px;
   transition: all 0.15s ease;
-  padding: 12px 12px;
+  padding: 16px 12px;
 }
 
 .sidebar-nav-item:hover {
