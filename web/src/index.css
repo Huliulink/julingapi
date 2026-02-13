@@ -425,13 +425,6 @@ code {
               visibility 0s linear 0s;
 }
 
-/* 子菜单样式统一 */
-.sidebar-nav .semi-navigation-sub .semi-navigation-item {
-  height: 40px !important;
-  min-height: 40px !important;
-  padding-left: 44px !important;
-}
-
 /* 确保图标在折叠状态下居中 */
 .semi-navigation-collapsed .sidebar-icon-container {
   margin: 0 !important;
