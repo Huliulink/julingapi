@@ -132,15 +132,6 @@ html.dark .header-gradient {
   min-height: 0;
   transition: width 0.3s ease;
   background: var(--semi-color-bg-0);
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.sidebar-container::-webkit-scrollbar {
-  display: none;
 }
 
 .sidebar-nav {
@@ -149,6 +140,15 @@ html.dark .header-gradient {
   background: var(--semi-color-bg-0);
   border-right: none;
   min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
 }
 
 /* 侧边栏导航项样式 */
