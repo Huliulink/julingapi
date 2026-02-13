@@ -739,7 +739,7 @@ const Home = () => {
               </div>
               <div className="border-t border-gray-200 pt-8 dark:border-gray-700">
                 <div className="text-center">
-                  <p className="text-gray-600 text-sm dark:text-gray-400">© 2025 聚灵API. All rights reserved.</p>
+                  <p className="text-gray-600 text-sm dark:text-gray-400">© 2026 聚灵API. All rights reserved.</p>
                   <p className="text-gray-500 text-xs mt-2 dark:text-gray-500">我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。</p>
                 </div>
               </div>
