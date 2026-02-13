@@ -144,20 +144,21 @@ html.dark .header-gradient {
 }
 
 .sidebar-nav {
-  flex: 1;
+  flex: 0 0 auto;
   width: 100%;
   background: var(--semi-color-bg-0);
   border-right: none;
-  min-height: 0;
 }
 
 /* 确保 Nav 内部容器不限制 Nav.Sub 的向下展开 */
 .sidebar-nav .semi-navigation-list-wrapper {
   overflow: visible !important;
+  height: auto !important;
 }
 
 .sidebar-nav .semi-navigation-header-list-outer {
   overflow: visible !important;
+  height: auto !important;
 }
 
 /* 侧边栏导航项样式 */
