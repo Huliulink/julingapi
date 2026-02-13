@@ -196,7 +196,8 @@ const PageLayout = () => {
           </Content>
           {isConsoleRoute && (
             <div style={{ textAlign: 'center', padding: '8px 16px', color: 'var(--semi-color-text-2)', fontSize: '12px', ...(showSider ? { paddingRight: 'var(--sidebar-current-width)' } : {}) }}>
-              Copyright © 2026 聚灵API.
+              <div>© 2026 聚灵API. All rights reserved.</div>
+              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.7 }}>我们尊重客户隐私，不保留聊天记录。国内用户请遵守生成式人工智能服务管理暂行办法。</div>
             </div>
           )}
         </Layout>
