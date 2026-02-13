@@ -21,7 +21,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getLucideIcon } from '../../helpers/render';
-import { ChevronLeft, ChevronDown } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
 import { useSidebar } from '../../hooks/common/useSidebar';
 import { useMinimumLoadingTime } from '../../hooks/common/useMinimumLoadingTime';
@@ -336,80 +336,50 @@ const SiderBar = ({ onNavigate = () => {} }) => {
     );
   };
 
-  // 渲染子菜单项（手动实现向下展开，不使用 Nav.Sub 避免 popup 问题）
+  // 渲染子菜单项
   const renderSubItem = (item) => {
     if (item.items && item.items.length > 0) {
-      const isOpen = openedKeys.includes(item.itemKey);
       const isSelected = selectedKeys.includes(item.itemKey);
       const textColor = isSelected ? SELECTED_COLOR : 'inherit';
 
       return (
-        <React.Fragment key={item.itemKey}>
-          <Nav.Item
-            itemKey={item.itemKey}
-            text={
-              <span
-                className='truncate font-medium text-sm'
-                style={{ color: textColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
-              >
-                {item.text}
-                {!collapsed && (
-                  <ChevronDown
-                    size={14}
-                    style={{
-                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s ease',
-                      flexShrink: 0,
-                      marginLeft: 4,
-                    }}
-                  />
-                )}
-              </span>
-            }
-            icon={
-              <div className='sidebar-icon-container flex-shrink-0'>
-                {getLucideIcon(item.itemKey, isSelected)}
-              </div>
-            }
-            onClick={() => {
-              if (isOpen) {
-                setOpenedKeys(openedKeys.filter((k) => k !== item.itemKey));
-              } else {
-                setOpenedKeys([...openedKeys, item.itemKey]);
-              }
-            }}
-          />
-          {!collapsed && isOpen && (
-            <div
-              style={{
-                overflow: 'hidden',
-                transition: 'max-height 0.25s ease',
-                maxHeight: isOpen ? `${item.items.length * 50}px` : '0px',
-                paddingLeft: 12,
-              }}
+        <Nav.Sub
+          key={item.itemKey}
+          itemKey={item.itemKey}
+          text={
+            <span
+              className='truncate font-medium text-sm'
+              style={{ color: textColor }}
             >
-              {item.items.map((subItem) => {
-                const isSubSelected = selectedKeys.includes(subItem.itemKey);
-                const subTextColor = isSubSelected ? SELECTED_COLOR : 'inherit';
-
-                return (
-                  <Nav.Item
-                    key={subItem.itemKey}
-                    itemKey={subItem.itemKey}
-                    text={
-                      <span
-                        className='truncate font-medium text-sm'
-                        style={{ color: subTextColor }}
-                      >
-                        {subItem.text}
-                      </span>
-                    }
-                  />
-                );
-              })}
+              {item.text}
+            </span>
+          }
+          icon={
+            <div className='sidebar-icon-container flex-shrink-0'>
+              {getLucideIcon(item.itemKey, isSelected)}
             </div>
-          )}
-        </React.Fragment>
+          }
+        >
+          {item.items.map((subItem) => {
+            const isSubSelected = selectedKeys.includes(subItem.itemKey);
+            const subTextColor = isSubSelected ? SELECTED_COLOR : 'inherit';
+
+            return (
+              <Nav.Item
+                key={subItem.itemKey}
+                itemKey={subItem.itemKey}
+                text={
+                  <span
+                    className='truncate font-medium text-sm'
+                    style={{ color: subTextColor }}
+                  >
+                    {subItem.text}
+                  </span>
+                }
+              />
+            );
+          })}
+        </Nav.Sub>
       );
     } else {
       return renderNavItem(item);
@@ -457,9 +427,16 @@ const SiderBar = ({ onNavigate = () => {} }) => {
             );
           }}
           onSelect={(key) => {
-            // "聊天"父菜单项只用于展开/收起，不设为选中
-            if (key.itemKey === 'chat') return;
+            // 如果点击的是已经展开的子菜单的父项，则收起子菜单
+            if (openedKeys.includes(key.itemKey)) {
+              setOpenedKeys(openedKeys.filter((k) => k !== key.itemKey));
+            }
+
             setSelectedKeys([key.itemKey]);
+          }}
+          openKeys={openedKeys}
+          onOpenChange={(data) => {
+            setOpenedKeys(data.openKeys);
           }}
         >
           {/* 聊天区域 */}
