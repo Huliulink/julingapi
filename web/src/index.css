@@ -138,6 +138,15 @@ code {
   margin: 2px 8px !important;
 }
 
+/* Nav.Sub 包裹器 - 允许展开显示子项 */
+.semi-navigation-item:has(> .semi-navigation-sub-title) {
+  height: auto !important;
+  min-height: auto !important;
+  display: block !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 #root
   > section
   > header
