@@ -1178,16 +1178,19 @@ html.dark .with-pastel-balls::before {
   border-radius: 10px !important;
 }
 
-/* 覆盖 Semi UI 导航选中状态的左圆角右直角 + 对齐修正 */
-@layer semi {
-  .semi-navigation-item-inner {
-    border-radius: 8px !important;
-    padding: 0 12px !important;
+/* 覆盖 Semi UI 导航样式 - 放在最高优先级层 */
+@layer tailwind-base {
+  .semi-navigation-item.semi-navigation-item-sub {
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    background: transparent !important;
   }
 
+  .semi-navigation-item-inner,
   .semi-navigation-sub-title {
     border-radius: 8px !important;
-    padding: 0 12px !important;
   }
 
   .semi-navigation-item-icon {
