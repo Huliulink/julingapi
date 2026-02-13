@@ -181,11 +181,6 @@ const PageLayout = () => {
             flex: '1 1 auto',
             display: 'flex',
             flexDirection: 'column',
-            ...(isConsoleRoute
-              ? {
-                  background: `radial-gradient(2000px 1200px at 0% 0%, rgba(46, 92, 246, 0.12), transparent 70%), radial-gradient(2000px 1200px at 100% 0%, rgba(6, 182, 212, 0.12), transparent 70%), var(--semi-color-bg-0)`,
-                }
-              : {}),
           }}
         >
           <Content

@@ -65,7 +65,12 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
   const { mainNavLinks } = useNavigation(t, docsLink, headerNavModules);
 
   return (
-    <header className='text-semi-color-text-0 sticky top-0 z-50 transition-colors duration-300 bg-white/75 dark:bg-zinc-900/75 backdrop-blur-lg'>
+    <header
+      className='text-semi-color-text-0 sticky top-0 z-50 transition-colors duration-300 bg-white/75 dark:bg-zinc-900/75 backdrop-blur-lg'
+      style={isConsoleRoute ? {
+        backgroundImage: 'radial-gradient(2000px 1200px at 0% 0%, rgba(46, 92, 246, 0.12), transparent 70%), radial-gradient(2000px 1200px at 100% 0%, rgba(6, 182, 212, 0.12), transparent 70%)',
+      } : undefined}
+    >
       <NoticeModal
         visible={noticeVisible}
         onClose={handleNoticeClose}
