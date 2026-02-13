@@ -132,24 +132,32 @@ html.dark .header-gradient {
   min-height: 0;
   transition: width 0.3s ease;
   background: var(--semi-color-bg-0);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-container::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-nav {
   flex: 1;
   width: 100%;
   background: var(--semi-color-bg-0);
-  height: 100%;
-  overflow-x: hidden;
   border-right: none;
-  overflow-y: auto;
   min-height: 0;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
-.sidebar-nav::-webkit-scrollbar {
-  display: none;
+/* 确保 Nav 内部容器不限制 Nav.Sub 的向下展开 */
+.sidebar-nav .semi-navigation-list-wrapper {
+  overflow: visible !important;
+}
+
+.sidebar-nav .semi-navigation-header-list-outer {
+  overflow: visible !important;
 }
 
 /* 侧边栏导航项样式 */
