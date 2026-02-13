@@ -88,7 +88,9 @@ code {
 
 .semi-navigation-item,
 .semi-navigation-sub-title {
-  height: 100% !important;
+  height: 45px !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 .semi-navigation-item-collapsed {
