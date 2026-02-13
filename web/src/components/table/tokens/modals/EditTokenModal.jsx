@@ -72,7 +72,7 @@ const EditTokenModal = (props) => {
     model_limits_enabled: false,
     model_limits: [],
     allow_ips: '',
-    group: '',
+    group: [],
     cross_group_retry: false,
     tokenCount: 1,
   });
@@ -162,6 +162,12 @@ const EditTokenModal = (props) => {
       } else {
         data.model_limits = [];
       }
+      // 将分组字符串转为数组（多选模式）
+      if (data.group && data.group !== '') {
+        data.group = data.group.split(',');
+      } else {
+        data.group = [];
+      }
       if (formApiRef.current) {
         formApiRef.current.setValues({ ...getInitValues(), ...data });
       }
@@ -221,6 +227,8 @@ const EditTokenModal = (props) => {
       }
       localInputs.model_limits = localInputs.model_limits.join(',');
       localInputs.model_limits_enabled = localInputs.model_limits.length > 0;
+      // 将分组数组转为逗号分隔字符串
+      localInputs.group = Array.isArray(localInputs.group) ? localInputs.group.join(',') : (localInputs.group || '');
       let res = await API.put(`/api/token/`, {
         ...localInputs,
         id: parseInt(props.editingToken.id),
@@ -258,6 +266,8 @@ const EditTokenModal = (props) => {
         }
         localInputs.model_limits = localInputs.model_limits.join(',');
         localInputs.model_limits_enabled = localInputs.model_limits.length > 0;
+        // 将分组数组转为逗号分隔字符串
+        localInputs.group = Array.isArray(localInputs.group) ? localInputs.group.join(',') : (localInputs.group || '');
         let res = await API.post(`/api/token/`, localInputs);
         const { success, message } = res.data;
         if (success) {
@@ -362,10 +372,11 @@ const EditTokenModal = (props) => {
                     {groups.length > 0 ? (
                       <Form.Select
                         field='group'
-                        label={t('令牌分组')}
-                        placeholder={t('令牌分组，默认为用户的分组')}
+                        label={t('分组优先级')}
+                        placeholder={t('选择分组（按选择顺序决定优先级），留空使用用户默认分组')}
                         optionList={groups}
                         renderOptionItem={renderGroupOption}
+                        multiple
                         showClear
                         style={{ width: '100%' }}
                       />
@@ -373,7 +384,7 @@ const EditTokenModal = (props) => {
                       <Form.Select
                         placeholder={t('管理员未设置用户可选分组')}
                         disabled
-                        label={t('令牌分组')}
+                        label={t('分组优先级')}
                         style={{ width: '100%' }}
                       />
                     )}
@@ -381,7 +392,11 @@ const EditTokenModal = (props) => {
                   <Col
                     span={24}
                     style={{
-                      display: values.group === 'auto' ? 'block' : 'none',
+                      display:
+                        (Array.isArray(values.group) && values.group.length > 1) ||
+                        (Array.isArray(values.group) && values.group.includes('auto'))
+                          ? 'block'
+                          : 'none',
                     }}
                   >
                     <Form.Switch

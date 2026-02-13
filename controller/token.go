@@ -137,6 +137,32 @@ func GetTokenUsage(c *gin.Context) {
 	})
 }
 
+// validateTokenGroup 验证令牌分组格式（支持多分组逗号分隔）
+func validateTokenGroup(group string) string {
+	if group == "" || group == "auto" {
+		return ""
+	}
+	if !strings.Contains(group, ",") {
+		return ""
+	}
+	groups := strings.Split(group, ",")
+	seen := make(map[string]bool)
+	for _, g := range groups {
+		g = strings.TrimSpace(g)
+		if g == "" {
+			return "分组名不能为空"
+		}
+		if g == "auto" {
+			return "多分组模式下不能包含 auto 分组"
+		}
+		if seen[g] {
+			return fmt.Sprintf("分组 %s 重复", g)
+		}
+		seen[g] = true
+	}
+	return ""
+}
+
 func AddToken(c *gin.Context) {
 	token := model.Token{}
 	err := c.ShouldBindJSON(&token)
@@ -146,6 +172,11 @@ func AddToken(c *gin.Context) {
 	}
 	if len(token.Name) > 50 {
 		common.ApiErrorI18n(c, i18n.MsgTokenNameTooLong)
+		return
+	}
+	// 验证多分组格式
+	if errMsg := validateTokenGroup(token.Group); errMsg != "" {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": errMsg})
 		return
 	}
 	// 非无限额度时，检查额度值是否超出有效范围
@@ -233,6 +264,11 @@ func UpdateToken(c *gin.Context) {
 	}
 	if len(token.Name) > 50 {
 		common.ApiErrorI18n(c, i18n.MsgTokenNameTooLong)
+		return
+	}
+	// 验证多分组格式
+	if errMsg := validateTokenGroup(token.Group); errMsg != "" {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": errMsg})
 		return
 	}
 	if !token.UnlimitedQuota {

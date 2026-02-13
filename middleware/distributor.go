@@ -113,6 +113,19 @@ func Distribute() func(c *gin.Context) {
 									break
 								}
 							}
+						} else if strings.Contains(usingGroup, ",") {
+							// 多分组 affinity 检查
+							multiGroups := strings.Split(usingGroup, ",")
+							for _, g := range multiGroups {
+								g = strings.TrimSpace(g)
+								if model.IsChannelEnabledForGroupModel(g, modelRequest.Model, preferred.Id) {
+									selectGroup = g
+									common.SetContextKey(c, constant.ContextKeyAutoGroup, g)
+									channel = preferred
+									service.MarkChannelAffinityUsed(c, g, preferred.Id)
+									break
+								}
+							}
 						} else if model.IsChannelEnabledForGroupModel(usingGroup, modelRequest.Model, preferred.Id) {
 							channel = preferred
 							selectGroup = usingGroup

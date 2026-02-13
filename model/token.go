@@ -328,6 +328,19 @@ func (token *Token) GetModelLimits() []string {
 	return strings.Split(token.ModelLimits, ",")
 }
 
+// GetGroups 获取令牌的分组列表
+func (token *Token) GetGroups() []string {
+	if token.Group == "" || token.Group == "auto" {
+		return []string{token.Group}
+	}
+	return strings.Split(token.Group, ",")
+}
+
+// IsMultiGroup 判断是否为多分组令牌
+func (token *Token) IsMultiGroup() bool {
+	return token.Group != "" && token.Group != "auto" && strings.Contains(token.Group, ",")
+}
+
 func (token *Token) GetModelLimitsMap() map[string]bool {
 	limits := token.GetModelLimits()
 	limitsMap := make(map[string]bool)

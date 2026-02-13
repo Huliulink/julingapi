@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -148,6 +149,52 @@ func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 			} else {
 				// Stay in current group, save current state
 				// 保持在当前分组，保存当前状态
+				common.SetContextKey(param.Ctx, constant.ContextKeyAutoGroupIndex, i)
+			}
+			break
+		}
+	} else if strings.Contains(param.TokenGroup, ",") {
+		// 多分组：按用户选择的分组顺序依次尝试，逻辑与 auto 类似
+		multiGroups := strings.Split(param.TokenGroup, ",")
+		for i := range multiGroups {
+			multiGroups[i] = strings.TrimSpace(multiGroups[i])
+		}
+
+		startGroupIndex := 0
+		crossGroupRetry := common.GetContextKeyBool(param.Ctx, constant.ContextKeyTokenCrossGroupRetry)
+
+		if lastGroupIndex, exists := common.GetContextKey(param.Ctx, constant.ContextKeyAutoGroupIndex); exists {
+			if idx, ok := lastGroupIndex.(int); ok {
+				startGroupIndex = idx
+			}
+		}
+
+		for i := startGroupIndex; i < len(multiGroups); i++ {
+			group := multiGroups[i]
+			priorityRetry := param.GetRetry()
+			if i > startGroupIndex {
+				priorityRetry = 0
+			}
+			logger.LogDebug(param.Ctx, "Multi-group selecting group: %s, priorityRetry: %d", group, priorityRetry)
+
+			channel, _ = model.GetRandomSatisfiedChannel(group, param.ModelName, priorityRetry)
+			if channel == nil {
+				logger.LogDebug(param.Ctx, "No available channel in group %s for model %s at priorityRetry %d, trying next group", group, param.ModelName, priorityRetry)
+				common.SetContextKey(param.Ctx, constant.ContextKeyAutoGroupIndex, i+1)
+				common.SetContextKey(param.Ctx, constant.ContextKeyAutoGroupRetryIndex, 0)
+				param.SetRetry(0)
+				continue
+			}
+			common.SetContextKey(param.Ctx, constant.ContextKeyAutoGroup, group)
+			selectGroup = group
+			logger.LogDebug(param.Ctx, "Multi-group selected group: %s", group)
+
+			if crossGroupRetry && priorityRetry >= common.RetryTimes {
+				logger.LogDebug(param.Ctx, "Current group %s retries exhausted, preparing switch to next group", group)
+				common.SetContextKey(param.Ctx, constant.ContextKeyAutoGroupIndex, i+1)
+				param.SetRetry(0)
+				param.ResetRetryNextTry()
+			} else {
 				common.SetContextKey(param.Ctx, constant.ContextKeyAutoGroupIndex, i)
 			}
 			break
