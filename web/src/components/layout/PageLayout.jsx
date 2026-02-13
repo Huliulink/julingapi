@@ -195,7 +195,7 @@ const PageLayout = () => {
             <App />
           </Content>
           {isConsoleRoute && (
-            <div style={{ textAlign: 'right', padding: '8px 16px', color: 'var(--semi-color-text-2)', fontSize: '12px' }}>
+            <div style={{ textAlign: 'center', padding: '8px 16px', color: 'var(--semi-color-text-2)', fontSize: '12px', ...(showSider ? { paddingRight: 'var(--sidebar-current-width)' } : {}) }}>
               Copyright © 2026 聚灵API.
             </div>
           )}
