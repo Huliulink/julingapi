@@ -58,7 +58,7 @@ const Home = () => {
                 <span className="price-inline"><span className="price-label">限时价</span><span className="price-accent">1元兑换1美刀额度</span><span className="price-chip">省87%</span></span>
               </p>
               <div className="button-group">
-                <a className="button-custom button-primary" href="/token">立即开始</a>
+                <a className="button-custom button-primary" href="/login">立即开始</a>
                 <a className="button-custom button-secondary" href="https://julingapi.apifox.cn/" target="_blank" rel="noreferrer">技术文档</a>
                 <a className="button-custom button-secondary" href="/pricing">模型定价</a>
                 <a className="button-custom button-secondary" href="/about">关于我们</a>
