@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.37.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.11
 	github.com/aws/aws-sdk-go-v2/service/bedrockruntime v1.33.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.75.3
 	github.com/aws/smithy-go v1.22.5
 	github.com/bytedance/gopkg v0.1.3
 	github.com/gin-contrib/cors v1.7.2

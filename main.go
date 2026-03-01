@@ -22,6 +22,7 @@ import (
 	"github.com/QuantumNous/new-api/router"
 	"github.com/QuantumNous/new-api/service"
 	_ "github.com/QuantumNous/new-api/setting/performance_setting"
+	_ "github.com/QuantumNous/new-api/setting/storage_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
@@ -110,6 +111,9 @@ func main() {
 
 	// Subscription quota reset task (daily/weekly/monthly/custom)
 	service.StartSubscriptionQuotaResetTask()
+
+	// R2 video auto cleanup task (hourly)
+	service.StartR2CleanupTask()
 
 	if common.IsMasterNode && constant.UpdateTask {
 		gopool.Go(func() {

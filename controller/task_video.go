@@ -15,6 +15,7 @@ import (
 	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/relay/channel"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 )
 
@@ -147,6 +148,15 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		}
 		if !(len(taskResult.Url) > 5 && taskResult.Url[:5] == "data:") {
 			task.FailReason = taskResult.Url
+		}
+
+		// R2 云存储转存：将视频 URL 转存到 R2，替换为自定义域名 URL
+		if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
+			r2Result := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
+			if r2Result.Success {
+				task.FailReason = r2Result.R2URL
+			}
+			// 转存失败则保留原始 URL，已在 service 层记录日志
 		}
 
 		// 如果返回了 total_tokens 并且配置了模型倍率(非固定价格),则重新计费

@@ -12,6 +12,7 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/storage_setting"
 
 	"github.com/gin-gonic/gin"
 )
@@ -58,6 +59,27 @@ func VideoProxy(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	// R2 URL → 302 redirect, zero server bandwidth
+	if task.FailReason != "" && service.IsR2URL(task.FailReason) {
+		c.Redirect(http.StatusFound, task.FailReason)
+		return
+	}
+
+	// Video expired: FailReason was cleared by R2 cleanup task
+	// Only check for R2 platforms - Sora/Gemini have empty FailReason normally
+	if task.FailReason == "" {
+		ch, chErr := model.CacheGetChannel(task.ChannelId)
+		if chErr == nil && storage_setting.GetPlatformPrefix(ch.Type) != "unknown" {
+			c.JSON(http.StatusGone, gin.H{
+				"error": gin.H{
+					"message": "视频已过期删除",
+					"type":    "video_expired",
+				},
+			})
+			return
+		}
 	}
 
 	channel, err := model.CacheGetChannel(task.ChannelId)
