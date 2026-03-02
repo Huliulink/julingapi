@@ -80,6 +80,30 @@ func IsVideoR2Enabled() bool {
 	return IsConfigured() && storageSetting.VideoR2Enable
 }
 
+// IsVideoR2EnabledForChannelType checks whether query-time takeover should be active
+// for a specific channel type.
+// Rule:
+// 1) global VideoR2Enable must be ON
+// 2) known video channel types additionally require their per-platform switch ON
+// 3) unknown channel types use global switch only (for OpenAI-compatible generic channels)
+func IsVideoR2EnabledForChannelType(channelType int) bool {
+	if !IsVideoR2Enabled() {
+		return false
+	}
+	switch channelType {
+	case constant.ChannelTypeAli,
+		constant.ChannelTypeKling,
+		constant.ChannelTypeJimeng,
+		constant.ChannelTypeVidu,
+		constant.ChannelTypeDoubaoVideo,
+		constant.ChannelTypeMiniMax,
+		constant.ChannelTypeXai:
+		return IsPlatformR2Enabled(channelType)
+	default:
+		return true
+	}
+}
+
 // GetVideoR2Prefix 获取通用视频转存的 R2 路径前缀
 func GetVideoR2Prefix() string {
 	if storageSetting.VideoR2Prefix != "" {

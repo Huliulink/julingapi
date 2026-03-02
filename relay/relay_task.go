@@ -2,6 +2,7 @@ package relay
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -19,8 +21,10 @@ import (
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	"github.com/QuantumNous/new-api/setting/storage_setting"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/singleflight"
 )
 
 /*
@@ -467,6 +471,48 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		}
 	}()
 
+	legacyVideoQuery := !strings.HasPrefix(c.Request.RequestURI, "/v1/videos/")
+	if legacyVideoQuery && relayR2TakeoverEnabledForTask(originTask) {
+		waitCtx, cancel := context.WithTimeout(c.Request.Context(), relayR2TakeoverWaitTimeout)
+		defer cancel()
+
+		if relayR2TakeoverInProgress(originTask) {
+			originTask, err = relayR2TakeoverWaitTask(waitCtx, originTask.TaskID)
+			if err != nil {
+				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer pending: %w", err), "r2_transfer_failed", http.StatusBadGateway)
+				return
+			}
+		}
+
+		if originTask.Status == model.TaskStatusSuccess && !relayR2TakeoverHasR2Result(originTask) {
+			originTask, err = relayR2TakeoverEnsureTask(waitCtx, originTask.TaskID)
+			if err != nil {
+				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: %w", err), "r2_transfer_failed", http.StatusBadGateway)
+				return
+			}
+		}
+
+		latestTask, latestExist, latestErr := model.GetByTaskId(userId, taskId)
+		if latestErr == nil && latestExist && latestTask != nil {
+			originTask = latestTask
+		}
+
+		if originTask.Status == model.TaskStatusSuccess && !relayR2TakeoverHasR2Result(originTask) {
+			taskResp = service.TaskErrorWrapperLocal(errors.New("r2 url not ready"), "r2_transfer_failed", http.StatusBadGateway)
+			return
+		}
+
+		safeTask := relayR2TakeoverSanitizeTask(originTask)
+		respBody, err = common.Marshal(dto.TaskResponse[any]{
+			Code: "success",
+			Data: TaskModel2Dto(safeTask),
+		})
+		if err != nil {
+			taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
+		}
+		return
+	}
+
 	if len(respBody) != 0 {
 		return
 	}
@@ -497,6 +543,264 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
 	}
 	return
+}
+
+const (
+	relayR2TakeoverWaitTimeout = 120 * time.Second
+	relayR2TakeoverPollDelay   = 500 * time.Millisecond
+)
+
+var relayR2TakeoverGroup singleflight.Group
+
+func relayR2TakeoverEnsureTask(ctx context.Context, taskID string) (*model.Task, error) {
+	workerCtx, cancel := context.WithTimeout(context.Background(), relayR2TakeoverWaitTimeout)
+	defer cancel()
+
+	ch := relayR2TakeoverGroup.DoChan(taskID, func() (interface{}, error) {
+		task, exist, err := model.GetByOnlyTaskId(taskID)
+		if err != nil {
+			return nil, err
+		}
+		if !exist || task == nil {
+			return nil, fmt.Errorf("task %s not found", taskID)
+		}
+
+		if relayR2TakeoverInProgress(task) {
+			task, err = relayR2TakeoverWaitTask(workerCtx, taskID)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if task.Status != model.TaskStatusSuccess {
+			return task, nil
+		}
+		if relayR2TakeoverHasR2Result(task) {
+			return task, nil
+		}
+		return relayR2TakeoverTransferTask(workerCtx, task)
+	})
+
+	select {
+	case result := <-ch:
+		if result.Err != nil {
+			return nil, result.Err
+		}
+		task, ok := result.Val.(*model.Task)
+		if !ok || task == nil {
+			return nil, fmt.Errorf("invalid transfer result for task %s", taskID)
+		}
+		return task, nil
+	case <-ctx.Done():
+		return nil, fmt.Errorf("wait r2 transfer timeout: %w", ctx.Err())
+	}
+}
+
+func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.Task, error) {
+	if task == nil {
+		return nil, errors.New("task is nil")
+	}
+
+	prefix := storage_setting.GetVideoR2Prefix()
+	mainR2URL := ""
+	dataChanged := false
+
+	var taskData map[string]interface{}
+	if len(task.Data) > 0 {
+		if err := common.Unmarshal(task.Data, &taskData); err != nil {
+			return nil, fmt.Errorf("parse task data failed: %w", err)
+		}
+	}
+	if taskData == nil {
+		taskData = map[string]interface{}{}
+	}
+
+	type fieldRule struct {
+		name      string
+		objectKey string
+		asMainURL bool
+	}
+	rules := []fieldRule{
+		{name: "video_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
+		{name: "output_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
+		{name: "image_url", objectKey: fmt.Sprintf("%s/%s_image.jpg", prefix, task.TaskID), asMainURL: true},
+		{name: "thumbnail_url", objectKey: fmt.Sprintf("%s/%s_thumb.jpg", prefix, task.TaskID), asMainURL: true},
+	}
+
+	for _, rule := range rules {
+		rawURL, ok := taskData[rule.name].(string)
+		if !ok || strings.TrimSpace(rawURL) == "" {
+			continue
+		}
+		if service.IsR2URL(rawURL) {
+			if mainR2URL == "" && rule.asMainURL {
+				mainR2URL = rawURL
+			}
+			continue
+		}
+		if strings.Contains(rawURL, "/v1/videos/") {
+			return nil, fmt.Errorf("field %s uses protected upstream URL and cannot be transferred directly", rule.name)
+		}
+		res := service.TransferFileToR2(ctx, rule.objectKey, rawURL)
+		if !res.Success {
+			return nil, fmt.Errorf("transfer %s failed: %w", rule.name, res.Error)
+		}
+		taskData[rule.name] = res.R2URL
+		dataChanged = true
+		if mainR2URL == "" && rule.asMainURL {
+			mainR2URL = res.R2URL
+		}
+	}
+
+	if task.FailReason != "" {
+		if service.IsR2URL(task.FailReason) {
+			if mainR2URL == "" {
+				mainR2URL = task.FailReason
+			}
+		} else {
+			if strings.Contains(task.FailReason, "/v1/videos/") {
+				return nil, errors.New("protected upstream content URL cannot be transferred directly")
+			}
+			mainKey := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
+			res := service.TransferFileToR2(ctx, mainKey, task.FailReason)
+			if !res.Success {
+				return nil, fmt.Errorf("transfer main video failed: %w", res.Error)
+			}
+			task.FailReason = res.R2URL
+			if mainR2URL == "" {
+				mainR2URL = res.R2URL
+			}
+		}
+	}
+
+	if task.FailReason == "" && mainR2URL != "" {
+		task.FailReason = mainR2URL
+	}
+	if task.FailReason == "" {
+		return nil, fmt.Errorf("no transferable media URL found for task %s", task.TaskID)
+	}
+
+	if dataChanged {
+		newData, err := common.Marshal(taskData)
+		if err != nil {
+			return nil, fmt.Errorf("marshal r2 task data failed: %w", err)
+		}
+		task.Data = newData
+	}
+
+	task.Status = model.TaskStatusSuccess
+	task.Progress = "100%"
+	if err := task.Update(); err != nil {
+		return nil, fmt.Errorf("save r2 task result failed: %w", err)
+	}
+	return task, nil
+}
+
+func relayR2TakeoverWaitTask(ctx context.Context, taskID string) (*model.Task, error) {
+	ticker := time.NewTicker(relayR2TakeoverPollDelay)
+	defer ticker.Stop()
+
+	for {
+		task, exist, err := model.GetByOnlyTaskId(taskID)
+		if err != nil {
+			return nil, err
+		}
+		if !exist || task == nil {
+			return nil, fmt.Errorf("task %s not found", taskID)
+		}
+		if !relayR2TakeoverInProgress(task) {
+			return task, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("wait transfer state timeout: %w", ctx.Err())
+		case <-ticker.C:
+		}
+	}
+}
+
+func relayR2TakeoverInProgress(task *model.Task) bool {
+	return task != nil && task.Status == model.TaskStatusInProgress && task.Progress == "95%"
+}
+
+func relayR2TakeoverHasR2Result(task *model.Task) bool {
+	return relayR2TakeoverPrimaryR2URL(task) != ""
+}
+
+func relayR2TakeoverPrimaryR2URL(task *model.Task) string {
+	if task == nil {
+		return ""
+	}
+	if service.IsR2URL(task.FailReason) {
+		return task.FailReason
+	}
+	if len(task.Data) == 0 {
+		return ""
+	}
+
+	var taskData map[string]interface{}
+	if err := common.Unmarshal(task.Data, &taskData); err != nil {
+		return ""
+	}
+	for _, key := range []string{"url", "video_url", "output_url", "image_url", "thumbnail_url"} {
+		v, ok := taskData[key].(string)
+		if ok && v != "" && service.IsR2URL(v) {
+			return v
+		}
+	}
+	return ""
+}
+
+func relayR2TakeoverEnabledForTask(task *model.Task) bool {
+	if task == nil {
+		return false
+	}
+	if !storage_setting.IsVideoR2Enabled() {
+		return false
+	}
+
+	channelModel, err := model.GetChannelById(task.ChannelId, true)
+	if err != nil || channelModel == nil {
+		// Fail-open to global switch if channel lookup fails.
+		return true
+	}
+	return storage_setting.IsVideoR2EnabledForChannelType(channelModel.Type)
+}
+
+func relayR2TakeoverSanitizeTask(task *model.Task) *model.Task {
+	if task == nil {
+		return nil
+	}
+	safe := *task
+	if !service.IsR2URL(safe.FailReason) {
+		safe.FailReason = ""
+	}
+	if len(safe.Data) == 0 {
+		return &safe
+	}
+
+	var taskData map[string]interface{}
+	if err := common.Unmarshal(safe.Data, &taskData); err != nil {
+		return &safe
+	}
+
+	changed := false
+	for _, key := range []string{"url", "video_url", "output_url", "image_url", "thumbnail_url"} {
+		v, ok := taskData[key].(string)
+		if !ok || strings.TrimSpace(v) == "" {
+			continue
+		}
+		if !service.IsR2URL(v) {
+			delete(taskData, key)
+			changed = true
+		}
+	}
+	if changed {
+		if b, err := common.Marshal(taskData); err == nil {
+			safe.Data = b
+		}
+	}
+	return &safe
 }
 
 func TaskModel2Dto(task *model.Task) *dto.TaskDto {
