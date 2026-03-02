@@ -87,6 +87,8 @@ export default function SettingsStorage(props) {
     'storage_setting.r2_bucket_name': '',
     'storage_setting.r2_custom_domain': '',
     'storage_setting.r2_auto_delete_days': 0,
+    'storage_setting.video_r2_enable': false,
+    'storage_setting.video_r2_prefix': 'video',
     'storage_setting.ali_r2_enable': false,
     'storage_setting.kling_r2_enable': false,
     'storage_setting.jimeng_r2_enable': false,
@@ -239,9 +241,6 @@ export default function SettingsStorage(props) {
               onChange={handleFieldChange('storage_setting.r2_custom_domain')}
             />
           </Col>
-        </Row>
-
-        <Row gutter={16}>
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.InputNumber
               field='storage_setting.r2_auto_delete_days'
@@ -250,6 +249,37 @@ export default function SettingsStorage(props) {
               min={0}
               initValue={inputs['storage_setting.r2_auto_delete_days']}
               onChange={handleFieldChange('storage_setting.r2_auto_delete_days')}
+            />
+          </Col>
+        </Row>
+
+        <Divider style={{ marginTop: 10, marginBottom: 10 }} />
+
+        <Typography.Title heading={6}>
+          {t('全局视频转存')}
+        </Typography.Title>
+        <Typography.Text type='tertiary' size='small'>
+          {t('开启后，所有渠道类型（包括 OpenAI 兼容渠道）的视频查询接口都会被接管，视频自动转存到 R2。关闭则完全透传，不影响任何逻辑。')}
+        </Typography.Text>
+
+        <Row gutter={16} style={{ marginTop: 10 }}>
+          <Col xs={12} sm={8} md={4} lg={4} xl={3}>
+            <Form.Switch
+              field='storage_setting.video_r2_enable'
+              label={t('启用全局视频转存')}
+              checkedText='|'
+              uncheckedText='〇'
+              initValue={inputs['storage_setting.video_r2_enable']}
+              onChange={handleFieldChange('storage_setting.video_r2_enable')}
+            />
+          </Col>
+          <Col xs={24} sm={16} md={8} lg={8} xl={6}>
+            <Form.Input
+              field='storage_setting.video_r2_prefix'
+              label={t('R2 路径前缀')}
+              placeholder='video'
+              initValue={inputs['storage_setting.video_r2_prefix']}
+              onChange={handleFieldChange('storage_setting.video_r2_prefix')}
             />
           </Col>
         </Row>

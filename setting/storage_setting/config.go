@@ -16,7 +16,12 @@ type StorageSetting struct {
 	R2CustomDomain    string `json:"r2_custom_domain"`
 	R2AutoDeleteDays  int    `json:"r2_auto_delete_days"`
 
-	// Per-platform R2 enable switches
+	// Global video R2 switch: intercepts GET /v1/videos/:id at query time,
+	// works for ALL channel types (OpenAI compatible, xAI, etc.)
+	VideoR2Enable bool   `json:"video_r2_enable"`
+	VideoR2Prefix string `json:"video_r2_prefix"` // e.g. "grok", "video" – default "video"
+
+	// Per-platform R2 enable switches (poller-based, for known channel types)
 	AliR2Enable    bool `json:"ali_r2_enable"`
 	KlingR2Enable  bool `json:"kling_r2_enable"`
 	JimengR2Enable bool `json:"jimeng_r2_enable"`
@@ -28,6 +33,7 @@ type StorageSetting struct {
 
 var storageSetting = StorageSetting{
 	R2AutoDeleteDays: 0, // 0 = permanent
+	VideoR2Prefix:    "video",
 }
 
 func init() {
@@ -68,7 +74,21 @@ func IsConfigured() bool {
 		storageSetting.R2CustomDomain != ""
 }
 
-// IsPlatformR2Enabled 检查指定平台是否启用 R2 转存
+// IsVideoR2Enabled 检查通用视频转存（查询时接管）是否启用
+// 与 channel type 无关，适用于所有渠道
+func IsVideoR2Enabled() bool {
+	return IsConfigured() && storageSetting.VideoR2Enable
+}
+
+// GetVideoR2Prefix 获取通用视频转存的 R2 路径前缀
+func GetVideoR2Prefix() string {
+	if storageSetting.VideoR2Prefix != "" {
+		return storageSetting.VideoR2Prefix
+	}
+	return "video"
+}
+
+// IsPlatformR2Enabled 检查指定平台是否启用 R2 转存（poller 方式，已知渠道类型）
 func IsPlatformR2Enabled(channelType int) bool {
 	if !IsConfigured() {
 		return false
