@@ -17,6 +17,7 @@ import (
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	"github.com/QuantumNous/new-api/setting/storage_setting"
 )
 
 func UpdateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, taskChannelM map[int][]string, taskM map[string]*model.Task) error {
@@ -150,13 +151,60 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			task.FailReason = taskResult.Url
 		}
 
-		// R2 云存储转存：将视频 URL 转存到 R2，替换为自定义域名 URL
-		if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
-			r2Result := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
-			if r2Result.Success {
-				task.FailReason = r2Result.R2URL
+		// R2 云存储转存：将视频和缩略图转存到 R2，替换 task.Data 中的 URL
+		if storage_setting.IsPlatformR2Enabled(channel.Type) {
+			platformPrefix := storage_setting.GetPlatformPrefix(channel.Type)
+			var taskData map[string]interface{}
+			if err := json.Unmarshal(task.Data, &taskData); err == nil {
+				dataChanged := false
+
+				// 转存 video_url
+				if videoURL, ok := taskData["video_url"].(string); ok && videoURL != "" && !service.IsR2URL(videoURL) {
+					videoKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
+					r2Result := service.TransferFileToR2(ctx, videoKey, videoURL)
+					if r2Result.Success {
+						taskData["video_url"] = r2Result.R2URL
+						task.FailReason = r2Result.R2URL
+						dataChanged = true
+					}
+				}
+
+				// 转存 thumbnail_url
+				if thumbURL, ok := taskData["thumbnail_url"].(string); ok && thumbURL != "" && !service.IsR2URL(thumbURL) {
+					thumbKey := fmt.Sprintf("%s/%s_thumb.jpg", platformPrefix, taskId)
+					r2Result := service.TransferFileToR2(ctx, thumbKey, thumbURL)
+					if r2Result.Success {
+						taskData["thumbnail_url"] = r2Result.R2URL
+						dataChanged = true
+					}
+				}
+
+				// 转存 output_url (部分上游使用此字段)
+				if outputURL, ok := taskData["output_url"].(string); ok && outputURL != "" && !service.IsR2URL(outputURL) {
+					outputKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
+					r2Result := service.TransferFileToR2(ctx, outputKey, outputURL)
+					if r2Result.Success {
+						taskData["output_url"] = r2Result.R2URL
+						if task.FailReason == "" {
+							task.FailReason = r2Result.R2URL
+						}
+						dataChanged = true
+					}
+				}
+
+				if dataChanged {
+					if newData, err := common.Marshal(taskData); err == nil {
+						task.Data = newData
+					}
+				}
 			}
-			// 转存失败则保留原始 URL，已在 service 层记录日志
+			// 如果 FailReason 还没设置（比如 URL 字段名不是以上几种），走原始逻辑
+			if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
+				r2Result := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
+				if r2Result.Success {
+					task.FailReason = r2Result.R2URL
+				}
+			}
 		}
 
 		// 如果返回了 total_tokens 并且配置了模型倍率(非固定价格),则重新计费

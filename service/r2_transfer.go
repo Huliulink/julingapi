@@ -94,6 +94,34 @@ func DeleteVideoFromR2(ctx context.Context, r2URL string) error {
 	return common.DeleteFromR2(ctx, objectKey)
 }
 
+// TransferFileToR2 downloads a file from originalURL and uploads to R2 with the given objectKey.
+// Unlike TransferVideoToR2, this does not check platform enable status — caller is responsible.
+func TransferFileToR2(ctx context.Context, objectKey string, originalURL string) R2TransferResult {
+	if !common.IsR2ClientReady() {
+		return R2TransferResult{Success: false, Error: fmt.Errorf("R2 client not ready")}
+	}
+	if originalURL == "" || strings.HasPrefix(originalURL, "data:") {
+		return R2TransferResult{Success: false, Error: fmt.Errorf("invalid URL")}
+	}
+
+	var lastErr error
+	for attempt := 1; attempt <= r2MaxRetries; attempt++ {
+		if attempt > 1 {
+			logger.LogWarn(ctx, fmt.Sprintf("R2 file transfer retry %d/%d for %s", attempt, r2MaxRetries, objectKey))
+			time.Sleep(r2RetryInterval)
+		}
+		err := downloadAndUpload(ctx, objectKey, originalURL)
+		if err == nil {
+			r2URL := common.GetR2PublicURL(objectKey)
+			logger.LogInfo(ctx, fmt.Sprintf("R2 file transfer success: %s -> %s", objectKey, r2URL))
+			return R2TransferResult{Success: true, R2URL: r2URL}
+		}
+		lastErr = err
+		logger.LogError(ctx, fmt.Sprintf("R2 file transfer attempt %d failed for %s: %v", attempt, objectKey, err))
+	}
+	return R2TransferResult{Success: false, Error: lastErr}
+}
+
 // IsR2URL checks if a URL is an R2 URL by matching the custom domain
 func IsR2URL(url string) bool {
 	cfg := common.GetR2Config()
