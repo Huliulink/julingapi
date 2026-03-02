@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
@@ -59,15 +60,27 @@ func GetVideoTaskStatus(c *gin.Context) {
 
 	switch task.Status {
 	case model.TaskStatusSuccess:
-		// R2 transfer completed — FailReason holds the R2 URL
-		if task.FailReason != "" && service.IsR2URL(task.FailReason) {
+		// FailReason holds the video URL (R2 URL after transfer, or upstream URL if transfer failed/disabled)
+		if task.FailReason != "" {
 			video.SetMetadata("url", task.FailReason)
+		}
+		// Also expose thumbnail_url and video_url from task.Data if present
+		var taskData map[string]interface{}
+		if task.Data != nil {
+			if err := common.Unmarshal(task.Data, &taskData); err == nil {
+				if v, ok := taskData["thumbnail_url"].(string); ok && v != "" {
+					video.SetMetadata("thumbnail_url", v)
+				}
+				if v, ok := taskData["video_url"].(string); ok && v != "" {
+					video.SetMetadata("video_url", v)
+				}
+			}
 		}
 	case model.TaskStatusInProgress:
 		// R2 transfer still in progress (progress == "95%") — hide upstream URL
 		video.SetMetadata("message", "视频正在转存中，请稍后重试")
 	case model.TaskStatusFailure:
-		// Generation failed
+		// Generation failed — error info is in task data
 	}
 
 	c.JSON(http.StatusOK, video)
