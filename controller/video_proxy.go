@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -17,18 +18,22 @@ import (
 	"github.com/QuantumNous/new-api/setting/storage_setting"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/singleflight"
 )
+
+const (
+	r2TransferWaitTimeout = 120 * time.Second
+	r2TransferPollDelay   = 500 * time.Millisecond
+)
+
+var videoTransferGroup singleflight.Group
 
 // GetVideoTaskStatus handles GET /v1/videos/:task_id
 //
-// Logic:
-//  1. If global VideoR2Enable is OFF → pure passthrough (RelayTask)
-//  2. If ON → serve from local DB:
-//     - Task not in DB → passthrough (RelayTask)
-//     - Task SUCCESS + FailReason is R2 URL → return R2 result immediately
-//     - Task SUCCESS + FailReason is upstream URL → start async R2 transfer, return "in_progress 95%"
-//     - Task in IN_PROGRESS with progress=95% (our transfer) → return "transferring"
-//     - Other statuses → return local task status as-is
+// When global VideoR2Enable is ON, query is intercepted by local task storage:
+// 1) return immediately if task already contains R2 URLs
+// 2) otherwise transfer to R2 in-query and wait for completion
+// 3) if transfer fails, return transfer error instead of upstream URL
 func GetVideoTaskStatus(c *gin.Context) {
 	taskID := c.Param("task_id")
 	if taskID == "" {
@@ -38,13 +43,11 @@ func GetVideoTaskStatus(c *gin.Context) {
 		return
 	}
 
-	// If global video R2 switch is OFF, passthrough entirely
 	if !storage_setting.IsVideoR2Enabled() {
 		RelayTask(c)
 		return
 	}
 
-	// Global switch ON — intercept and serve from local DB
 	task, exists, err := model.GetByOnlyTaskId(taskID)
 	if err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("GetVideoTaskStatus query error for %s: %s", taskID, err.Error()))
@@ -54,131 +57,320 @@ func GetVideoTaskStatus(c *gin.Context) {
 		return
 	}
 	if !exists || task == nil {
-		// Task not in our DB — relay to upstream unchanged
+		RelayTask(c)
+		return
+	}
+	if !isTaskQueryTakeoverEnabled(task) {
 		RelayTask(c)
 		return
 	}
 
-	video := task.ToOpenAIVideo()
+	waitCtx, cancel := context.WithTimeout(c.Request.Context(), r2TransferWaitTimeout)
+	defer cancel()
 
-	switch task.Status {
-	case model.TaskStatusSuccess:
-		if service.IsR2URL(task.FailReason) {
-			// Already in R2 — return R2 result with all URL fields
-			video.SetMetadata("url", task.FailReason)
-			if task.Data != nil {
-				var taskData map[string]interface{}
-				if err2 := common.Unmarshal(task.Data, &taskData); err2 == nil {
-					if v, ok := taskData["thumbnail_url"].(string); ok && v != "" {
-						video.SetMetadata("thumbnail_url", v)
-					}
-					if v, ok := taskData["video_url"].(string); ok && v != "" {
-						video.SetMetadata("video_url", v)
-					}
-				}
-			}
-		} else {
-			// SUCCESS but FailReason is still an upstream URL (or empty) — trigger R2 transfer
-			go globalTransferTaskToR2(task)
-			video.Status = dto.VideoStatusInProgress
-			video.Progress = 95
-			video.SetMetadata("message", "视频正在转存中，请稍后重试")
+	if isR2TransferInProgress(task) {
+		task, err = waitForR2TransferState(waitCtx, task.TaskID)
+		if err != nil {
+			respondR2TransferError(c, task, err)
+			return
 		}
-
-	case model.TaskStatusInProgress:
-		if task.Progress == "95%" {
-			// Our R2 transfer is in progress
-			video.SetMetadata("message", "视频正在转存中，请稍后重试")
-		}
-		// Otherwise just return the normal in_progress status from task
-
-	case model.TaskStatusFailure:
-		// Generation failed — error info is in task data, ToOpenAIVideo already handles it
-
-	default:
-		// queued, submitted, etc. — return as-is
 	}
 
+	if task.Status == model.TaskStatusSuccess && !taskHasR2Result(task) {
+		task, err = ensureTaskTransferredToR2(waitCtx, task.TaskID)
+		if err != nil {
+			respondR2TransferError(c, task, err)
+			return
+		}
+	}
+
+	video := buildVideoResponse(task, true)
+	if task.Status == model.TaskStatusInProgress && task.Progress == "95%" {
+		video.SetMetadata("message", "video transfer in progress")
+	}
 	c.JSON(http.StatusOK, video)
 }
 
-// globalTransferTaskToR2 performs R2 transfer for any channel type using the global prefix setting.
-// Called asynchronously from GetVideoTaskStatus when SUCCESS task has upstream URLs.
-func globalTransferTaskToR2(task *model.Task) {
-	ctx := context.Background()
+func ensureTaskTransferredToR2(ctx context.Context, taskID string) (*model.Task, error) {
+	workerCtx, cancel := context.WithTimeout(context.Background(), r2TransferWaitTimeout)
+	defer cancel()
 
-	// Mark in-progress (95%) and clear FailReason to hide upstream URL
-	savedFailReason := task.FailReason
-	task.Status = model.TaskStatusInProgress
-	task.Progress = "95%"
-	task.FailReason = ""
+	ch := videoTransferGroup.DoChan(taskID, func() (interface{}, error) {
+		task, exists, err := model.GetByOnlyTaskId(taskID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists || task == nil {
+			return nil, fmt.Errorf("task %s not found", taskID)
+		}
+
+		if isR2TransferInProgress(task) {
+			task, err = waitForR2TransferState(workerCtx, taskID)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if task.Status != model.TaskStatusSuccess {
+			return task, nil
+		}
+		if taskHasR2Result(task) {
+			return task, nil
+		}
+
+		return transferTaskToR2(workerCtx, task)
+	})
+
+	select {
+	case res := <-ch:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		task, ok := res.Val.(*model.Task)
+		if !ok || task == nil {
+			return nil, fmt.Errorf("invalid transfer result for task %s", taskID)
+		}
+		return task, nil
+	case <-ctx.Done():
+		return nil, fmt.Errorf("wait r2 transfer timeout: %w", ctx.Err())
+	}
+}
+
+func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error) {
+	if task == nil {
+		return nil, fmt.Errorf("task is nil")
+	}
+
+	prefix := storage_setting.GetVideoR2Prefix()
+	mainR2URL := ""
+	dataChanged := false
+
+	var taskData map[string]interface{}
+	if len(task.Data) > 0 {
+		if err := common.Unmarshal(task.Data, &taskData); err != nil {
+			return nil, fmt.Errorf("parse task data failed: %w", err)
+		}
+	}
+	if taskData == nil {
+		taskData = map[string]interface{}{}
+	}
+
+	type fieldRule struct {
+		name      string
+		fileName  string
+		asMainURL bool
+	}
+	rules := []fieldRule{
+		{name: "video_url", fileName: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
+		{name: "output_url", fileName: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
+		{name: "image_url", fileName: fmt.Sprintf("%s/%s_image.jpg", prefix, task.TaskID), asMainURL: true},
+		{name: "thumbnail_url", fileName: fmt.Sprintf("%s/%s_thumb.jpg", prefix, task.TaskID), asMainURL: true},
+	}
+
+	for _, rule := range rules {
+		rawURL, ok := taskData[rule.name].(string)
+		if !ok || strings.TrimSpace(rawURL) == "" {
+			continue
+		}
+		if service.IsR2URL(rawURL) {
+			if mainR2URL == "" && rule.asMainURL {
+				mainR2URL = rawURL
+			}
+			continue
+		}
+		if strings.Contains(rawURL, "/v1/videos/") {
+			return nil, fmt.Errorf("field %s uses protected upstream URL and cannot be transferred directly", rule.name)
+		}
+		res := service.TransferFileToR2(ctx, rule.fileName, rawURL)
+		if !res.Success {
+			return nil, fmt.Errorf("transfer %s failed: %w", rule.name, res.Error)
+		}
+		taskData[rule.name] = res.R2URL
+		dataChanged = true
+		if mainR2URL == "" && rule.asMainURL {
+			mainR2URL = res.R2URL
+		}
+	}
+
+	if task.FailReason != "" {
+		if service.IsR2URL(task.FailReason) {
+			if mainR2URL == "" {
+				mainR2URL = task.FailReason
+			}
+		} else {
+			if strings.Contains(task.FailReason, "/v1/videos/") {
+				return nil, fmt.Errorf("protected upstream content URL cannot be transferred directly")
+			}
+			fileName := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
+			res := service.TransferFileToR2(ctx, fileName, task.FailReason)
+			if !res.Success {
+				return nil, fmt.Errorf("transfer main video failed: %w", res.Error)
+			}
+			task.FailReason = res.R2URL
+			if mainR2URL == "" {
+				mainR2URL = res.R2URL
+			}
+		}
+	}
+
+	if task.FailReason == "" && mainR2URL != "" {
+		task.FailReason = mainR2URL
+	}
+	if task.FailReason == "" {
+		return nil, fmt.Errorf("no transferable media URL found for task %s", task.TaskID)
+	}
+
+	if dataChanged {
+		newData, err := common.Marshal(taskData)
+		if err != nil {
+			return nil, fmt.Errorf("marshal r2 task data failed: %w", err)
+		}
+		task.Data = newData
+	}
+
+	task.Status = model.TaskStatusSuccess
+	task.Progress = "100%"
 	if err := task.Update(); err != nil {
-		logger.LogWarn(ctx, "globalTransferTaskToR2 pre-save failed: "+err.Error())
+		return nil, fmt.Errorf("save r2 task result failed: %w", err)
+	}
+
+	logger.LogInfo(ctx, fmt.Sprintf("task %s query-transfer to R2 finished, url=%s", task.TaskID, task.FailReason))
+	return task, nil
+}
+
+func waitForR2TransferState(ctx context.Context, taskID string) (*model.Task, error) {
+	ticker := time.NewTicker(r2TransferPollDelay)
+	defer ticker.Stop()
+
+	for {
+		task, exists, err := model.GetByOnlyTaskId(taskID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists || task == nil {
+			return nil, fmt.Errorf("task %s not found", taskID)
+		}
+		if !isR2TransferInProgress(task) {
+			return task, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("wait transfer state timeout: %w", ctx.Err())
+		case <-ticker.C:
+		}
+	}
+}
+
+func isR2TransferInProgress(task *model.Task) bool {
+	return task != nil && task.Status == model.TaskStatusInProgress && task.Progress == "95%"
+}
+
+func taskHasR2Result(task *model.Task) bool {
+	return taskPrimaryR2URL(task) != ""
+}
+
+func taskPrimaryR2URL(task *model.Task) string {
+	if task == nil {
+		return ""
+	}
+	if service.IsR2URL(task.FailReason) {
+		return task.FailReason
+	}
+	if len(task.Data) == 0 {
+		return ""
+	}
+
+	var taskData map[string]interface{}
+	if err := common.Unmarshal(task.Data, &taskData); err != nil {
+		return ""
+	}
+
+	keys := []string{"url", "video_url", "output_url", "image_url", "thumbnail_url"}
+	for _, k := range keys {
+		v, ok := taskData[k].(string)
+		if ok && v != "" && service.IsR2URL(v) {
+			return v
+		}
+	}
+	return ""
+}
+
+func isTaskQueryTakeoverEnabled(task *model.Task) bool {
+	if task == nil {
+		return false
+	}
+	if !storage_setting.IsVideoR2Enabled() {
+		return false
+	}
+
+	channel, err := model.CacheGetChannel(task.ChannelId)
+	if err != nil || channel == nil {
+		// Fail-open to global switch if channel info lookup fails.
+		return true
+	}
+	return storage_setting.IsVideoR2EnabledForChannelType(channel.Type)
+}
+
+func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
+	video := task.ToOpenAIVideo()
+	if !onlyR2 {
+		return video
+	}
+
+	video.Metadata = nil
+	if service.IsR2URL(task.FailReason) {
+		video.SetMetadata("url", task.FailReason)
+	}
+
+	if len(task.Data) > 0 {
+		var taskData map[string]interface{}
+		if err := common.Unmarshal(task.Data, &taskData); err == nil {
+			keys := []string{"video_url", "output_url", "thumbnail_url", "image_url", "url"}
+			for _, k := range keys {
+				v, ok := taskData[k].(string)
+				if ok && v != "" && service.IsR2URL(v) {
+					video.SetMetadata(k, v)
+				}
+			}
+		}
+	}
+
+	if video.Metadata == nil {
+		video.Metadata = map[string]any{}
+	}
+
+	// Ensure metadata.url exists when we already have R2 media links.
+	if _, ok := video.Metadata["url"]; !ok {
+		for _, k := range []string{"video_url", "output_url", "image_url", "thumbnail_url"} {
+			if v, ok := video.Metadata[k].(string); ok && v != "" {
+				video.SetMetadata("url", v)
+				break
+			}
+		}
+	}
+
+	return video
+}
+
+func respondR2TransferError(c *gin.Context, task *model.Task, err error) {
+	if task == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"message": "task not found", "type": "server_error"},
+		})
 		return
 	}
 
-	// Restore for transfer logic
-	task.Status = model.TaskStatusSuccess
-	task.Progress = "100%"
-	task.FailReason = savedFailReason
-
-	prefix := storage_setting.GetVideoR2Prefix()
-
-	var taskData map[string]interface{}
-	dataChanged := false
-	if task.Data != nil {
-		if err := common.Unmarshal(task.Data, &taskData); err == nil {
-			// Transfer video_url
-			if videoURL, ok := taskData["video_url"].(string); ok && videoURL != "" && !service.IsR2URL(videoURL) {
-				key := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
-				if r := service.TransferFileToR2(ctx, key, videoURL); r.Success {
-					taskData["video_url"] = r.R2URL
-					task.FailReason = r.R2URL
-					dataChanged = true
-				}
-			}
-			// Transfer thumbnail_url
-			if thumbURL, ok := taskData["thumbnail_url"].(string); ok && thumbURL != "" && !service.IsR2URL(thumbURL) {
-				key := fmt.Sprintf("%s/%s_thumb.jpg", prefix, task.TaskID)
-				if r := service.TransferFileToR2(ctx, key, thumbURL); r.Success {
-					taskData["thumbnail_url"] = r.R2URL
-					dataChanged = true
-				}
-			}
-			// Transfer output_url
-			if outputURL, ok := taskData["output_url"].(string); ok && outputURL != "" && !service.IsR2URL(outputURL) {
-				key := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
-				if r := service.TransferFileToR2(ctx, key, outputURL); r.Success {
-					taskData["output_url"] = r.R2URL
-					if task.FailReason == "" {
-						task.FailReason = r.R2URL
-					}
-					dataChanged = true
-				}
-			}
-			if dataChanged {
-				if newData, err := common.Marshal(taskData); err == nil {
-					task.Data = newData
-				}
-			}
-		}
+	logger.LogWarn(c.Request.Context(), fmt.Sprintf("R2 transfer failed for task %s: %s", task.TaskID, err.Error()))
+	video := buildVideoResponse(task, true)
+	video.Status = dto.VideoStatusFailed
+	video.Progress = 100
+	video.Error = &dto.OpenAIVideoError{
+		Message: err.Error(),
+		Code:    "r2_transfer_failed",
 	}
-
-	// Fallback: FailReason itself (the main video URL) if still upstream
-	if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
-		key := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
-		if r := service.TransferFileToR2(ctx, key, task.FailReason); r.Success {
-			task.FailReason = r.R2URL
-		}
-	}
-
-	task.Status = model.TaskStatusSuccess
-	task.Progress = "100%"
-	if err := task.Update(); err != nil {
-		logger.LogWarn(ctx, "globalTransferTaskToR2 post-save failed: "+err.Error())
-	} else {
-		logger.LogInfo(ctx, fmt.Sprintf("globalTransferTaskToR2 complete for task %s, R2 URL: %s", task.TaskID, task.FailReason))
-	}
+	video.SetMetadata("message", err.Error())
+	c.JSON(http.StatusOK, video)
 }
 
 func VideoProxy(c *gin.Context) {
@@ -225,20 +417,66 @@ func VideoProxy(c *gin.Context) {
 		return
 	}
 
-	// R2 URL → 302 redirect, zero server bandwidth
-	if task.FailReason != "" && service.IsR2URL(task.FailReason) {
-		c.Redirect(http.StatusFound, task.FailReason)
+	// When query interception is enabled, /content must not expose upstream URL.
+	if isTaskQueryTakeoverEnabled(task) {
+		waitCtx, cancel := context.WithTimeout(c.Request.Context(), r2TransferWaitTimeout)
+		defer cancel()
+
+		if isR2TransferInProgress(task) {
+			task, err = waitForR2TransferState(waitCtx, task.TaskID)
+			if err != nil {
+				c.JSON(http.StatusBadGateway, gin.H{
+					"error": gin.H{
+						"message": fmt.Sprintf("R2 transfer pending: %s", err.Error()),
+						"type":    "server_error",
+					},
+				})
+				return
+			}
+		}
+
+		if !service.IsR2URL(task.FailReason) {
+			task, err = ensureTaskTransferredToR2(waitCtx, task.TaskID)
+			if err != nil {
+				c.JSON(http.StatusBadGateway, gin.H{
+					"error": gin.H{
+						"message": fmt.Sprintf("R2 transfer failed: %s", err.Error()),
+						"type":    "server_error",
+					},
+				})
+				return
+			}
+		}
+
+		r2URL := taskPrimaryR2URL(task)
+		if r2URL != "" {
+			c.Redirect(http.StatusFound, r2URL)
+			return
+		}
+
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error": gin.H{
+				"message": "R2 URL not ready for this task",
+				"type":    "server_error",
+			},
+		})
+		return
+	}
+
+	// R2 URL -> 302 redirect, zero server bandwidth
+	if r2URL := taskPrimaryR2URL(task); r2URL != "" {
+		c.Redirect(http.StatusFound, r2URL)
 		return
 	}
 
 	// Video expired: FailReason was cleared by R2 cleanup task
-	// Only check for R2 platforms - Sora/Gemini have empty FailReason normally
+	// Only check for R2 platforms - Sora/Gemini may have empty FailReason normally.
 	if task.FailReason == "" {
 		ch, chErr := model.CacheGetChannel(task.ChannelId)
 		if chErr == nil && storage_setting.GetPlatformPrefix(ch.Type) != "unknown" {
 			c.JSON(http.StatusGone, gin.H{
 				"error": gin.H{
-					"message": "视频已过期删除",
+					"message": "video expired",
 					"type":    "video_expired",
 				},
 			})
@@ -320,7 +558,6 @@ func VideoProxy(c *gin.Context) {
 		videoURL = fmt.Sprintf("%s/v1/videos/%s/content", baseURL, task.TaskID)
 		req.Header.Set("Authorization", "Bearer "+channel.Key)
 	default:
-		// Video URL is directly in task.FailReason
 		videoURL = task.FailReason
 	}
 
@@ -366,7 +603,7 @@ func VideoProxy(c *gin.Context) {
 		}
 	}
 
-	c.Writer.Header().Set("Cache-Control", "public, max-age=86400") // Cache for 24 hours
+	c.Writer.Header().Set("Cache-Control", "public, max-age=86400")
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {

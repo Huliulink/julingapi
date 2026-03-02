@@ -60,3 +60,21 @@
 - Phase 5 can be done after core flow works
 - Phase 7 can be done incrementally with Phase 6
 - Grok is the primary focus platform
+
+## Session Update (2026-03-03)
+
+- [x] Refactor `controller/video_proxy.go` query takeover flow from async-return-95% to sync-wait transfer flow.
+- [x] Add singleflight deduplication for query-triggered R2 transfer, keyed by `task_id`.
+- [x] Query-side behavior now:
+  - If R2 URLs already exist, return immediately.
+  - If not, block query and perform transfer in-request.
+  - If transfer fails, return transfer error (do not return upstream URL).
+- [x] `/v1/videos/:task_id/content` now follows global query takeover switch:
+  - With `VideoR2Enable=ON`, do not proxy upstream URL directly; transfer first, then redirect to R2.
+- [x] Extend query takeover to legacy endpoint `/v1/video/generations/:task_id` via `relay/relay_task.go`:
+  - With `VideoR2Enable=ON`, query waits for transfer and returns task data with R2 result.
+  - If transfer fails, returns `r2_transfer_failed` instead of upstream URL.
+- [x] Query takeover now respects "corresponding switch":
+  - Known video platforms require both global switch and per-platform switch.
+  - Unknown/OpenAI-compatible channel types use global switch only.
+  - Legacy query response sanitizes common upstream media URL fields when takeover is enabled.
