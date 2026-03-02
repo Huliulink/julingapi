@@ -20,7 +20,7 @@ func SetVideoRouter(router *gin.Engine) {
 	// docs: https://platform.openai.com/docs/api-reference/videos/create
 	{
 		videoV1Router.POST("/videos", controller.RelayTask)
-		videoV1Router.GET("/videos/:task_id", controller.RelayTask)
+		videoV1Router.GET("/videos/:task_id", controller.GetVideoTaskStatus)
 	}
 
 	klingV1Router := router.Group("/kling/v1")

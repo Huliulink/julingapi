@@ -9,7 +9,13 @@ import {
   Divider,
   Banner,
   Space,
+  Tag,
 } from '@douyinfe/semi-ui';
+import {
+  IconCheckCircleStroked,
+  IconCloseCircleStroked,
+  IconMinusCircleStroked,
+} from '@douyinfe/semi-icons';
 import {
   compareObjects,
   API,
@@ -19,11 +25,61 @@ import {
 } from '../../../helpers';
 import { useTranslation } from 'react-i18next';
 
+// Platform metadata: field key → { label, name }
+const PLATFORMS = [
+  { key: 'storage_setting.ali_r2_enable',    platform: 'ali',    label: '通义万相' },
+  { key: 'storage_setting.kling_r2_enable',  platform: 'kling',  label: '可灵' },
+  { key: 'storage_setting.jimeng_r2_enable', platform: 'jimeng', label: '即梦' },
+  { key: 'storage_setting.vidu_r2_enable',   platform: 'vidu',   label: 'Vidu' },
+  { key: 'storage_setting.doubao_r2_enable', platform: 'doubao', label: '豆包' },
+  { key: 'storage_setting.hailuo_r2_enable', platform: 'hailuo', label: '海螺' },
+  { key: 'storage_setting.grok_r2_enable',   platform: 'grok',   label: 'Grok' },
+];
+
+function PlatformFolderStatus({ platform, result }) {
+  const { t } = useTranslation();
+  if (!result) return null;
+
+  if (!result.enabled) {
+    return (
+      <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <IconMinusCircleStroked style={{ color: 'var(--semi-color-text-2)', fontSize: 13 }} />
+        <Typography.Text type='tertiary' size='small'>{t('未启用，跳过')}</Typography.Text>
+      </div>
+    );
+  }
+
+  if (result.folder_ok) {
+    return (
+      <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <IconCheckCircleStroked style={{ color: 'var(--semi-color-success)', fontSize: 13 }} />
+        <Typography.Text type='success' size='small'>
+          {t('文件夹已创建')}
+          {result.folder_key && (
+            <Tag size='small' color='green' style={{ marginLeft: 4 }}>
+              {result.folder_key}
+            </Tag>
+          )}
+        </Typography.Text>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 4, display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+      <IconCloseCircleStroked style={{ color: 'var(--semi-color-danger)', fontSize: 13, marginTop: 2 }} />
+      <Typography.Text type='danger' size='small'>
+        {t('文件夹创建失败')}{result.error ? `：${result.error}` : ''}
+      </Typography.Text>
+    </div>
+  );
+}
+
 export default function SettingsStorage(props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null); // null | { success, message, code }
+  const [testResult, setTestResult] = useState(null); // null | { success, message, code, platforms }
   const [inputs, setInputs] = useState({
     'storage_setting.r2_account_id': '',
     'storage_setting.r2_access_key_id': '',
@@ -53,13 +109,14 @@ export default function SettingsStorage(props) {
     setTestResult(null);
     try {
       const res = await API.get('/api/storage/test');
-      const { success, message, code } = res.data;
-      setTestResult({ success, message, code });
+      const { success, message, code, platforms } = res.data;
+      setTestResult({ success, message, code, platforms });
     } catch (e) {
       setTestResult({
         success: false,
         message: t('请求失败，请检查网络或服务器状态'),
         code: 'request_error',
+        platforms: null,
       });
     } finally {
       setTesting(false);
@@ -110,6 +167,8 @@ export default function SettingsStorage(props) {
       refForm.current.setValues(currentInputs);
     }
   }, [props.options]);
+
+  const platformResults = testResult?.platforms || null;
 
   return (
     <Spin spinning={loading}>
@@ -205,76 +264,24 @@ export default function SettingsStorage(props) {
         </Typography.Text>
 
         <Row gutter={16} style={{ marginTop: 10 }}>
-          <Col xs={12} sm={8} md={6} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.ali_r2_enable'
-              label={t('通义万相')}
-              checkedText='|'
-              uncheckedText='〇'
-              initValue={inputs['storage_setting.ali_r2_enable']}
-              onChange={handleFieldChange('storage_setting.ali_r2_enable')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={6} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.kling_r2_enable'
-              label={t('可灵')}
-              checkedText='|'
-              uncheckedText='〇'
-              initValue={inputs['storage_setting.kling_r2_enable']}
-              onChange={handleFieldChange('storage_setting.kling_r2_enable')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={6} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.jimeng_r2_enable'
-              label={t('即梦')}
-              checkedText='|'
-              uncheckedText='〇'
-              initValue={inputs['storage_setting.jimeng_r2_enable']}
-              onChange={handleFieldChange('storage_setting.jimeng_r2_enable')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={6} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.vidu_r2_enable'
-              label='Vidu'
-              checkedText='|'
-              uncheckedText='〇'
-              initValue={inputs['storage_setting.vidu_r2_enable']}
-              onChange={handleFieldChange('storage_setting.vidu_r2_enable')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={6} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.doubao_r2_enable'
-              label={t('豆包')}
-              checkedText='|'
-              uncheckedText='〇'
-              initValue={inputs['storage_setting.doubao_r2_enable']}
-              onChange={handleFieldChange('storage_setting.doubao_r2_enable')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={6} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.hailuo_r2_enable'
-              label={t('海螺')}
-              checkedText='|'
-              uncheckedText='〇'
-              initValue={inputs['storage_setting.hailuo_r2_enable']}
-              onChange={handleFieldChange('storage_setting.hailuo_r2_enable')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={6} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.grok_r2_enable'
-              label='Grok'
-              checkedText='|'
-              uncheckedText='〇'
-              initValue={inputs['storage_setting.grok_r2_enable']}
-              onChange={handleFieldChange('storage_setting.grok_r2_enable')}
-            />
-          </Col>
+          {PLATFORMS.map(({ key, platform, label }) => (
+            <Col key={key} xs={12} sm={8} md={6} lg={4} xl={3}>
+              <Form.Switch
+                field={key}
+                label={label}
+                checkedText='|'
+                uncheckedText='〇'
+                initValue={inputs[key]}
+                onChange={handleFieldChange(key)}
+              />
+              {platformResults && (
+                <PlatformFolderStatus
+                  platform={platform}
+                  result={platformResults[platform]}
+                />
+              )}
+            </Col>
+          ))}
         </Row>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />

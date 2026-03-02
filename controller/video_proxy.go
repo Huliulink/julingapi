@@ -17,6 +17,62 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetVideoTaskStatus handles GET /v1/videos/:task_id
+// For R2-enabled platforms: serves task status from local DB (never exposes upstream URLs).
+// While R2 transfer is in progress the task shows IN_PROGRESS/95%.
+// Once transferred, returns the R2 URL in metadata.url.
+// For non-R2 platforms: falls through to the normal upstream proxy.
+func GetVideoTaskStatus(c *gin.Context) {
+	taskID := c.Param("task_id")
+	if taskID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"message": "task_id is required", "type": "invalid_request_error"},
+		})
+		return
+	}
+
+	task, exists, err := model.GetByOnlyTaskId(taskID)
+	if err != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("GetVideoTaskStatus query error for %s: %s", taskID, err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"message": "Failed to query task", "type": "server_error"},
+		})
+		return
+	}
+	if !exists || task == nil {
+		// Task not found in local DB — relay to upstream
+		RelayTask(c)
+		return
+	}
+
+	ch, chErr := model.CacheGetChannel(task.ChannelId)
+	isR2Platform := chErr == nil && storage_setting.IsPlatformR2Enabled(ch.Type)
+
+	if !isR2Platform {
+		// Not an R2 platform — relay to upstream normally
+		RelayTask(c)
+		return
+	}
+
+	// R2 platform: always serve from local DB
+	video := task.ToOpenAIVideo()
+
+	switch task.Status {
+	case model.TaskStatusSuccess:
+		// R2 transfer completed — FailReason holds the R2 URL
+		if task.FailReason != "" && service.IsR2URL(task.FailReason) {
+			video.SetMetadata("url", task.FailReason)
+		}
+	case model.TaskStatusInProgress:
+		// R2 transfer still in progress (progress == "95%") — hide upstream URL
+		video.SetMetadata("message", "视频正在转存中，请稍后重试")
+	case model.TaskStatusFailure:
+		// Generation failed
+	}
+
+	c.JSON(http.StatusOK, video)
+}
+
 func VideoProxy(c *gin.Context) {
 	taskID := c.Param("task_id")
 	if taskID == "" {

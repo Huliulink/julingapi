@@ -12,6 +12,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// platformCheckResult holds the per-platform folder creation result
+type platformCheckResult struct {
+	Enabled   bool   `json:"enabled"`
+	FolderOK  bool   `json:"folder_ok"`
+	FolderKey string `json:"folder_key,omitempty"`
+	Error     string `json:"error,omitempty"`
+}
+
 // TestR2Connection tests the R2 storage configuration connectivity
 func TestR2Connection(c *gin.Context) {
 	cfg := storage_setting.GetStorageSetting()
@@ -64,7 +72,7 @@ func TestR2Connection(c *gin.Context) {
 	}
 
 	// Step 4: upload a timestamped test file to verify R2 read/write access
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	now := time.Now()
@@ -91,22 +99,65 @@ func TestR2Connection(c *gin.Context) {
 	// Step 5: test custom domain reachability (optional, non-blocking)
 	domainOK, domainMsg := testCustomDomain(cfg.R2CustomDomain)
 
+	// Step 6: for each enabled platform, create a folder marker file
+	platforms := checkPlatformFolders(ctx, cfg)
+
 	if !domainOK {
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": fmt.Sprintf("R2 存储桶连接正常，已创建测试文件：%s\n但自定义域名访问异常：%s\n请检查 Cloudflare R2 存储桶的自定义域名是否已正确绑定。", fileName, domainMsg),
-			"code":    "domain_unreachable",
-			"file":    fileURL,
+			"success":   true,
+			"message":   fmt.Sprintf("R2 存储桶连接正常，已创建测试文件：%s\n但自定义域名访问异常：%s\n请检查 Cloudflare R2 存储桶的自定义域名是否已正确绑定。", fileName, domainMsg),
+			"code":      "domain_unreachable",
+			"file":      fileURL,
+			"platforms": platforms,
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": fmt.Sprintf("连接测试成功！R2 存储桶可读写，自定义域名访问正常。\n已创建测试文件：%s", fileName),
-		"code":    "ok",
-		"file":    fileURL,
+		"success":   true,
+		"message":   fmt.Sprintf("连接测试成功！R2 存储桶可读写，自定义域名访问正常。\n已创建测试文件：%s", fileName),
+		"code":      "ok",
+		"file":      fileURL,
+		"platforms": platforms,
 	})
+}
+
+// checkPlatformFolders tries to create a folder marker in R2 for each enabled platform.
+// Returns a map of platform name → result.
+func checkPlatformFolders(ctx context.Context, cfg *storage_setting.StorageSetting) map[string]*platformCheckResult {
+	type entry struct {
+		name    string
+		prefix  string
+		enabled bool
+	}
+	platforms := []entry{
+		{"ali", "ali", cfg.AliR2Enable},
+		{"kling", "kling", cfg.KlingR2Enable},
+		{"jimeng", "jimeng", cfg.JimengR2Enable},
+		{"vidu", "vidu", cfg.ViduR2Enable},
+		{"doubao", "doubao", cfg.DoubaoR2Enable},
+		{"hailuo", "hailuo", cfg.HailuoR2Enable},
+		{"grok", "grok", cfg.GrokR2Enable},
+	}
+
+	results := make(map[string]*platformCheckResult, len(platforms))
+	for _, p := range platforms {
+		res := &platformCheckResult{Enabled: p.enabled}
+		if p.enabled {
+			key := fmt.Sprintf("%s/.r2_folder_init", p.prefix)
+			content := fmt.Sprintf("folder init for %s", p.name)
+			r := strings.NewReader(content)
+			if err := common.UploadToR2(ctx, key, r, int64(len(content)), "text/plain; charset=utf-8"); err != nil {
+				res.FolderOK = false
+				res.Error = diagnoseR2Error(err.Error())
+			} else {
+				res.FolderOK = true
+				res.FolderKey = key
+			}
+		}
+		results[p.name] = res
+	}
+	return results
 }
 
 // diagnoseR2Error translates AWS SDK errors to human-readable Chinese messages
