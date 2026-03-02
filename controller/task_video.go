@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -199,7 +200,8 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 				}
 			}
 			// 如果 FailReason 还没设置（比如 URL 字段名不是以上几种），走原始逻辑
-			if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
+			// 跳过需要鉴权的 proxy URL（如 /v1/videos/.../content），匿名下载会失败
+			if task.FailReason != "" && !service.IsR2URL(task.FailReason) && !strings.Contains(task.FailReason, "/v1/videos/") {
 				r2Result := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
 				if r2Result.Success {
 					task.FailReason = r2Result.R2URL
