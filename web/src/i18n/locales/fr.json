@@ -2741,6 +2741,8 @@
     "即梦": "Jimeng",
     "豆包": "Doubao",
     "海螺": "Hailuo",
-    "保存存储设置": "Enregistrer les paramètres de stockage"
+    "保存存储设置": "Enregistrer les paramètres de stockage",
+    "测试 R2 连接": "Tester la connexion R2",
+    "请求失败，请检查网络或服务器状态": "Échec de la requête, vérifiez le réseau ou le serveur"
   }
 }

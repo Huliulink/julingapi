@@ -3302,6 +3302,8 @@
     "即梦": "Jimeng",
     "豆包": "Doubao",
     "海螺": "Hailuo",
-    "保存存储设置": "Lưu cài đặt lưu trữ"
+    "保存存储设置": "Lưu cài đặt lưu trữ",
+    "测试 R2 连接": "Kiểm tra kết nối R2",
+    "请求失败，请检查网络或服务器状态": "Yêu cầu thất bại, vui lòng kiểm tra mạng hoặc máy chủ"
   }
 }

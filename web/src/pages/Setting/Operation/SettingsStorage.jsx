@@ -7,6 +7,8 @@ import {
   Spin,
   Typography,
   Divider,
+  Banner,
+  Space,
 } from '@douyinfe/semi-ui';
 import {
   compareObjects,
@@ -20,13 +22,14 @@ import { useTranslation } from 'react-i18next';
 export default function SettingsStorage(props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null); // null | { success, message, code }
   const [inputs, setInputs] = useState({
     'storage_setting.r2_account_id': '',
     'storage_setting.r2_access_key_id': '',
     'storage_setting.r2_secret_access_key': '',
     'storage_setting.r2_bucket_name': '',
     'storage_setting.r2_custom_domain': '',
-    'storage_setting.r2_path_prefix': '',
     'storage_setting.r2_auto_delete_days': 0,
     'storage_setting.ali_r2_enable': false,
     'storage_setting.kling_r2_enable': false,
@@ -43,6 +46,24 @@ export default function SettingsStorage(props) {
     return (value) => {
       setInputs((inputs) => ({ ...inputs, [fieldName]: value }));
     };
+  }
+
+  async function onTestConnection() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await API.get('/api/storage/test');
+      const { success, message, code } = res.data;
+      setTestResult({ success, message, code });
+    } catch (e) {
+      setTestResult({
+        success: false,
+        message: t('请求失败，请检查网络或服务器状态'),
+        code: 'request_error',
+      });
+    } finally {
+      setTesting(false);
+    }
   }
 
   function onSubmit() {
@@ -159,15 +180,6 @@ export default function SettingsStorage(props) {
               onChange={handleFieldChange('storage_setting.r2_custom_domain')}
             />
           </Col>
-          <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-            <Form.Input
-              field='storage_setting.r2_path_prefix'
-              label={t('存储路径前缀')}
-              placeholder={t('可选，如 videos')}
-              initValue={inputs['storage_setting.r2_path_prefix']}
-              onChange={handleFieldChange('storage_setting.r2_path_prefix')}
-            />
-          </Col>
         </Row>
 
         <Row gutter={16}>
@@ -267,9 +279,29 @@ export default function SettingsStorage(props) {
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
 
-        <Button size='default' onClick={onSubmit} loading={loading}>
-          {t('保存存储设置')}
-        </Button>
+        <Space>
+          <Button size='default' onClick={onSubmit} loading={loading}>
+            {t('保存存储设置')}
+          </Button>
+          <Button
+            size='default'
+            theme='light'
+            type='secondary'
+            onClick={onTestConnection}
+            loading={testing}
+          >
+            {t('测试 R2 连接')}
+          </Button>
+        </Space>
+
+        {testResult && (
+          <Banner
+            style={{ marginTop: 16 }}
+            type={testResult.success ? 'success' : 'danger'}
+            description={testResult.message}
+            closeIcon={null}
+          />
+        )}
       </Form>
     </Spin>
   );

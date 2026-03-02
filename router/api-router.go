@@ -188,6 +188,11 @@ func SetApiRouter(router *gin.Engine) {
 			performanceRoute.POST("/reset_stats", controller.ResetPerformanceStats)
 			performanceRoute.POST("/gc", controller.ForceGC)
 		}
+		storageRoute := apiRouter.Group("/storage")
+		storageRoute.Use(middleware.RootAuth())
+		{
+			storageRoute.GET("/test", controller.TestR2Connection)
+		}
 		ratioSyncRoute := apiRouter.Group("/ratio_sync")
 		ratioSyncRoute.Use(middleware.RootAuth())
 		{

@@ -10,7 +10,6 @@ const StorageSetting = () => {
     'storage_setting.r2_secret_access_key': '',
     'storage_setting.r2_bucket_name': '',
     'storage_setting.r2_custom_domain': '',
-    'storage_setting.r2_path_prefix': '',
     'storage_setting.r2_auto_delete_days': 0,
     'storage_setting.ali_r2_enable': false,
     'storage_setting.kling_r2_enable': false,

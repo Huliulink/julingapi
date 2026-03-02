@@ -88,14 +88,8 @@ func DeleteVideoFromR2(ctx context.Context, r2URL string) error {
 		return fmt.Errorf("URL does not match R2 domain")
 	}
 
-	// Extract object key from URL: https://domain/prefix/platform/taskID.mp4 -> platform/taskID.mp4
+	// Extract object key from URL: https://domain/platform/taskID.mp4 -> platform/taskID.mp4
 	objectKey := strings.TrimPrefix(r2URL, domain+"/")
-	if cfg.PathPrefix != "" {
-		// The objectKey already includes the path prefix from the URL,
-		// but UploadToR2/DeleteFromR2 add it automatically, so strip it here
-		prefix := strings.TrimRight(cfg.PathPrefix, "/") + "/"
-		objectKey = strings.TrimPrefix(objectKey, prefix)
-	}
 
 	return common.DeleteFromR2(ctx, objectKey)
 }

@@ -14,7 +14,6 @@ type StorageSetting struct {
 	R2SecretAccessKey string `json:"r2_secret_access_key"`
 	R2BucketName      string `json:"r2_bucket_name"`
 	R2CustomDomain    string `json:"r2_custom_domain"`
-	R2PathPrefix      string `json:"r2_path_prefix"`
 	R2AutoDeleteDays  int    `json:"r2_auto_delete_days"`
 
 	// Per-platform R2 enable switches
@@ -47,7 +46,6 @@ func syncToCommon() {
 		SecretAccessKey: storageSetting.R2SecretAccessKey,
 		BucketName:      storageSetting.R2BucketName,
 		CustomDomain:    storageSetting.R2CustomDomain,
-		PathPrefix:      storageSetting.R2PathPrefix,
 	})
 }
 

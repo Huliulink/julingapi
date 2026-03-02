@@ -21,7 +21,6 @@ type R2Config struct {
 	SecretAccessKey string
 	BucketName      string
 	CustomDomain    string // e.g. https://video.example.com
-	PathPrefix      string // optional prefix
 }
 
 var (
@@ -73,22 +72,15 @@ func UploadToR2(ctx context.Context, objectKey string, body io.Reader, contentLe
 	r2Mu.RLock()
 	client := r2Client
 	bucket := r2Config.BucketName
-	prefix := r2Config.PathPrefix
 	r2Mu.RUnlock()
 
 	if client == nil {
 		return fmt.Errorf("R2 client not initialized")
 	}
 
-	// Apply path prefix
-	fullKey := objectKey
-	if prefix != "" {
-		fullKey = strings.TrimRight(prefix, "/") + "/" + strings.TrimLeft(objectKey, "/")
-	}
-
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(bucket),
-		Key:    aws.String(fullKey),
+		Key:    aws.String(objectKey),
 		Body:   body,
 	}
 	if contentLength > 0 {
@@ -107,21 +99,15 @@ func DeleteFromR2(ctx context.Context, objectKey string) error {
 	r2Mu.RLock()
 	client := r2Client
 	bucket := r2Config.BucketName
-	prefix := r2Config.PathPrefix
 	r2Mu.RUnlock()
 
 	if client == nil {
 		return fmt.Errorf("R2 client not initialized")
 	}
 
-	fullKey := objectKey
-	if prefix != "" {
-		fullKey = strings.TrimRight(prefix, "/") + "/" + strings.TrimLeft(objectKey, "/")
-	}
-
 	_, err := client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(bucket),
-		Key:    aws.String(fullKey),
+		Key:    aws.String(objectKey),
 	})
 	return err
 }
@@ -130,16 +116,10 @@ func DeleteFromR2(ctx context.Context, objectKey string) error {
 func GetR2PublicURL(objectKey string) string {
 	r2Mu.RLock()
 	domain := r2Config.CustomDomain
-	prefix := r2Config.PathPrefix
 	r2Mu.RUnlock()
 
 	domain = strings.TrimRight(domain, "/")
-	fullKey := objectKey
-	if prefix != "" {
-		fullKey = strings.TrimRight(prefix, "/") + "/" + strings.TrimLeft(objectKey, "/")
-	}
-
-	return domain + "/" + strings.TrimLeft(fullKey, "/")
+	return domain + "/" + strings.TrimLeft(objectKey, "/")
 }
 
 // DownloadFromURL downloads content from a URL and returns the body, content length, and content type
