@@ -153,7 +153,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		}
 
 		// R2 云存储转存：将视频和缩略图转存到 R2，替换 task.Data 中的 URL
-		if storage_setting.IsPlatformR2Enabled(channel.Type) {
+		if storage_setting.IsVideoR2Enabled() {
 			// 转存开始前：先将状态置为 IN_PROGRESS/95%，清空 FailReason，
 			// 防止用户查询时看到上游裸链接
 			savedFailReason := task.FailReason
@@ -167,7 +167,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			task.Status = model.TaskStatusSuccess
 			task.Progress = "100%"
 			task.FailReason = savedFailReason
-			platformPrefix := storage_setting.GetPlatformPrefix(channel.Type)
+			platformPrefix := storage_setting.GetVideoR2Prefix()
 			var taskData map[string]interface{}
 			if err := json.Unmarshal(task.Data, &taskData); err == nil {
 				dataChanged := false

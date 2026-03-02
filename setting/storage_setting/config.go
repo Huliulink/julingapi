@@ -80,28 +80,13 @@ func IsVideoR2Enabled() bool {
 	return IsConfigured() && storageSetting.VideoR2Enable
 }
 
-// IsVideoR2EnabledForChannelType checks whether query-time takeover should be active
-// for a specific channel type.
-// Rule:
-// 1) global VideoR2Enable must be ON
-// 2) known video channel types additionally require their per-platform switch ON
-// 3) unknown channel types use global switch only (for OpenAI-compatible generic channels)
+// IsVideoR2EnabledForChannelType checks whether query-time takeover is active for
+// a specific channel type.
+// Current policy: global switch only.
+// channelType is kept for backward-compatible call sites.
 func IsVideoR2EnabledForChannelType(channelType int) bool {
-	if !IsVideoR2Enabled() {
-		return false
-	}
-	switch channelType {
-	case constant.ChannelTypeAli,
-		constant.ChannelTypeKling,
-		constant.ChannelTypeJimeng,
-		constant.ChannelTypeVidu,
-		constant.ChannelTypeDoubaoVideo,
-		constant.ChannelTypeMiniMax,
-		constant.ChannelTypeXai:
-		return IsPlatformR2Enabled(channelType)
-	default:
-		return true
-	}
+	_ = channelType
+	return IsVideoR2Enabled()
 }
 
 // GetVideoR2Prefix 获取通用视频转存的 R2 路径前缀
@@ -114,27 +99,8 @@ func GetVideoR2Prefix() string {
 
 // IsPlatformR2Enabled 检查指定平台是否启用 R2 转存（poller 方式，已知渠道类型）
 func IsPlatformR2Enabled(channelType int) bool {
-	if !IsConfigured() {
-		return false
-	}
-	switch channelType {
-	case constant.ChannelTypeAli:
-		return storageSetting.AliR2Enable
-	case constant.ChannelTypeKling:
-		return storageSetting.KlingR2Enable
-	case constant.ChannelTypeJimeng:
-		return storageSetting.JimengR2Enable
-	case constant.ChannelTypeVidu:
-		return storageSetting.ViduR2Enable
-	case constant.ChannelTypeDoubaoVideo:
-		return storageSetting.DoubaoR2Enable
-	case constant.ChannelTypeMiniMax: // hailuo-video
-		return storageSetting.HailuoR2Enable
-	case constant.ChannelTypeXai:
-		return storageSetting.GrokR2Enable
-	default:
-		return false
-	}
+	_ = channelType
+	return IsVideoR2Enabled()
 }
 
 // GetPlatformPrefix 获取平台对应的 R2 路径前缀

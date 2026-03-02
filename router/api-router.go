@@ -191,6 +191,8 @@ func SetApiRouter(router *gin.Engine) {
 		storageRoute := apiRouter.Group("/storage")
 		storageRoute.Use(middleware.RootAuth())
 		{
+			storageRoute.GET("/options", controller.GetStorageOptions)
+			storageRoute.PUT("/options", controller.UpdateStorageOption)
 			storageRoute.GET("/test", controller.TestR2Connection)
 		}
 		ratioSyncRoute := apiRouter.Group("/ratio_sync")

@@ -26,8 +26,9 @@ type R2TransferResult struct {
 // TransferVideoToR2 downloads a video from the original URL and uploads it to R2.
 // Returns the R2 public URL on success, or empty string with error on failure.
 func TransferVideoToR2(ctx context.Context, channelType int, taskID string, originalURL string) R2TransferResult {
-	if !storage_setting.IsPlatformR2Enabled(channelType) {
-		return R2TransferResult{Success: false, Error: fmt.Errorf("R2 not enabled for channel type %d", channelType)}
+	_ = channelType
+	if !storage_setting.IsVideoR2Enabled() {
+		return R2TransferResult{Success: false, Error: fmt.Errorf("global video R2 is not enabled")}
 	}
 
 	if !common.IsR2ClientReady() {
@@ -38,8 +39,7 @@ func TransferVideoToR2(ctx context.Context, channelType int, taskID string, orig
 		return R2TransferResult{Success: false, Error: fmt.Errorf("invalid video URL")}
 	}
 
-	platformPrefix := storage_setting.GetPlatformPrefix(channelType)
-	objectKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskID)
+	objectKey := fmt.Sprintf("%s/%s.mp4", storage_setting.GetVideoR2Prefix(), taskID)
 
 	var lastErr error
 	for attempt := 1; attempt <= r2MaxRetries; attempt++ {

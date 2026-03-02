@@ -78,3 +78,20 @@
   - Known video platforms require both global switch and per-platform switch.
   - Unknown/OpenAI-compatible channel types use global switch only.
   - Legacy query response sanitizes common upstream media URL fields when takeover is enabled.
+- [x] Policy changed to **global-only video transfer switch**:
+  - Query takeover no longer depends on per-platform toggles.
+  - Poller/path transfer now uses global switch + global prefix (`video` default).
+  - Settings UI simplified: removed per-platform transfer toggles.
+  - Non-transferable/protected upstream URLs now fall back to original behavior instead of hard failure.
+- [x] Added dedicated storage settings APIs to avoid direct dependency on `/api/option/`:
+  - `GET /api/storage/options`
+  - `PUT /api/storage/options`
+- [x] Fixed active frontend storage settings wrapper (`web/src/components/settings/StorageSetting.jsx`):
+  - Use `/api/storage/options` for load.
+  - Keep only global fields (`video_r2_enable`, `video_r2_prefix`) and correct boolean parsing.
+- [x] Fixed settings submit endpoint (`SettingsStorage.jsx`) to use `/api/storage/options`, ensuring toggle save is effective.
+- [x] Unified runtime platform checks fully to global switch (`IsPlatformR2Enabled` now follows global policy).
+- [x] Improved R2 takeover persistence:
+  - When media fields are transferred to R2, `FailReason` is now updated to main R2 URL even if original `FailReason` was non-R2.
+  - This keeps query redirect and auto-delete cleanup behavior consistent.
+- [x] `/v1/videos/:task_id` now prefers returning sanitized original task JSON payload with R2 links (when available), keeping response shape closer to upstream while hiding upstream URLs.

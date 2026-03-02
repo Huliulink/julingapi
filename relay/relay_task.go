@@ -497,12 +497,10 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			originTask = latestTask
 		}
 
-		if originTask.Status == model.TaskStatusSuccess && !relayR2TakeoverHasR2Result(originTask) {
-			taskResp = service.TaskErrorWrapperLocal(errors.New("r2 url not ready"), "r2_transfer_failed", http.StatusBadGateway)
-			return
+		safeTask := originTask
+		if relayR2TakeoverHasR2Result(originTask) {
+			safeTask = relayR2TakeoverSanitizeTask(originTask)
 		}
-
-		safeTask := relayR2TakeoverSanitizeTask(originTask)
 		respBody, err = common.Marshal(dto.TaskResponse[any]{
 			Code: "success",
 			Data: TaskModel2Dto(safeTask),
@@ -638,7 +636,7 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 			continue
 		}
 		if strings.Contains(rawURL, "/v1/videos/") {
-			return nil, fmt.Errorf("field %s uses protected upstream URL and cannot be transferred directly", rule.name)
+			continue
 		}
 		res := service.TransferFileToR2(ctx, rule.objectKey, rawURL)
 		if !res.Success {
@@ -658,25 +656,26 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 			}
 		} else {
 			if strings.Contains(task.FailReason, "/v1/videos/") {
-				return nil, errors.New("protected upstream content URL cannot be transferred directly")
-			}
-			mainKey := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
-			res := service.TransferFileToR2(ctx, mainKey, task.FailReason)
-			if !res.Success {
-				return nil, fmt.Errorf("transfer main video failed: %w", res.Error)
-			}
-			task.FailReason = res.R2URL
-			if mainR2URL == "" {
-				mainR2URL = res.R2URL
+				// keep original URL for fallback
+			} else {
+				mainKey := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
+				res := service.TransferFileToR2(ctx, mainKey, task.FailReason)
+				if !res.Success {
+					return nil, fmt.Errorf("transfer main video failed: %w", res.Error)
+				}
+				task.FailReason = res.R2URL
+				if mainR2URL == "" {
+					mainR2URL = res.R2URL
+				}
 			}
 		}
 	}
 
-	if task.FailReason == "" && mainR2URL != "" {
+	if mainR2URL != "" && !service.IsR2URL(task.FailReason) {
 		task.FailReason = mainR2URL
 	}
 	if task.FailReason == "" {
-		return nil, fmt.Errorf("no transferable media URL found for task %s", task.TaskID)
+		return task, nil
 	}
 
 	if dataChanged {
@@ -752,19 +751,8 @@ func relayR2TakeoverPrimaryR2URL(task *model.Task) string {
 }
 
 func relayR2TakeoverEnabledForTask(task *model.Task) bool {
-	if task == nil {
-		return false
-	}
-	if !storage_setting.IsVideoR2Enabled() {
-		return false
-	}
-
-	channelModel, err := model.GetChannelById(task.ChannelId, true)
-	if err != nil || channelModel == nil {
-		// Fail-open to global switch if channel lookup fails.
-		return true
-	}
-	return storage_setting.IsVideoR2EnabledForChannelType(channelModel.Type)
+	_ = task
+	return storage_setting.IsVideoR2Enabled()
 }
 
 func relayR2TakeoverSanitizeTask(task *model.Task) *model.Task {

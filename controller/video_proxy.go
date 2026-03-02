@@ -60,10 +60,6 @@ func GetVideoTaskStatus(c *gin.Context) {
 		RelayTask(c)
 		return
 	}
-	if !isTaskQueryTakeoverEnabled(task) {
-		RelayTask(c)
-		return
-	}
 
 	waitCtx, cancel := context.WithTimeout(c.Request.Context(), r2TransferWaitTimeout)
 	defer cancel()
@@ -82,6 +78,15 @@ func GetVideoTaskStatus(c *gin.Context) {
 			respondR2TransferError(c, task, err)
 			return
 		}
+		if !taskHasR2Result(task) {
+			RelayTask(c)
+			return
+		}
+	}
+
+	if rawPayload, ok := buildR2TaskDataPayload(task); ok {
+		c.Data(http.StatusOK, "application/json", rawPayload)
+		return
 	}
 
 	video := buildVideoResponse(task, true)
@@ -179,7 +184,7 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 			continue
 		}
 		if strings.Contains(rawURL, "/v1/videos/") {
-			return nil, fmt.Errorf("field %s uses protected upstream URL and cannot be transferred directly", rule.name)
+			continue
 		}
 		res := service.TransferFileToR2(ctx, rule.fileName, rawURL)
 		if !res.Success {
@@ -199,25 +204,26 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 			}
 		} else {
 			if strings.Contains(task.FailReason, "/v1/videos/") {
-				return nil, fmt.Errorf("protected upstream content URL cannot be transferred directly")
-			}
-			fileName := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
-			res := service.TransferFileToR2(ctx, fileName, task.FailReason)
-			if !res.Success {
-				return nil, fmt.Errorf("transfer main video failed: %w", res.Error)
-			}
-			task.FailReason = res.R2URL
-			if mainR2URL == "" {
-				mainR2URL = res.R2URL
+				// keep original URL for fallback
+			} else {
+				fileName := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
+				res := service.TransferFileToR2(ctx, fileName, task.FailReason)
+				if !res.Success {
+					return nil, fmt.Errorf("transfer main video failed: %w", res.Error)
+				}
+				task.FailReason = res.R2URL
+				if mainR2URL == "" {
+					mainR2URL = res.R2URL
+				}
 			}
 		}
 	}
 
-	if task.FailReason == "" && mainR2URL != "" {
+	if mainR2URL != "" && !service.IsR2URL(task.FailReason) {
 		task.FailReason = mainR2URL
 	}
 	if task.FailReason == "" {
-		return nil, fmt.Errorf("no transferable media URL found for task %s", task.TaskID)
+		return task, nil
 	}
 
 	if dataChanged {
@@ -296,20 +302,54 @@ func taskPrimaryR2URL(task *model.Task) string {
 	return ""
 }
 
-func isTaskQueryTakeoverEnabled(task *model.Task) bool {
-	if task == nil {
-		return false
-	}
-	if !storage_setting.IsVideoR2Enabled() {
-		return false
+func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
+	if task == nil || len(task.Data) == 0 {
+		return nil, false
 	}
 
-	channel, err := model.CacheGetChannel(task.ChannelId)
-	if err != nil || channel == nil {
-		// Fail-open to global switch if channel info lookup fails.
-		return true
+	var payload map[string]interface{}
+	if err := common.Unmarshal(task.Data, &payload); err != nil || payload == nil {
+		return nil, false
 	}
-	return storage_setting.IsVideoR2EnabledForChannelType(channel.Type)
+
+	urlKeys := []string{"url", "video_url", "output_url", "image_url", "thumbnail_url"}
+	hasR2URL := false
+	changed := false
+	for _, k := range urlKeys {
+		v, ok := payload[k].(string)
+		if !ok || strings.TrimSpace(v) == "" {
+			continue
+		}
+		if service.IsR2URL(v) {
+			hasR2URL = true
+			continue
+		}
+		delete(payload, k)
+		changed = true
+	}
+
+	if !hasR2URL {
+		r2URL := taskPrimaryR2URL(task)
+		if r2URL == "" {
+			return nil, false
+		}
+		payload["video_url"] = r2URL
+		hasR2URL = true
+		changed = true
+	}
+
+	if !hasR2URL {
+		return nil, false
+	}
+	if !changed {
+		return task.Data, true
+	}
+
+	b, err := common.Marshal(payload)
+	if err != nil {
+		return nil, false
+	}
+	return b, true
 }
 
 func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
@@ -418,7 +458,7 @@ func VideoProxy(c *gin.Context) {
 	}
 
 	// When query interception is enabled, /content must not expose upstream URL.
-	if isTaskQueryTakeoverEnabled(task) {
+	if storage_setting.IsVideoR2Enabled() {
 		waitCtx, cancel := context.WithTimeout(c.Request.Context(), r2TransferWaitTimeout)
 		defer cancel()
 
@@ -453,14 +493,7 @@ func VideoProxy(c *gin.Context) {
 			c.Redirect(http.StatusFound, r2URL)
 			return
 		}
-
-		c.JSON(http.StatusBadGateway, gin.H{
-			"error": gin.H{
-				"message": "R2 URL not ready for this task",
-				"type":    "server_error",
-			},
-		})
-		return
+		// Non-transferable case: fallback to original proxy logic below.
 	}
 
 	// R2 URL -> 302 redirect, zero server bandwidth

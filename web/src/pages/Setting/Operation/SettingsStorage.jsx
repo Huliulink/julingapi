@@ -1,108 +1,31 @@
-import React, { useEffect, useState, useRef } from 'react';
-import {
-  Button,
-  Col,
-  Form,
-  Row,
-  Spin,
-  Typography,
-  Divider,
-  Banner,
-  Space,
-  Tag,
-} from '@douyinfe/semi-ui';
-import {
-  IconCheckCircleStroked,
-  IconClose,
-  IconMinus,
-} from '@douyinfe/semi-icons';
-import {
-  compareObjects,
-  API,
-  showError,
-  showSuccess,
-  showWarning,
-} from '../../../helpers';
+import React, { useEffect, useRef, useState } from 'react';
+import { Banner, Button, Col, Divider, Form, Row, Space, Spin, Typography } from '@douyinfe/semi-ui';
+import { API, compareObjects, showError, showSuccess, showWarning } from '../../../helpers';
 import { useTranslation } from 'react-i18next';
 
-// Platform metadata: field key → { label, name }
-const PLATFORMS = [
-  { key: 'storage_setting.ali_r2_enable',    platform: 'ali',    label: '通义万相' },
-  { key: 'storage_setting.kling_r2_enable',  platform: 'kling',  label: '可灵' },
-  { key: 'storage_setting.jimeng_r2_enable', platform: 'jimeng', label: '即梦' },
-  { key: 'storage_setting.vidu_r2_enable',   platform: 'vidu',   label: 'Vidu' },
-  { key: 'storage_setting.doubao_r2_enable', platform: 'doubao', label: '豆包' },
-  { key: 'storage_setting.hailuo_r2_enable', platform: 'hailuo', label: '海螺' },
-  { key: 'storage_setting.grok_r2_enable',   platform: 'grok',   label: 'Grok' },
-];
-
-function PlatformFolderStatus({ platform, result }) {
-  const { t } = useTranslation();
-  if (!result) return null;
-
-  if (!result.enabled) {
-    return (
-      <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-        <IconMinus style={{ color: 'var(--semi-color-text-2)', fontSize: 13 }} />
-        <Typography.Text type='tertiary' size='small'>{t('未启用，跳过')}</Typography.Text>
-      </div>
-    );
-  }
-
-  if (result.folder_ok) {
-    return (
-      <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-        <IconCheckCircleStroked style={{ color: 'var(--semi-color-success)', fontSize: 13 }} />
-        <Typography.Text type='success' size='small'>
-          {t('文件夹已创建')}
-          {result.folder_key && (
-            <Tag size='small' color='green' style={{ marginLeft: 4 }}>
-              {result.folder_key}
-            </Tag>
-          )}
-        </Typography.Text>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ marginTop: 4, display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-      <IconClose style={{ color: 'var(--semi-color-danger)', fontSize: 13, marginTop: 2 }} />
-      <Typography.Text type='danger' size='small'>
-        {t('文件夹创建失败')}{result.error ? `：${result.error}` : ''}
-      </Typography.Text>
-    </div>
-  );
-}
+const STORAGE_DEFAULTS = {
+  'storage_setting.r2_account_id': '',
+  'storage_setting.r2_access_key_id': '',
+  'storage_setting.r2_secret_access_key': '',
+  'storage_setting.r2_bucket_name': '',
+  'storage_setting.r2_custom_domain': '',
+  'storage_setting.r2_auto_delete_days': 0,
+  'storage_setting.video_r2_enable': false,
+  'storage_setting.video_r2_prefix': 'video',
+};
 
 export default function SettingsStorage(props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null); // null | { success, message, code, platforms }
-  const [inputs, setInputs] = useState({
-    'storage_setting.r2_account_id': '',
-    'storage_setting.r2_access_key_id': '',
-    'storage_setting.r2_secret_access_key': '',
-    'storage_setting.r2_bucket_name': '',
-    'storage_setting.r2_custom_domain': '',
-    'storage_setting.r2_auto_delete_days': 0,
-    'storage_setting.video_r2_enable': false,
-    'storage_setting.video_r2_prefix': 'video',
-    'storage_setting.ali_r2_enable': false,
-    'storage_setting.kling_r2_enable': false,
-    'storage_setting.jimeng_r2_enable': false,
-    'storage_setting.vidu_r2_enable': false,
-    'storage_setting.doubao_r2_enable': false,
-    'storage_setting.hailuo_r2_enable': false,
-    'storage_setting.grok_r2_enable': false,
-  });
-  const refForm = useRef();
+  const [testResult, setTestResult] = useState(null);
+  const [inputs, setInputs] = useState(STORAGE_DEFAULTS);
   const [inputsRow, setInputsRow] = useState(inputs);
+  const refForm = useRef();
 
   function handleFieldChange(fieldName) {
     return (value) => {
-      setInputs((inputs) => ({ ...inputs, [fieldName]: value }));
+      setInputs((prev) => ({ ...prev, [fieldName]: value }));
     };
   }
 
@@ -111,14 +34,13 @@ export default function SettingsStorage(props) {
     setTestResult(null);
     try {
       const res = await API.get('/api/storage/test');
-      const { success, message, code, platforms } = res.data;
-      setTestResult({ success, message, code, platforms });
+      const { success, message, code } = res.data;
+      setTestResult({ success, message, code });
     } catch (e) {
       setTestResult({
         success: false,
-        message: t('请求失败，请检查网络或服务器状态'),
+        message: t('Connection test failed, please check network or server logs'),
         code: 'request_error',
-        platforms: null,
       });
     } finally {
       setTesting(false);
@@ -127,29 +49,28 @@ export default function SettingsStorage(props) {
 
   function onSubmit() {
     const updateArray = compareObjects(inputs, inputsRow);
-    if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
-    const requestQueue = updateArray.map((item) => {
-      let value = '';
-      if (typeof inputs[item.key] === 'boolean') {
-        value = String(inputs[item.key]);
-      } else {
-        value = String(inputs[item.key]);
-      }
-      return API.put('/api/option/', {
+    if (!updateArray.length) {
+      return showWarning(t('No configuration changes detected'));
+    }
+
+    const requestQueue = updateArray.map((item) =>
+      API.put('/api/storage/options', {
         key: item.key,
-        value,
-      });
-    });
+        value: String(inputs[item.key]),
+      }),
+    );
+
     setLoading(true);
     Promise.all(requestQueue)
       .then((res) => {
-        if (res.includes(undefined))
-          return showError(t('部分保存失败，请重试'));
-        showSuccess(t('保存成功'));
+        if (res.includes(undefined)) {
+          return showError(t('Failed to save settings'));
+        }
+        showSuccess(t('Settings saved'));
         props.refresh();
       })
       .catch(() => {
-        showError(t('保存失败，请重试'));
+        showError(t('Failed to save settings'));
       })
       .finally(() => {
         setLoading(false);
@@ -157,9 +78,9 @@ export default function SettingsStorage(props) {
   }
 
   useEffect(() => {
-    const currentInputs = {};
-    for (let key in props.options) {
-      if (Object.keys(inputs).includes(key)) {
+    const currentInputs = { ...STORAGE_DEFAULTS };
+    for (const key in STORAGE_DEFAULTS) {
+      if (Object.prototype.hasOwnProperty.call(props.options, key)) {
         currentInputs[key] = props.options[key];
       }
     }
@@ -170,33 +91,23 @@ export default function SettingsStorage(props) {
     }
   }, [props.options]);
 
-  const platformResults = testResult?.platforms || null;
-
   return (
     <Spin spinning={loading}>
-      <Form
-        getFormApi={(formAPI) => (refForm.current = formAPI)}
-        style={{ marginBottom: 15 }}
-      >
-        <Typography.Title heading={5}>
-          {t('R2 云存储设置')}
-        </Typography.Title>
+      <Form getFormApi={(formAPI) => (refForm.current = formAPI)} style={{ marginBottom: 15 }}>
+        <Typography.Title heading={5}>{t('R2 Storage Settings')}</Typography.Title>
         <Typography.Text type='tertiary' size='small'>
-          {t('R2 云存储设置说明')}
+          {t('When global video transfer is enabled, query APIs will prefer R2 links.')}
         </Typography.Text>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
-
-        <Typography.Title heading={6}>
-          {t('全局配置')}
-        </Typography.Title>
+        <Typography.Title heading={6}>{t('Global R2 Config')}</Typography.Title>
 
         <Row gutter={16}>
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_account_id'
               label='Account ID'
-              placeholder={t('输入 Cloudflare Account ID')}
+              placeholder='Cloudflare Account ID'
               initValue={inputs['storage_setting.r2_account_id']}
               onChange={handleFieldChange('storage_setting.r2_account_id')}
             />
@@ -205,7 +116,7 @@ export default function SettingsStorage(props) {
             <Form.Input
               field='storage_setting.r2_access_key_id'
               label='Access Key ID'
-              placeholder={t('输入 R2 Access Key ID')}
+              placeholder='R2 Access Key ID'
               initValue={inputs['storage_setting.r2_access_key_id']}
               onChange={handleFieldChange('storage_setting.r2_access_key_id')}
             />
@@ -215,7 +126,7 @@ export default function SettingsStorage(props) {
               field='storage_setting.r2_secret_access_key'
               label='Secret Access Key'
               mode='password'
-              placeholder={t('输入 R2 Secret Access Key')}
+              placeholder='R2 Secret Access Key'
               initValue={inputs['storage_setting.r2_secret_access_key']}
               onChange={handleFieldChange('storage_setting.r2_secret_access_key')}
             />
@@ -226,8 +137,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_bucket_name'
-              label={t('Bucket 名称')}
-              placeholder={t('输入 R2 Bucket 名称')}
+              label={t('Bucket Name')}
+              placeholder={t('Enter R2 bucket name')}
               initValue={inputs['storage_setting.r2_bucket_name']}
               onChange={handleFieldChange('storage_setting.r2_bucket_name')}
             />
@@ -235,8 +146,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_custom_domain'
-              label={t('自定义域名')}
-              placeholder='https://video.example.com'
+              label={t('Custom Domain')}
+              placeholder='https://cloudflare.cdn.smv.buzz'
               initValue={inputs['storage_setting.r2_custom_domain']}
               onChange={handleFieldChange('storage_setting.r2_custom_domain')}
             />
@@ -244,8 +155,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.InputNumber
               field='storage_setting.r2_auto_delete_days'
-              label={t('自动删除天数')}
-              placeholder={t('0 表示永久保存')}
+              label={t('Auto Delete Days')}
+              placeholder={t('0 means keep forever')}
               min={0}
               initValue={inputs['storage_setting.r2_auto_delete_days']}
               onChange={handleFieldChange('storage_setting.r2_auto_delete_days')}
@@ -254,21 +165,18 @@ export default function SettingsStorage(props) {
         </Row>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
-
-        <Typography.Title heading={6}>
-          {t('全局视频转存')}
-        </Typography.Title>
+        <Typography.Title heading={6}>{t('Global Video Transfer')}</Typography.Title>
         <Typography.Text type='tertiary' size='small'>
-          {t('开启后，所有渠道类型（包括 OpenAI 兼容渠道）的视频查询接口都会被接管，视频自动转存到 R2。关闭则完全透传，不影响任何逻辑。')}
+          {t('Enable one global switch. All transferable video/image links use unified R2 storage.')}
         </Typography.Text>
 
         <Row gutter={16} style={{ marginTop: 10 }}>
           <Col xs={12} sm={8} md={4} lg={4} xl={3}>
             <Form.Switch
               field='storage_setting.video_r2_enable'
-              label={t('启用全局视频转存')}
-              checkedText='|'
-              uncheckedText='〇'
+              label={t('Enable Global Video Transfer')}
+              checkedText='ON'
+              uncheckedText='OFF'
               initValue={inputs['storage_setting.video_r2_enable']}
               onChange={handleFieldChange('storage_setting.video_r2_enable')}
             />
@@ -276,7 +184,7 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={16} md={8} lg={8} xl={6}>
             <Form.Input
               field='storage_setting.video_r2_prefix'
-              label={t('R2 路径前缀')}
+              label={t('R2 Path Prefix')}
               placeholder='video'
               initValue={inputs['storage_setting.video_r2_prefix']}
               onChange={handleFieldChange('storage_setting.video_r2_prefix')}
@@ -285,49 +193,12 @@ export default function SettingsStorage(props) {
         </Row>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
-
-        <Typography.Title heading={6}>
-          {t('平台 R2 转存开关')}
-        </Typography.Title>
-        <Typography.Text type='tertiary' size='small'>
-          {t('平台 R2 转存开关说明')}
-        </Typography.Text>
-
-        <Row gutter={16} style={{ marginTop: 10 }}>
-          {PLATFORMS.map(({ key, platform, label }) => (
-            <Col key={key} xs={12} sm={8} md={6} lg={4} xl={3}>
-              <Form.Switch
-                field={key}
-                label={label}
-                checkedText='|'
-                uncheckedText='〇'
-                initValue={inputs[key]}
-                onChange={handleFieldChange(key)}
-              />
-              {platformResults && (
-                <PlatformFolderStatus
-                  platform={platform}
-                  result={platformResults[platform]}
-                />
-              )}
-            </Col>
-          ))}
-        </Row>
-
-        <Divider style={{ marginTop: 10, marginBottom: 10 }} />
-
         <Space>
           <Button size='default' onClick={onSubmit} loading={loading}>
-            {t('保存存储设置')}
+            {t('Save Settings')}
           </Button>
-          <Button
-            size='default'
-            theme='light'
-            type='secondary'
-            onClick={onTestConnection}
-            loading={testing}
-          >
-            {t('测试 R2 连接')}
+          <Button size='default' theme='light' type='secondary' onClick={onTestConnection} loading={testing}>
+            {t('Test R2 Connection')}
           </Button>
         </Space>
 

@@ -131,13 +131,7 @@ func checkPlatformFolders(ctx context.Context, cfg *storage_setting.StorageSetti
 		enabled bool
 	}
 	platforms := []entry{
-		{"ali", "ali", cfg.AliR2Enable},
-		{"kling", "kling", cfg.KlingR2Enable},
-		{"jimeng", "jimeng", cfg.JimengR2Enable},
-		{"vidu", "vidu", cfg.ViduR2Enable},
-		{"doubao", "doubao", cfg.DoubaoR2Enable},
-		{"hailuo", "hailuo", cfg.HailuoR2Enable},
-		{"grok", "grok", cfg.GrokR2Enable},
+		{"video", storage_setting.GetVideoR2Prefix(), storage_setting.IsVideoR2Enabled()},
 	}
 
 	results := make(map[string]*platformCheckResult, len(platforms))

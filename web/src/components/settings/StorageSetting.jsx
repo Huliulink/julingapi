@@ -3,33 +3,37 @@ import { Card, Spin } from '@douyinfe/semi-ui';
 import SettingsStorage from '../../pages/Setting/Operation/SettingsStorage';
 import { API, showError, toBoolean } from '../../helpers';
 
+const STORAGE_DEFAULTS = {
+  'storage_setting.r2_account_id': '',
+  'storage_setting.r2_access_key_id': '',
+  'storage_setting.r2_secret_access_key': '',
+  'storage_setting.r2_bucket_name': '',
+  'storage_setting.r2_custom_domain': '',
+  'storage_setting.r2_auto_delete_days': 0,
+  'storage_setting.video_r2_enable': false,
+  'storage_setting.video_r2_prefix': 'video',
+};
+
+const BOOLEAN_KEYS = new Set(['storage_setting.video_r2_enable']);
+
 const StorageSetting = () => {
-  let [inputs, setInputs] = useState({
-    'storage_setting.r2_account_id': '',
-    'storage_setting.r2_access_key_id': '',
-    'storage_setting.r2_secret_access_key': '',
-    'storage_setting.r2_bucket_name': '',
-    'storage_setting.r2_custom_domain': '',
-    'storage_setting.r2_auto_delete_days': 0,
-    'storage_setting.ali_r2_enable': false,
-    'storage_setting.kling_r2_enable': false,
-    'storage_setting.jimeng_r2_enable': false,
-    'storage_setting.vidu_r2_enable': false,
-    'storage_setting.doubao_r2_enable': false,
-    'storage_setting.hailuo_r2_enable': false,
-    'storage_setting.grok_r2_enable': false,
-  });
+  let [inputs, setInputs] = useState(STORAGE_DEFAULTS);
 
   let [loading, setLoading] = useState(false);
 
   const getOptions = async () => {
-    const res = await API.get('/api/option/');
+    const res = await API.get('/api/storage/options');
     const { success, message, data } = res.data;
     if (success) {
-      let newInputs = {};
+      let newInputs = { ...STORAGE_DEFAULTS };
       data.forEach((item) => {
-        if (typeof inputs[item.key] === 'boolean') {
+        if (!(item.key in STORAGE_DEFAULTS)) {
+          return;
+        }
+        if (BOOLEAN_KEYS.has(item.key)) {
           newInputs[item.key] = toBoolean(item.value);
+        } else if (item.key === 'storage_setting.r2_auto_delete_days') {
+          newInputs[item.key] = Number(item.value) || 0;
         } else {
           newInputs[item.key] = item.value;
         }
