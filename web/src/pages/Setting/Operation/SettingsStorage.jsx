@@ -13,8 +13,8 @@ import {
 } from '@douyinfe/semi-ui';
 import {
   IconCheckCircleStroked,
-  IconCloseCircleStroked,
-  IconMinusCircleStroked,
+  IconClose,
+  IconMinus,
 } from '@douyinfe/semi-icons';
 import {
   compareObjects,
@@ -43,7 +43,7 @@ function PlatformFolderStatus({ platform, result }) {
   if (!result.enabled) {
     return (
       <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-        <IconMinusCircleStroked style={{ color: 'var(--semi-color-text-2)', fontSize: 13 }} />
+        <IconMinus style={{ color: 'var(--semi-color-text-2)', fontSize: 13 }} />
         <Typography.Text type='tertiary' size='small'>{t('未启用，跳过')}</Typography.Text>
       </div>
     );
@@ -67,7 +67,7 @@ function PlatformFolderStatus({ platform, result }) {
 
   return (
     <div style={{ marginTop: 4, display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-      <IconCloseCircleStroked style={{ color: 'var(--semi-color-danger)', fontSize: 13, marginTop: 2 }} />
+      <IconClose style={{ color: 'var(--semi-color-danger)', fontSize: 13, marginTop: 2 }} />
       <Typography.Text type='danger' size='small'>
         {t('文件夹创建失败')}{result.error ? `：${result.error}` : ''}
       </Typography.Text>
