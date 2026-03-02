@@ -63,12 +63,17 @@ func TestR2Connection(c *gin.Context) {
 		return
 	}
 
-	// Step 4: upload a tiny probe file to verify R2 read/write access
+	// Step 4: upload a timestamped test file to verify R2 read/write access
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	testContent := strings.NewReader("ok")
-	err := common.UploadToR2(ctx, "r2-connection-test-probe.txt", testContent, 2, "text/plain")
+	now := time.Now()
+	timeStr := now.Format("2006-01-02 15:04:05")
+	fileName := fmt.Sprintf("R2连接测试_%s.txt", now.Format("2006-01-02_15-04-05"))
+	fileContent := fmt.Sprintf("已连接到R2 %s", timeStr)
+
+	testContent := strings.NewReader(fileContent)
+	err := common.UploadToR2(ctx, fileName, testContent, int64(len(fileContent)), "text/plain; charset=utf-8")
 	if err != nil {
 		errMsg := err.Error()
 		humanMsg := diagnoseR2Error(errMsg)
@@ -81,8 +86,7 @@ func TestR2Connection(c *gin.Context) {
 		return
 	}
 
-	// Clean up test file
-	_ = common.DeleteFromR2(ctx, "r2-connection-test-probe.txt")
+	fileURL := common.GetR2PublicURL(fileName)
 
 	// Step 5: test custom domain reachability (optional, non-blocking)
 	domainOK, domainMsg := testCustomDomain(cfg.R2CustomDomain)
@@ -90,16 +94,18 @@ func TestR2Connection(c *gin.Context) {
 	if !domainOK {
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
-			"message": fmt.Sprintf("R2 存储桶连接正常，但自定义域名访问异常：%s\n请检查 Cloudflare R2 存储桶的自定义域名是否已正确绑定。", domainMsg),
+			"message": fmt.Sprintf("R2 存储桶连接正常，已创建测试文件：%s\n但自定义域名访问异常：%s\n请检查 Cloudflare R2 存储桶的自定义域名是否已正确绑定。", fileName, domainMsg),
 			"code":    "domain_unreachable",
+			"file":    fileURL,
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "连接测试成功！R2 存储桶可读写，自定义域名访问正常。",
+		"message": fmt.Sprintf("连接测试成功！R2 存储桶可读写，自定义域名访问正常。\n已创建测试文件：%s", fileName),
 		"code":    "ok",
+		"file":    fileURL,
 	})
 }
 
