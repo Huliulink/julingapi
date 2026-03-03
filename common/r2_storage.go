@@ -151,7 +151,7 @@ func ListR2Objects(ctx context.Context, prefix string, maxKeys int32, continuati
 	}
 
 	nextToken := ""
-	if output.IsTruncated && output.NextContinuationToken != nil {
+	if aws.ToBool(output.IsTruncated) && output.NextContinuationToken != nil {
 		nextToken = *output.NextContinuationToken
 	}
 	return items, nextToken, nil
