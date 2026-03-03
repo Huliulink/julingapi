@@ -30,6 +30,7 @@ type responseTask struct {
 	CompletedAt int64  `json:"completed_at,omitempty"`
 	OutputURL   string `json:"output_url,omitempty"`
 	VideoURL    string `json:"video_url,omitempty"`
+	ImageURL    string `json:"image_url,omitempty"`
 	Error       *struct {
 		Message string `json:"message"`
 		Code    string `json:"code"`
@@ -155,6 +156,9 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Url = resTask.OutputURL
 		if taskResult.Url == "" {
 			taskResult.Url = resTask.VideoURL
+		}
+		if taskResult.Url == "" {
+			taskResult.Url = resTask.ImageURL
 		}
 	case "failed", "cancelled":
 		taskResult.Status = model.TaskStatusFailure

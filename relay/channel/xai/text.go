@@ -2,16 +2,19 @@ package xai
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
+	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/channel/openai"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/storage_setting"
 	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
@@ -95,6 +98,7 @@ func xAIHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response
 		xaiResponse.Usage.CompletionTokens = xaiResponse.Usage.TotalTokens - xaiResponse.Usage.PromptTokens
 		xaiResponse.Usage.CompletionTokenDetails.TextTokens = xaiResponse.Usage.CompletionTokens - xaiResponse.Usage.CompletionTokenDetails.ReasoningTokens
 	}
+	rewriteVideoModelImageURLsToR2(c, info, &xaiResponse)
 
 	// new body
 	encodeJson, err := common.Marshal(xaiResponse)
@@ -105,4 +109,68 @@ func xAIHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response
 	service.IOCopyBytesGracefully(c, resp, encodeJson)
 
 	return xaiResponse.Usage, nil
+}
+
+func rewriteVideoModelImageURLsToR2(c *gin.Context, info *relaycommon.RelayInfo, xaiResponse *ChatCompletionResponse) {
+	if c == nil || xaiResponse == nil {
+		return
+	}
+	if !storage_setting.IsVideoR2Enabled() {
+		return
+	}
+
+	modelName := strings.ToLower(strings.TrimSpace(xaiResponse.Model))
+	if modelName == "" && info != nil {
+		modelName = strings.ToLower(strings.TrimSpace(info.UpstreamModelName))
+	}
+	// Only apply to video models for now. Generic image-transfer is planned separately.
+	if !strings.Contains(modelName, "video") {
+		return
+	}
+
+	requestID := c.GetString(common.RequestIdKey)
+	if requestID == "" {
+		requestID = common.GetTimeString()
+	}
+	prefix := storage_setting.GetVideoR2Prefix()
+
+	for choiceIdx := range xaiResponse.Choices {
+		parsed := xaiResponse.Choices[choiceIdx].Message.ParseContent()
+		if len(parsed) == 0 {
+			continue
+		}
+
+		changed := false
+		imageIdx := 0
+		for partIdx := range parsed {
+			if parsed[partIdx].Type != dto.ContentTypeImageURL {
+				continue
+			}
+			imageMedia := parsed[partIdx].GetImageMedia()
+			if imageMedia == nil {
+				continue
+			}
+
+			rawURL := strings.TrimSpace(imageMedia.Url)
+			if rawURL == "" || strings.HasPrefix(rawURL, "data:") || service.IsR2URL(rawURL) {
+				continue
+			}
+
+			imageIdx++
+			objectKey := fmt.Sprintf("%s/chat/%s_%d_%d.jpg", prefix, requestID, choiceIdx, imageIdx)
+			r2Result := service.TransferFileToR2(c.Request.Context(), objectKey, rawURL)
+			if !r2Result.Success {
+				logger.LogWarn(c.Request.Context(), fmt.Sprintf("xAI video image transfer failed for model %s: %v", xaiResponse.Model, r2Result.Error))
+				continue
+			}
+
+			imageMedia.Url = r2Result.R2URL
+			parsed[partIdx].ImageUrl = imageMedia
+			changed = true
+		}
+
+		if changed {
+			xaiResponse.Choices[choiceIdx].Message.SetMediaContent(parsed)
+		}
+	}
 }

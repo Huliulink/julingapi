@@ -194,22 +194,34 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 				}
 
 				// 转存 output_url (部分上游使用此字段)
-				if outputURL, ok := taskData["output_url"].(string); ok && outputURL != "" && !service.IsR2URL(outputURL) {
-					outputKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
-					r2Result := service.TransferFileToR2(ctx, outputKey, outputURL)
-					if r2Result.Success {
-						taskData["output_url"] = r2Result.R2URL
-						if task.FailReason == "" {
-							task.FailReason = r2Result.R2URL
+					if outputURL, ok := taskData["output_url"].(string); ok && outputURL != "" && !service.IsR2URL(outputURL) {
+						outputKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
+						r2Result := service.TransferFileToR2(ctx, outputKey, outputURL)
+						if r2Result.Success {
+							taskData["output_url"] = r2Result.R2URL
+							if task.FailReason == "" {
+								task.FailReason = r2Result.R2URL
+							}
+							dataChanged = true
 						}
-						dataChanged = true
 					}
-				}
 
-				if dataChanged {
-					if newData, err := common.Marshal(taskData); err == nil {
-						task.Data = newData
+					if imageURL, ok := taskData["image_url"].(string); ok && imageURL != "" && !service.IsR2URL(imageURL) {
+						imageKey := fmt.Sprintf("%s/%s_image.jpg", platformPrefix, taskId)
+						r2Result := service.TransferFileToR2(ctx, imageKey, imageURL)
+						if r2Result.Success {
+							taskData["image_url"] = r2Result.R2URL
+							if task.FailReason == "" {
+								task.FailReason = r2Result.R2URL
+							}
+							dataChanged = true
+						}
 					}
+
+					if dataChanged {
+						if newData, err := common.Marshal(taskData); err == nil {
+							task.Data = newData
+						}
 				}
 			}
 			// 如果 FailReason 还没设置（比如 URL 字段名不是以上几种），走原始逻辑
