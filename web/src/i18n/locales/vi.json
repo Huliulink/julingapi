@@ -3304,6 +3304,8 @@
     "海螺": "Hailuo",
     "保存存储设置": "Lưu cài đặt lưu trữ",
     "测试 R2 连接": "Kiểm tra kết nối R2",
-    "请求失败，请检查网络或服务器状态": "Yêu cầu thất bại, vui lòng kiểm tra mạng hoặc máy chủ"
+    "请求失败，请检查网络或服务器状态": "Yêu cầu thất bại, vui lòng kiểm tra mạng hoặc máy chủ",
+    "操练场转发开关": "Công tắc chuyển tiếp Playground",
+    "操练场转发开关说明": "Khi bật, các yêu cầu Playground được chuyển tiếp theo đường dẫn /v1 để đồng bộ với hành vi API tiêu chuẩn."
   }
 }

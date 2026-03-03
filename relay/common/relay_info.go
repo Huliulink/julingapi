@@ -12,6 +12,7 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/setting/model_setting"
+	"github.com/QuantumNous/new-api/setting/storage_setting"
 	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
@@ -473,8 +474,10 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 
 	if strings.HasPrefix(c.Request.URL.Path, "/pg") {
 		info.IsPlayground = true
-		info.RequestURLPath = strings.TrimPrefix(info.RequestURLPath, "/pg")
-		info.RequestURLPath = "/v1" + info.RequestURLPath
+		if storage_setting.IsPlaygroundForwardEnabled() {
+			info.RequestURLPath = strings.TrimPrefix(info.RequestURLPath, "/pg")
+			info.RequestURLPath = "/v1" + info.RequestURLPath
+		}
 	}
 
 	userSetting, ok := common.GetContextKeyType[dto.UserSetting](c, constant.ContextKeyUserSetting)

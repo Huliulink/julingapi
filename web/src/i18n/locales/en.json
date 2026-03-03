@@ -2869,6 +2869,8 @@
     "海螺": "Hailuo",
     "保存存储设置": "Save Storage Settings",
     "测试 R2 连接": "Test R2 Connection",
-    "请求失败，请检查网络或服务器状态": "Request failed, please check network or server status"
+    "请求失败，请检查网络或服务器状态": "Request failed, please check network or server status",
+    "操练场转发开关": "Playground Forwarding",
+    "操练场转发开关说明": "When enabled, Playground requests are forwarded with /v1 paths to align with standard API behavior."
   }
 }

@@ -13,9 +13,13 @@ const STORAGE_DEFAULTS = {
   'storage_setting.r2_auto_delete_days': 0,
   'storage_setting.video_r2_enable': false,
   'storage_setting.video_r2_prefix': 'video',
+  'storage_setting.playground_forward_enable': true,
 };
 
-const BOOLEAN_KEYS = new Set(['storage_setting.video_r2_enable']);
+const BOOLEAN_KEYS = new Set([
+  'storage_setting.video_r2_enable',
+  'storage_setting.playground_forward_enable',
+]);
 
 const StorageSetting = () => {
   const { t } = useTranslation();

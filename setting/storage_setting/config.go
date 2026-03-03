@@ -20,6 +20,8 @@ type StorageSetting struct {
 	// works for ALL channel types (OpenAI compatible, xAI, etc.)
 	VideoR2Enable bool   `json:"video_r2_enable"`
 	VideoR2Prefix string `json:"video_r2_prefix"` // e.g. "grok", "video" – default "video"
+	// Playground forward switch: when enabled, /pg requests are rewritten to /v1 paths.
+	PlaygroundForwardEnable bool `json:"playground_forward_enable"`
 
 	// Per-platform R2 enable switches (poller-based, for known channel types)
 	AliR2Enable    bool `json:"ali_r2_enable"`
@@ -32,8 +34,9 @@ type StorageSetting struct {
 }
 
 var storageSetting = StorageSetting{
-	R2AutoDeleteDays: 0, // 0 = permanent
-	VideoR2Prefix:    "video",
+	R2AutoDeleteDays:       0, // 0 = permanent
+	VideoR2Prefix:          "video",
+	PlaygroundForwardEnable: true,
 }
 
 func init() {
@@ -101,6 +104,11 @@ func GetVideoR2Prefix() string {
 func IsPlatformR2Enabled(channelType int) bool {
 	_ = channelType
 	return IsVideoR2Enabled()
+}
+
+// IsPlaygroundForwardEnabled checks whether /pg requests should be rewritten to /v1 paths.
+func IsPlaygroundForwardEnabled() bool {
+	return storageSetting.PlaygroundForwardEnable
 }
 
 // GetPlatformPrefix 获取平台对应的 R2 路径前缀

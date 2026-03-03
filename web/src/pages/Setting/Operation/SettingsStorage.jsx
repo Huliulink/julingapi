@@ -12,6 +12,7 @@ const STORAGE_DEFAULTS = {
   'storage_setting.r2_auto_delete_days': 0,
   'storage_setting.video_r2_enable': false,
   'storage_setting.video_r2_prefix': 'video',
+  'storage_setting.playground_forward_enable': true,
 };
 
 export default function SettingsStorage(props) {
@@ -163,7 +164,6 @@ export default function SettingsStorage(props) {
             />
           </Col>
         </Row>
-
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
         <Typography.Title heading={6}>{t('平台 R2 转存开关')}</Typography.Title>
         <Typography.Text type='tertiary' size='small'>
@@ -181,6 +181,16 @@ export default function SettingsStorage(props) {
               onChange={handleFieldChange('storage_setting.video_r2_enable')}
             />
           </Col>
+          <Col xs={12} sm={8} md={4} lg={4} xl={3}>
+            <Form.Switch
+              field='storage_setting.playground_forward_enable'
+              label={t('\u64cd\u7ec3\u573a\u8f6c\u53d1\u5f00\u5173')}
+              checkedText='ON'
+              uncheckedText='OFF'
+              initValue={inputs['storage_setting.playground_forward_enable']}
+              onChange={handleFieldChange('storage_setting.playground_forward_enable')}
+            />
+          </Col>
           <Col xs={24} sm={16} md={8} lg={8} xl={6}>
             <Form.Input
               field='storage_setting.video_r2_prefix'
@@ -191,6 +201,9 @@ export default function SettingsStorage(props) {
             />
           </Col>
         </Row>
+        <Typography.Text type='tertiary' size='small'>
+          {t('\u64cd\u7ec3\u573a\u8f6c\u53d1\u5f00\u5173\u8bf4\u660e')}
+        </Typography.Text>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
         <Space>
