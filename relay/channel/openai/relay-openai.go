@@ -12,6 +12,7 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/channel/openrouter"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
 
@@ -590,7 +591,7 @@ func OpenaiHandlerWithUsage(c *gin.Context, info *relaycommon.RelayInfo, resp *h
 		return nil, types.NewOpenAIError(err, types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
 	}
 
-	if info != nil && (info.RelayMode == constant.RelayModeImagesGenerations || info.RelayMode == constant.RelayModeImagesEdits) {
+	if info != nil && (info.RelayMode == relayconstant.RelayModeImagesGenerations || info.RelayMode == relayconstant.RelayModeImagesEdits) {
 		rewrittenBody, rewriteResult, rewriteErr := service.RewriteImageResponseURLsToR2(c.Request.Context(), c.GetString(common.RequestIdKey), responseBody)
 		if rewriteErr != nil {
 			logger.LogWarn(c.Request.Context(), fmt.Sprintf("image response rewrite error: %v", rewriteErr))
@@ -606,7 +607,7 @@ func OpenaiHandlerWithUsage(c *gin.Context, info *relaycommon.RelayInfo, resp *h
 			}
 		}
 	}
-	if info != nil && info.RelayMode != constant.RelayModeImagesGenerations && info.RelayMode != constant.RelayModeImagesEdits {
+	if info != nil && info.RelayMode != relayconstant.RelayModeImagesGenerations && info.RelayMode != relayconstant.RelayModeImagesEdits {
 		var simpleResponse dto.OpenAITextResponse
 		if err := common.Unmarshal(responseBody, &simpleResponse); err == nil && len(simpleResponse.Choices) > 0 {
 			responseModel := strings.TrimSpace(simpleResponse.Model)
