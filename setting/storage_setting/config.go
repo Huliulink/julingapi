@@ -14,7 +14,9 @@ type StorageSetting struct {
 	R2SecretAccessKey string `json:"r2_secret_access_key"`
 	R2BucketName      string `json:"r2_bucket_name"`
 	R2CustomDomain    string `json:"r2_custom_domain"`
-	R2AutoDeleteDays  int    `json:"r2_auto_delete_days"`
+	// Auto-delete days for video-class transferred objects under video prefix.
+	// 0 means keep permanently.
+	R2AutoDeleteDays int `json:"r2_auto_delete_days"`
 
 	// Image R2 settings
 	ImageR2Enable         bool   `json:"image_r2_enable"`

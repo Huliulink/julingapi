@@ -22,14 +22,14 @@ var (
 )
 
 const (
-	r2CleanupInterval  = 1 * time.Hour
-	r2CleanupBatchSize = 100
-	r2CleanupImageBatchSize = 200
+	r2CleanupInterval    = 1 * time.Hour
+	r2CleanupBatchSize   = 100
+	r2CleanupObjectBatch = 200
 )
 
 var r2CleanupURLKeys = []string{"url", "video_url", "output_url", "image_url", "thumbnail_url"}
 
-// StartR2CleanupTask starts the background R2 video cleanup task
+// StartR2CleanupTask starts the background R2 cleanup task
 func StartR2CleanupTask() {
 	r2CleanupOnce.Do(func() {
 		if !common.IsMasterNode {
@@ -71,6 +71,7 @@ func runR2CleanupOnce() {
 
 	if cfg.R2AutoDeleteDays > 0 {
 		cleanupExpiredTaskMedia(ctx, cfg, domain)
+		cleanupExpiredVideoObjects(ctx, cfg.R2AutoDeleteDays)
 	}
 
 	if storage_setting.IsImageR2Enabled() && storage_setting.GetImageR2AutoDeleteDays() > 0 {
@@ -148,16 +149,36 @@ func cleanupExpiredImageObjects(ctx context.Context) {
 	if prefix == "" {
 		prefix = "images"
 	}
+	cleanupExpiredObjectsByPrefix(ctx, prefix, days, "image")
+}
+
+func cleanupExpiredVideoObjects(ctx context.Context, days int) {
+	if days <= 0 {
+		return
+	}
+
+	prefix := strings.Trim(storage_setting.GetVideoR2Prefix(), "/")
+	if prefix == "" {
+		prefix = "video"
+	}
+	cleanupExpiredObjectsByPrefix(ctx, prefix, days, "video")
+}
+
+func cleanupExpiredObjectsByPrefix(ctx context.Context, prefix string, days int, category string) {
+	prefix = strings.Trim(prefix, "/")
+	if prefix == "" {
+		return
+	}
+
 	cutoff := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
 	scanPrefix := prefix + "/"
-
 	deleted := 0
 	scanned := 0
 	continuation := ""
-	for deleted < r2CleanupImageBatchSize {
+	for deleted < r2CleanupObjectBatch {
 		items, nextToken, err := common.ListR2Objects(ctx, scanPrefix, 200, continuation)
 		if err != nil {
-			logger.LogError(ctx, fmt.Sprintf("R2 image cleanup list failed: prefix=%s err=%v", scanPrefix, err))
+			logger.LogError(ctx, fmt.Sprintf("R2 %s cleanup list failed: prefix=%s err=%v", category, scanPrefix, err))
 			break
 		}
 		if len(items) == 0 {
@@ -177,11 +198,11 @@ func cleanupExpiredImageObjects(ctx context.Context) {
 				continue
 			}
 			if err := common.DeleteFromR2(ctx, key); err != nil {
-				logger.LogError(ctx, fmt.Sprintf("R2 image cleanup delete failed: key=%s err=%v", key, err))
+				logger.LogError(ctx, fmt.Sprintf("R2 %s cleanup delete failed: key=%s err=%v", category, key, err))
 				continue
 			}
 			deleted++
-			if deleted >= r2CleanupImageBatchSize {
+			if deleted >= r2CleanupObjectBatch {
 				break
 			}
 		}
@@ -193,7 +214,7 @@ func cleanupExpiredImageObjects(ctx context.Context) {
 	}
 
 	if scanned > 0 || deleted > 0 {
-		logger.LogInfo(ctx, fmt.Sprintf("R2 image cleanup: prefix=%s scanned=%d deleted=%d cutoff_days=%d", scanPrefix, scanned, deleted, days))
+		logger.LogInfo(ctx, fmt.Sprintf("R2 %s cleanup: prefix=%s scanned=%d deleted=%d cutoff_days=%d", category, scanPrefix, scanned, deleted, days))
 	}
 }
 

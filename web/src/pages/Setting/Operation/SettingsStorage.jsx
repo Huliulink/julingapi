@@ -43,7 +43,7 @@ export default function SettingsStorage(props) {
     } catch (e) {
       setTestResult({
         success: false,
-        message: t('请求失败，请检查网络或服务器状态'),
+        message: t('连接测试请求失败，请稍后重试'),
         code: 'request_error',
       });
     } finally {
@@ -54,7 +54,7 @@ export default function SettingsStorage(props) {
   function onSubmit() {
     const updateArray = compareObjects(inputs, inputsRow);
     if (!updateArray.length) {
-      return showWarning(t('你似乎并没有修改什么'));
+      return showWarning(t('没有检测到需要保存的变更'));
     }
 
     const requestQueue = updateArray.map((item) =>
@@ -68,13 +68,13 @@ export default function SettingsStorage(props) {
     Promise.all(requestQueue)
       .then((res) => {
         if (res.includes(undefined)) {
-          return showError(t('设置保存失败'));
+          return showError(t('保存配置失败'));
         }
-        showSuccess(t('设置已保存'));
+        showSuccess(t('保存配置成功'));
         props.refresh();
       })
       .catch(() => {
-        showError(t('设置保存失败'));
+        showError(t('保存配置失败'));
       })
       .finally(() => {
         setLoading(false);
@@ -100,7 +100,7 @@ export default function SettingsStorage(props) {
       <Form getFormApi={(formAPI) => (refForm.current = formAPI)} style={{ marginBottom: 15 }}>
         <Typography.Title heading={5}>{t('R2 云存储设置')}</Typography.Title>
         <Typography.Text type='tertiary' size='small'>
-          {t('R2 云存储设置说明')}
+          {t('配置 Cloudflare R2 连接信息，并按视频类与图片类分别控制转存行为。')}
         </Typography.Text>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
@@ -110,8 +110,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_account_id'
-              label={t('输入 Cloudflare Account ID')}
-              placeholder={t('输入 Cloudflare Account ID')}
+              label={t('Cloudflare Account ID')}
+              placeholder={t('请输入 Cloudflare Account ID')}
               initValue={inputs['storage_setting.r2_account_id']}
               onChange={handleFieldChange('storage_setting.r2_account_id')}
             />
@@ -119,8 +119,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_access_key_id'
-              label={t('输入 R2 Access Key ID')}
-              placeholder={t('输入 R2 Access Key ID')}
+              label={t('R2 Access Key ID')}
+              placeholder={t('请输入 R2 Access Key ID')}
               initValue={inputs['storage_setting.r2_access_key_id']}
               onChange={handleFieldChange('storage_setting.r2_access_key_id')}
             />
@@ -128,9 +128,9 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_secret_access_key'
-              label={t('输入 R2 Secret Access Key')}
+              label={t('R2 Secret Access Key')}
               mode='password'
-              placeholder={t('输入 R2 Secret Access Key')}
+              placeholder={t('请输入 R2 Secret Access Key')}
               initValue={inputs['storage_setting.r2_secret_access_key']}
               onChange={handleFieldChange('storage_setting.r2_secret_access_key')}
             />
@@ -142,7 +142,7 @@ export default function SettingsStorage(props) {
             <Form.Input
               field='storage_setting.r2_bucket_name'
               label={t('Bucket 名称')}
-              placeholder={t('输入 R2 Bucket 名称')}
+              placeholder={t('请输入 R2 Bucket 名称')}
               initValue={inputs['storage_setting.r2_bucket_name']}
               onChange={handleFieldChange('storage_setting.r2_bucket_name')}
             />
@@ -159,88 +159,122 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.InputNumber
               field='storage_setting.r2_auto_delete_days'
-              label={t('自动删除天数')}
-              placeholder={t('0 表示永久保存')}
+              label={t('视频类自动删除天数')}
+              placeholder={t('0 表示永久保留')}
               min={0}
               initValue={inputs['storage_setting.r2_auto_delete_days']}
               onChange={handleFieldChange('storage_setting.r2_auto_delete_days')}
             />
           </Col>
         </Row>
-        <Divider style={{ marginTop: 10, marginBottom: 10 }} />
-        <Typography.Title heading={6}>{t('平台 R2 转存开关')}</Typography.Title>
         <Typography.Text type='tertiary' size='small'>
-          {t('平台 R2 转存开关说明')}
+          {t('用于视频类转存目录（含视频及视频模型产生的图片预览文件）的自动清理。')}
         </Typography.Text>
 
-        <Row gutter={16} style={{ marginTop: 10 }}>
-          <Col xs={12} sm={8} md={4} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.video_r2_enable'
-              label={t('平台 R2 转存开关')}
-              checkedText='ON'
-              uncheckedText='OFF'
-              initValue={inputs['storage_setting.video_r2_enable']}
-              onChange={handleFieldChange('storage_setting.video_r2_enable')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={4} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.playground_forward_enable'
-              label={t('\u64cd\u7ec3\u573a\u8f6c\u53d1\u5f00\u5173')}
-              checkedText='ON'
-              uncheckedText='OFF'
-              initValue={inputs['storage_setting.playground_forward_enable']}
-              onChange={handleFieldChange('storage_setting.playground_forward_enable')}
-            />
-          </Col>
-          <Col xs={24} sm={16} md={8} lg={8} xl={6}>
-            <Form.Input
-              field='storage_setting.video_r2_prefix'
-              label={t('存储路径前缀')}
-              placeholder='video'
-              initValue={inputs['storage_setting.video_r2_prefix']}
-              onChange={handleFieldChange('storage_setting.video_r2_prefix')}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={4} lg={4} xl={3}>
-            <Form.Switch
-              field='storage_setting.image_r2_enable'
-              label={t('图片 R2 转存开关')}
-              checkedText='ON'
-              uncheckedText='OFF'
-              initValue={inputs['storage_setting.image_r2_enable']}
-              onChange={handleFieldChange('storage_setting.image_r2_enable')}
-            />
-          </Col>
-          <Col xs={24} sm={16} md={8} lg={8} xl={6}>
-            <Form.Input
-              field='storage_setting.image_r2_prefix'
-              label={t('图片存储路径前缀')}
-              placeholder='images'
-              initValue={inputs['storage_setting.image_r2_prefix']}
-              onChange={handleFieldChange('storage_setting.image_r2_prefix')}
-            />
-          </Col>
-          <Col xs={24} sm={12} md={8} lg={8} xl={6}>
-            <Form.InputNumber
-              field='storage_setting.image_r2_auto_delete_days'
-              label={t('图片自动删除天数')}
-              placeholder={t('0 表示永久保存')}
-              min={0}
-              initValue={inputs['storage_setting.image_r2_auto_delete_days']}
-              onChange={handleFieldChange('storage_setting.image_r2_auto_delete_days')}
-            />
-          </Col>
-        </Row>
-        <Typography.Text type='tertiary' size='small'>
-          {t('\u64cd\u7ec3\u573a\u8f6c\u53d1\u5f00\u5173\u8bf4\u660e')}
-        </Typography.Text>
+        <Divider style={{ marginTop: 10, marginBottom: 10 }} />
+        <Typography.Title heading={6}>{t('平台 R2 转存开关（分类）')}</Typography.Title>
+
+        <div style={{
+          border: '1px solid var(--semi-color-border)',
+          borderRadius: 8,
+          padding: 12,
+          marginTop: 10,
+          background: 'var(--semi-color-bg-1)',
+        }}>
+          <Typography.Title heading={6} style={{ marginTop: 0 }}>
+            {t('视频类转存')}
+          </Typography.Title>
+          <Typography.Text type='tertiary' size='small'>
+            {t('适用于视频模型与视频类接管转存；操练场转发开关也归类在视频侧。')}
+          </Typography.Text>
+
+          <Row gutter={16} style={{ marginTop: 10 }}>
+            <Col xs={12} sm={8} md={6} lg={5} xl={4}>
+              <Form.Switch
+                field='storage_setting.video_r2_enable'
+                label={t('视频 R2 转存开关')}
+                checkedText='ON'
+                uncheckedText='OFF'
+                initValue={inputs['storage_setting.video_r2_enable']}
+                onChange={handleFieldChange('storage_setting.video_r2_enable')}
+              />
+            </Col>
+            <Col xs={12} sm={8} md={6} lg={5} xl={4}>
+              <Form.Switch
+                field='storage_setting.playground_forward_enable'
+                label={t('操练场转发开关')}
+                checkedText='ON'
+                uncheckedText='OFF'
+                initValue={inputs['storage_setting.playground_forward_enable']}
+                onChange={handleFieldChange('storage_setting.playground_forward_enable')}
+              />
+            </Col>
+            <Col xs={24} sm={16} md={12} lg={10} xl={8}>
+              <Form.Input
+                field='storage_setting.video_r2_prefix'
+                label={t('视频转存前缀')}
+                placeholder='video'
+                initValue={inputs['storage_setting.video_r2_prefix']}
+                onChange={handleFieldChange('storage_setting.video_r2_prefix')}
+              />
+            </Col>
+          </Row>
+          <Typography.Text type='tertiary' size='small'>
+            {t('操练场转发开关说明')}
+          </Typography.Text>
+        </div>
+
+        <div style={{
+          border: '1px solid var(--semi-color-border)',
+          borderRadius: 8,
+          padding: 12,
+          marginTop: 12,
+          background: 'var(--semi-color-bg-1)',
+        }}>
+          <Typography.Title heading={6} style={{ marginTop: 0 }}>
+            {t('图片类转存')}
+          </Typography.Title>
+          <Typography.Text type='tertiary' size='small'>
+            {t('适用于图片模型转存，使用独立前缀与独立自动删除策略。')}
+          </Typography.Text>
+
+          <Row gutter={16} style={{ marginTop: 10 }}>
+            <Col xs={12} sm={8} md={6} lg={5} xl={4}>
+              <Form.Switch
+                field='storage_setting.image_r2_enable'
+                label={t('图片 R2 转存开关')}
+                checkedText='ON'
+                uncheckedText='OFF'
+                initValue={inputs['storage_setting.image_r2_enable']}
+                onChange={handleFieldChange('storage_setting.image_r2_enable')}
+              />
+            </Col>
+            <Col xs={24} sm={16} md={10} lg={9} xl={7}>
+              <Form.Input
+                field='storage_setting.image_r2_prefix'
+                label={t('图片转存前缀')}
+                placeholder='images'
+                initValue={inputs['storage_setting.image_r2_prefix']}
+                onChange={handleFieldChange('storage_setting.image_r2_prefix')}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={8} lg={8} xl={6}>
+              <Form.InputNumber
+                field='storage_setting.image_r2_auto_delete_days'
+                label={t('图片自动删除天数')}
+                placeholder={t('0 表示永久保留')}
+                min={0}
+                initValue={inputs['storage_setting.image_r2_auto_delete_days']}
+                onChange={handleFieldChange('storage_setting.image_r2_auto_delete_days')}
+              />
+            </Col>
+          </Row>
+        </div>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
         <Space>
           <Button size='default' onClick={onSubmit} loading={loading}>
-            {t('保存存储设置')}
+            {t('保存配置')}
           </Button>
           <Button size='default' theme='light' type='secondary' onClick={onTestConnection} loading={testing}>
             {t('测试 R2 连接')}
