@@ -10,6 +10,9 @@ const STORAGE_DEFAULTS = {
   'storage_setting.r2_bucket_name': '',
   'storage_setting.r2_custom_domain': '',
   'storage_setting.r2_auto_delete_days': 0,
+  'storage_setting.image_r2_enable': false,
+  'storage_setting.image_r2_prefix': 'images',
+  'storage_setting.image_r2_auto_delete_days': 0,
   'storage_setting.video_r2_enable': false,
   'storage_setting.video_r2_prefix': 'video',
   'storage_setting.playground_forward_enable': true,
@@ -198,6 +201,35 @@ export default function SettingsStorage(props) {
               placeholder='video'
               initValue={inputs['storage_setting.video_r2_prefix']}
               onChange={handleFieldChange('storage_setting.video_r2_prefix')}
+            />
+          </Col>
+          <Col xs={12} sm={8} md={4} lg={4} xl={3}>
+            <Form.Switch
+              field='storage_setting.image_r2_enable'
+              label={t('图片 R2 转存开关')}
+              checkedText='ON'
+              uncheckedText='OFF'
+              initValue={inputs['storage_setting.image_r2_enable']}
+              onChange={handleFieldChange('storage_setting.image_r2_enable')}
+            />
+          </Col>
+          <Col xs={24} sm={16} md={8} lg={8} xl={6}>
+            <Form.Input
+              field='storage_setting.image_r2_prefix'
+              label={t('图片存储路径前缀')}
+              placeholder='images'
+              initValue={inputs['storage_setting.image_r2_prefix']}
+              onChange={handleFieldChange('storage_setting.image_r2_prefix')}
+            />
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={8} xl={6}>
+            <Form.InputNumber
+              field='storage_setting.image_r2_auto_delete_days'
+              label={t('图片自动删除天数')}
+              placeholder={t('0 表示永久保存')}
+              min={0}
+              initValue={inputs['storage_setting.image_r2_auto_delete_days']}
+              onChange={handleFieldChange('storage_setting.image_r2_auto_delete_days')}
             />
           </Col>
         </Row>

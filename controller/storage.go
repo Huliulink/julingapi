@@ -132,6 +132,7 @@ func checkPlatformFolders(ctx context.Context, cfg *storage_setting.StorageSetti
 	}
 	platforms := []entry{
 		{"video", storage_setting.GetVideoR2Prefix(), storage_setting.IsVideoR2Enabled()},
+		{"image", storage_setting.GetImageR2Prefix(), storage_setting.IsImageR2Enabled()},
 	}
 
 	results := make(map[string]*platformCheckResult, len(platforms))

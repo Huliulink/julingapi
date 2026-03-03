@@ -24,6 +24,7 @@ var (
 const (
 	r2CleanupInterval  = 1 * time.Hour
 	r2CleanupBatchSize = 100
+	r2CleanupImageBatchSize = 200
 )
 
 var r2CleanupURLKeys = []string{"url", "video_url", "output_url", "image_url", "thumbnail_url"}
@@ -55,16 +56,30 @@ func runR2CleanupOnce() {
 	ctx := context.Background()
 
 	cfg := storage_setting.GetStorageSetting()
-	if cfg.R2AutoDeleteDays <= 0 {
-		return
-	}
-
 	if !storage_setting.IsConfigured() || !common.IsR2ClientReady() {
 		return
 	}
 
 	domain := strings.TrimRight(cfg.R2CustomDomain, "/")
 	if domain == "" {
+		return
+	}
+
+	if cfg.R2AutoDeleteDays <= 0 && storage_setting.GetImageR2AutoDeleteDays() <= 0 {
+		return
+	}
+
+	if cfg.R2AutoDeleteDays > 0 {
+		cleanupExpiredTaskMedia(ctx, cfg, domain)
+	}
+
+	if storage_setting.IsImageR2Enabled() && storage_setting.GetImageR2AutoDeleteDays() > 0 {
+		cleanupExpiredImageObjects(ctx)
+	}
+}
+
+func cleanupExpiredTaskMedia(ctx context.Context, cfg *storage_setting.StorageSetting, domain string) {
+	if cfg == nil {
 		return
 	}
 
@@ -121,6 +136,65 @@ func runR2CleanupOnce() {
 	}
 
 	logger.LogInfo(ctx, fmt.Sprintf("R2 cleanup: deleted %d/%d expired tasks, removed %d objects", deletedTasks, expiredTasks, deletedObjects))
+}
+
+func cleanupExpiredImageObjects(ctx context.Context) {
+	days := storage_setting.GetImageR2AutoDeleteDays()
+	if days <= 0 {
+		return
+	}
+
+	prefix := strings.Trim(storage_setting.GetImageR2Prefix(), "/")
+	if prefix == "" {
+		prefix = "images"
+	}
+	cutoff := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	scanPrefix := prefix + "/"
+
+	deleted := 0
+	scanned := 0
+	continuation := ""
+	for deleted < r2CleanupImageBatchSize {
+		items, nextToken, err := common.ListR2Objects(ctx, scanPrefix, 200, continuation)
+		if err != nil {
+			logger.LogError(ctx, fmt.Sprintf("R2 image cleanup list failed: prefix=%s err=%v", scanPrefix, err))
+			break
+		}
+		if len(items) == 0 {
+			break
+		}
+
+		for _, item := range items {
+			scanned++
+			key := strings.TrimSpace(item.Key)
+			if key == "" {
+				continue
+			}
+			if strings.HasSuffix(key, "/.r2_folder_init") {
+				continue
+			}
+			if item.LastModified.IsZero() || item.LastModified.After(cutoff) {
+				continue
+			}
+			if err := common.DeleteFromR2(ctx, key); err != nil {
+				logger.LogError(ctx, fmt.Sprintf("R2 image cleanup delete failed: key=%s err=%v", key, err))
+				continue
+			}
+			deleted++
+			if deleted >= r2CleanupImageBatchSize {
+				break
+			}
+		}
+
+		if nextToken == "" {
+			break
+		}
+		continuation = nextToken
+	}
+
+	if scanned > 0 || deleted > 0 {
+		logger.LogInfo(ctx, fmt.Sprintf("R2 image cleanup: prefix=%s scanned=%d deleted=%d cutoff_days=%d", scanPrefix, scanned, deleted, days))
+	}
 }
 
 func collectTaskR2URLs(ctx context.Context, task *model.Task, domain string) ([]string, map[string]interface{}) {

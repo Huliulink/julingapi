@@ -11,12 +11,16 @@ const STORAGE_DEFAULTS = {
   'storage_setting.r2_bucket_name': '',
   'storage_setting.r2_custom_domain': '',
   'storage_setting.r2_auto_delete_days': 0,
+  'storage_setting.image_r2_enable': false,
+  'storage_setting.image_r2_prefix': 'images',
+  'storage_setting.image_r2_auto_delete_days': 0,
   'storage_setting.video_r2_enable': false,
   'storage_setting.video_r2_prefix': 'video',
   'storage_setting.playground_forward_enable': true,
 };
 
 const BOOLEAN_KEYS = new Set([
+  'storage_setting.image_r2_enable',
   'storage_setting.video_r2_enable',
   'storage_setting.playground_forward_enable',
 ]);
@@ -38,7 +42,10 @@ const StorageSetting = () => {
         }
         if (BOOLEAN_KEYS.has(item.key)) {
           newInputs[item.key] = toBoolean(item.value);
-        } else if (item.key === 'storage_setting.r2_auto_delete_days') {
+        } else if (
+          item.key === 'storage_setting.r2_auto_delete_days' ||
+          item.key === 'storage_setting.image_r2_auto_delete_days'
+        ) {
           newInputs[item.key] = Number(item.value) || 0;
         } else {
           newInputs[item.key] = item.value;

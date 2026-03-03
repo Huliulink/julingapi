@@ -71,6 +71,24 @@ func OaiResponsesToChatHandler(c *gin.Context, info *relaycommon.RelayInfo, resp
 		chatResp.Usage = *usage
 	}
 
+	responseModel := strings.TrimSpace(chatResp.Model)
+	if responseModel == "" {
+		responseModel = strings.TrimSpace(info.UpstreamModelName)
+	}
+	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), responseModel, c.GetString(common.RequestIdKey), chatResp.Choices)
+	if !rewriteResult.Applied {
+		if service.IsVideoModelName(responseModel) {
+			logger.LogInfo(c.Request.Context(), fmt.Sprintf("responses->chat video-model media rewrite skipped: model=%s reason=%s", responseModel, rewriteResult.SkipReason))
+		} else {
+			logger.LogDebug(c.Request.Context(), "responses->chat video-model media rewrite skipped: model=%s reason=%s", responseModel, rewriteResult.SkipReason)
+		}
+	} else if rewriteResult.Attempted == 0 {
+		logger.LogDebug(c.Request.Context(), "responses->chat video-model media rewrite applied but no transferable image found: model=%s", responseModel)
+	} else {
+		logger.LogInfo(c.Request.Context(), fmt.Sprintf("responses->chat video-model media rewrite result: model=%s attempted=%d succeeded=%d changed=%t",
+			responseModel, rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
+	}
+
 	var responseBody []byte
 	switch info.RelayFormat {
 	case types.RelayFormatClaude:

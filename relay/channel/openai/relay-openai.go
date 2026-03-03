@@ -236,12 +236,31 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 		}
 	}
 
+	responseModel := strings.TrimSpace(simpleResponse.Model)
+	if responseModel == "" {
+		responseModel = strings.TrimSpace(info.UpstreamModelName)
+	}
+	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), responseModel, c.GetString(common.RequestIdKey), simpleResponse.Choices)
+	if !rewriteResult.Applied {
+		if service.IsVideoModelName(responseModel) {
+			logger.LogInfo(c.Request.Context(), fmt.Sprintf("openai video-model media rewrite skipped: model=%s reason=%s", responseModel, rewriteResult.SkipReason))
+		} else {
+			logger.LogDebug(c.Request.Context(), "openai video-model media rewrite skipped: model=%s reason=%s", responseModel, rewriteResult.SkipReason)
+		}
+	} else if rewriteResult.Attempted == 0 {
+		logger.LogDebug(c.Request.Context(), "openai video-model media rewrite applied but no transferable image found: model=%s", responseModel)
+	} else {
+		logger.LogInfo(c.Request.Context(), fmt.Sprintf("openai video-model media rewrite result: model=%s attempted=%d succeeded=%d changed=%t",
+			responseModel, rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
+	}
+
 	forceFormat := false
 	if info.ChannelSetting.ForceFormat {
 		forceFormat = true
 	}
 
 	usageModified := false
+	responseChanged := rewriteResult.Changed
 	if simpleResponse.Usage.PromptTokens == 0 {
 		completionTokens := simpleResponse.Usage.CompletionTokens
 		if completionTokens == 0 {
@@ -262,7 +281,12 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 
 	switch info.RelayFormat {
 	case types.RelayFormatOpenAI:
-		if usageModified {
+		if responseChanged {
+			responseBody, err = common.Marshal(simpleResponse)
+			if err != nil {
+				return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
+			}
+		} else if usageModified {
 			var bodyMap map[string]interface{}
 			err = common.Unmarshal(responseBody, &bodyMap)
 			if err != nil {
@@ -564,6 +588,53 @@ func OpenaiHandlerWithUsage(c *gin.Context, info *relaycommon.RelayInfo, resp *h
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
+	}
+
+	if info != nil && (info.RelayMode == constant.RelayModeImagesGenerations || info.RelayMode == constant.RelayModeImagesEdits) {
+		rewrittenBody, rewriteResult, rewriteErr := service.RewriteImageResponseURLsToR2(c.Request.Context(), c.GetString(common.RequestIdKey), responseBody)
+		if rewriteErr != nil {
+			logger.LogWarn(c.Request.Context(), fmt.Sprintf("image response rewrite error: %v", rewriteErr))
+		} else {
+			responseBody = rewrittenBody
+			if !rewriteResult.Applied {
+				logger.LogDebug(c.Request.Context(), "image response rewrite skipped: reason=%s", rewriteResult.SkipReason)
+			} else if rewriteResult.Attempted == 0 {
+				logger.LogDebug(c.Request.Context(), "image response rewrite applied but no transferable image URL found")
+			} else {
+				logger.LogInfo(c.Request.Context(), fmt.Sprintf("image response rewrite result: attempted=%d succeeded=%d changed=%t",
+					rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
+			}
+		}
+	}
+	if info != nil && info.RelayMode != constant.RelayModeImagesGenerations && info.RelayMode != constant.RelayModeImagesEdits {
+		var simpleResponse dto.OpenAITextResponse
+		if err := common.Unmarshal(responseBody, &simpleResponse); err == nil && len(simpleResponse.Choices) > 0 {
+			responseModel := strings.TrimSpace(simpleResponse.Model)
+			if responseModel == "" {
+				responseModel = strings.TrimSpace(info.UpstreamModelName)
+			}
+
+			rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), responseModel, c.GetString(common.RequestIdKey), simpleResponse.Choices)
+			if !rewriteResult.Applied {
+				if service.IsVideoModelName(responseModel) {
+					logger.LogInfo(c.Request.Context(), fmt.Sprintf("openai-with-usage video-model media rewrite skipped: model=%s reason=%s", responseModel, rewriteResult.SkipReason))
+				} else {
+					logger.LogDebug(c.Request.Context(), "openai-with-usage video-model media rewrite skipped: model=%s reason=%s", responseModel, rewriteResult.SkipReason)
+				}
+			} else if rewriteResult.Attempted == 0 {
+				logger.LogDebug(c.Request.Context(), "openai-with-usage video-model media rewrite applied but no transferable image found: model=%s", responseModel)
+			} else {
+				logger.LogInfo(c.Request.Context(), fmt.Sprintf("openai-with-usage video-model media rewrite result: model=%s attempted=%d succeeded=%d changed=%t",
+					responseModel, rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
+			}
+
+			if rewriteResult.Changed {
+				responseBody, err = common.Marshal(simpleResponse)
+				if err != nil {
+					return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
+				}
+			}
+		}
 	}
 
 	var usageResp dto.SimpleResponse

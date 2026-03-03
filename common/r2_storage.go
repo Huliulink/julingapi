@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // R2Config holds the Cloudflare R2 storage configuration
@@ -28,6 +29,11 @@ var (
 	r2Config R2Config
 	r2Mu     sync.RWMutex
 )
+
+type R2ObjectInfo struct {
+	Key          string
+	LastModified time.Time
+}
 
 // InitR2Client initializes or reinitializes the R2 S3 client
 func InitR2Client(cfg R2Config) error {
@@ -110,6 +116,55 @@ func DeleteFromR2(ctx context.Context, objectKey string) error {
 		Key:    aws.String(objectKey),
 	})
 	return err
+}
+
+func ListR2Objects(ctx context.Context, prefix string, maxKeys int32, continuationToken string) ([]R2ObjectInfo, string, error) {
+	r2Mu.RLock()
+	client := r2Client
+	bucket := r2Config.BucketName
+	r2Mu.RUnlock()
+
+	if client == nil {
+		return nil, "", fmt.Errorf("R2 client not initialized")
+	}
+
+	if maxKeys <= 0 {
+		maxKeys = 1000
+	}
+	input := &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucket),
+		Prefix:  aws.String(strings.TrimSpace(prefix)),
+		MaxKeys: aws.Int32(maxKeys),
+	}
+	if continuationToken != "" {
+		input.ContinuationToken = aws.String(continuationToken)
+	}
+
+	output, err := client.ListObjectsV2(ctx, input)
+	if err != nil {
+		return nil, "", err
+	}
+
+	items := make([]R2ObjectInfo, 0, len(output.Contents))
+	for _, object := range output.Contents {
+		items = append(items, toR2ObjectInfo(object))
+	}
+
+	nextToken := ""
+	if output.IsTruncated && output.NextContinuationToken != nil {
+		nextToken = *output.NextContinuationToken
+	}
+	return items, nextToken, nil
+}
+
+func toR2ObjectInfo(obj s3types.Object) R2ObjectInfo {
+	item := R2ObjectInfo{
+		Key: aws.ToString(obj.Key),
+	}
+	if obj.LastModified != nil {
+		item.LastModified = *obj.LastModified
+	}
+	return item
 }
 
 // GetR2PublicURL returns the public URL for an R2 object
