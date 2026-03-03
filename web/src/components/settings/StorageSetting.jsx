@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Spin } from '@douyinfe/semi-ui';
+import { useTranslation } from 'react-i18next';
 import SettingsStorage from '../../pages/Setting/Operation/SettingsStorage';
 import { API, showError, toBoolean } from '../../helpers';
 
@@ -17,6 +18,7 @@ const STORAGE_DEFAULTS = {
 const BOOLEAN_KEYS = new Set(['storage_setting.video_r2_enable']);
 
 const StorageSetting = () => {
+  const { t } = useTranslation();
   let [inputs, setInputs] = useState(STORAGE_DEFAULTS);
 
   let [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ const StorageSetting = () => {
       setLoading(true);
       await getOptions();
     } catch (error) {
-      showError('刷新失败');
+      showError(t('\u5237\u65b0\u5931\u8d25'));
     } finally {
       setLoading(false);
     }

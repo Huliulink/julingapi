@@ -39,7 +39,7 @@ export default function SettingsStorage(props) {
     } catch (e) {
       setTestResult({
         success: false,
-        message: t('Connection test failed, please check network or server logs'),
+        message: t('请求失败，请检查网络或服务器状态'),
         code: 'request_error',
       });
     } finally {
@@ -50,7 +50,7 @@ export default function SettingsStorage(props) {
   function onSubmit() {
     const updateArray = compareObjects(inputs, inputsRow);
     if (!updateArray.length) {
-      return showWarning(t('No configuration changes detected'));
+      return showWarning(t('你似乎并没有修改什么'));
     }
 
     const requestQueue = updateArray.map((item) =>
@@ -64,13 +64,13 @@ export default function SettingsStorage(props) {
     Promise.all(requestQueue)
       .then((res) => {
         if (res.includes(undefined)) {
-          return showError(t('Failed to save settings'));
+          return showError(t('设置保存失败'));
         }
-        showSuccess(t('Settings saved'));
+        showSuccess(t('设置已保存'));
         props.refresh();
       })
       .catch(() => {
-        showError(t('Failed to save settings'));
+        showError(t('设置保存失败'));
       })
       .finally(() => {
         setLoading(false);
@@ -94,20 +94,20 @@ export default function SettingsStorage(props) {
   return (
     <Spin spinning={loading}>
       <Form getFormApi={(formAPI) => (refForm.current = formAPI)} style={{ marginBottom: 15 }}>
-        <Typography.Title heading={5}>{t('R2 Storage Settings')}</Typography.Title>
+        <Typography.Title heading={5}>{t('R2 云存储设置')}</Typography.Title>
         <Typography.Text type='tertiary' size='small'>
-          {t('When global video transfer is enabled, query APIs will prefer R2 links.')}
+          {t('R2 云存储设置说明')}
         </Typography.Text>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
-        <Typography.Title heading={6}>{t('Global R2 Config')}</Typography.Title>
+        <Typography.Title heading={6}>{t('全局配置')}</Typography.Title>
 
         <Row gutter={16}>
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_account_id'
-              label='Account ID'
-              placeholder='Cloudflare Account ID'
+              label={t('输入 Cloudflare Account ID')}
+              placeholder={t('输入 Cloudflare Account ID')}
               initValue={inputs['storage_setting.r2_account_id']}
               onChange={handleFieldChange('storage_setting.r2_account_id')}
             />
@@ -115,8 +115,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_access_key_id'
-              label='Access Key ID'
-              placeholder='R2 Access Key ID'
+              label={t('输入 R2 Access Key ID')}
+              placeholder={t('输入 R2 Access Key ID')}
               initValue={inputs['storage_setting.r2_access_key_id']}
               onChange={handleFieldChange('storage_setting.r2_access_key_id')}
             />
@@ -124,9 +124,9 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_secret_access_key'
-              label='Secret Access Key'
+              label={t('输入 R2 Secret Access Key')}
               mode='password'
-              placeholder='R2 Secret Access Key'
+              placeholder={t('输入 R2 Secret Access Key')}
               initValue={inputs['storage_setting.r2_secret_access_key']}
               onChange={handleFieldChange('storage_setting.r2_secret_access_key')}
             />
@@ -137,8 +137,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_bucket_name'
-              label={t('Bucket Name')}
-              placeholder={t('Enter R2 bucket name')}
+              label={t('Bucket 名称')}
+              placeholder={t('输入 R2 Bucket 名称')}
               initValue={inputs['storage_setting.r2_bucket_name']}
               onChange={handleFieldChange('storage_setting.r2_bucket_name')}
             />
@@ -146,7 +146,7 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.Input
               field='storage_setting.r2_custom_domain'
-              label={t('Custom Domain')}
+              label={t('自定义域名')}
               placeholder='https://cloudflare.cdn.smv.buzz'
               initValue={inputs['storage_setting.r2_custom_domain']}
               onChange={handleFieldChange('storage_setting.r2_custom_domain')}
@@ -155,8 +155,8 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={12} md={8} lg={8} xl={8}>
             <Form.InputNumber
               field='storage_setting.r2_auto_delete_days'
-              label={t('Auto Delete Days')}
-              placeholder={t('0 means keep forever')}
+              label={t('自动删除天数')}
+              placeholder={t('0 表示永久保存')}
               min={0}
               initValue={inputs['storage_setting.r2_auto_delete_days']}
               onChange={handleFieldChange('storage_setting.r2_auto_delete_days')}
@@ -165,16 +165,16 @@ export default function SettingsStorage(props) {
         </Row>
 
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
-        <Typography.Title heading={6}>{t('Global Video Transfer')}</Typography.Title>
+        <Typography.Title heading={6}>{t('平台 R2 转存开关')}</Typography.Title>
         <Typography.Text type='tertiary' size='small'>
-          {t('Enable one global switch. All transferable video/image links use unified R2 storage.')}
+          {t('平台 R2 转存开关说明')}
         </Typography.Text>
 
         <Row gutter={16} style={{ marginTop: 10 }}>
           <Col xs={12} sm={8} md={4} lg={4} xl={3}>
             <Form.Switch
               field='storage_setting.video_r2_enable'
-              label={t('Enable Global Video Transfer')}
+              label={t('平台 R2 转存开关')}
               checkedText='ON'
               uncheckedText='OFF'
               initValue={inputs['storage_setting.video_r2_enable']}
@@ -184,7 +184,7 @@ export default function SettingsStorage(props) {
           <Col xs={24} sm={16} md={8} lg={8} xl={6}>
             <Form.Input
               field='storage_setting.video_r2_prefix'
-              label={t('R2 Path Prefix')}
+              label={t('存储路径前缀')}
               placeholder='video'
               initValue={inputs['storage_setting.video_r2_prefix']}
               onChange={handleFieldChange('storage_setting.video_r2_prefix')}
@@ -195,10 +195,10 @@ export default function SettingsStorage(props) {
         <Divider style={{ marginTop: 10, marginBottom: 10 }} />
         <Space>
           <Button size='default' onClick={onSubmit} loading={loading}>
-            {t('Save Settings')}
+            {t('保存存储设置')}
           </Button>
           <Button size='default' theme='light' type='secondary' onClick={onTestConnection} loading={testing}>
-            {t('Test R2 Connection')}
+            {t('测试 R2 连接')}
           </Button>
         </Space>
 
