@@ -46,8 +46,9 @@ func xAIStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	var toolCount int
 	var containStreamUsage bool
 	var streamItems []string
+	rewriteModel := service.ResolveVideoRewriteModelName(info.UpstreamModelName, info.OriginModelName)
 	delayVideoModelResponse := storage_setting.IsVideoR2Enabled() &&
-		(service.IsVideoModelName(info.UpstreamModelName) || service.IsVideoModelName(info.OriginModelName))
+		service.IsAnyVideoModelName(rewriteModel)
 
 	helper.SetEventStreamHeaders(c)
 
@@ -186,14 +187,15 @@ func emitDelayedXAIStreamResponse(c *gin.Context, info *relaycommon.RelayInfo, s
 		})
 	}
 
-	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), model, c.GetString(common.RequestIdKey), choices)
+	rewriteModel := service.ResolveVideoRewriteModelName(model, info.UpstreamModelName, info.OriginModelName)
+	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), rewriteModel, c.GetString(common.RequestIdKey), choices)
 	if !rewriteResult.Applied {
-		if service.IsVideoModelName(model) {
-			logger.LogInfo(c.Request.Context(), fmt.Sprintf("xAI delayed stream video-model media rewrite skipped: model=%s reason=%s", model, rewriteResult.SkipReason))
+		if service.IsVideoModelName(rewriteModel) {
+			logger.LogInfo(c.Request.Context(), fmt.Sprintf("xAI delayed stream video-model media rewrite skipped: model=%s reason=%s", rewriteModel, rewriteResult.SkipReason))
 		}
 	} else if rewriteResult.Attempted > 0 {
 		logger.LogInfo(c.Request.Context(), fmt.Sprintf("xAI delayed stream video-model media rewrite result: model=%s attempted=%d succeeded=%d changed=%t",
-			model, rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
+			rewriteModel, rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
 	}
 
 	if err := helper.ObjectData(c, helper.GenerateStartEmptyResponse(responseID, createAt, model, nil)); err != nil {
@@ -295,9 +297,9 @@ func rewriteVideoModelImageURLsToR2(c *gin.Context, info *relaycommon.RelayInfo,
 		return
 	}
 
-	modelName := strings.TrimSpace(xaiResponse.Model)
-	if modelName == "" && info != nil {
-		modelName = strings.TrimSpace(info.UpstreamModelName)
+	modelName := xaiResponse.Model
+	if info != nil {
+		modelName = service.ResolveVideoRewriteModelName(modelName, info.UpstreamModelName, info.OriginModelName)
 	}
 	requestID := c.GetString(common.RequestIdKey)
 	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), modelName, requestID, xaiResponse.Choices)

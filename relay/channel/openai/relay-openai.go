@@ -129,7 +129,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	// 检查是否为音频模型
 	isAudioModel := strings.Contains(strings.ToLower(model), "audio")
 	delayVideoModelResponse := storage_setting.IsVideoR2Enabled() &&
-		(service.IsVideoModelName(model) || service.IsVideoModelName(info.OriginModelName))
+		service.IsAnyVideoModelName(model, info.UpstreamModelName, info.OriginModelName)
 
 	helper.StreamScannerHandler(c, resp, info, func(data string) bool {
 		if !delayVideoModelResponse && lastStreamData != "" {
@@ -285,14 +285,15 @@ func emitDelayedVideoModelStreamResponse(
 		})
 	}
 
-	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), model, c.GetString(common.RequestIdKey), choices)
+	rewriteModel := service.ResolveVideoRewriteModelName(model, info.UpstreamModelName, info.OriginModelName)
+	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), rewriteModel, c.GetString(common.RequestIdKey), choices)
 	if !rewriteResult.Applied {
-		if service.IsVideoModelName(model) {
-			logger.LogInfo(c.Request.Context(), fmt.Sprintf("delayed stream video-model media rewrite skipped: model=%s reason=%s", model, rewriteResult.SkipReason))
+		if service.IsVideoModelName(rewriteModel) {
+			logger.LogInfo(c.Request.Context(), fmt.Sprintf("delayed stream video-model media rewrite skipped: model=%s reason=%s", rewriteModel, rewriteResult.SkipReason))
 		}
 	} else if rewriteResult.Attempted > 0 {
 		logger.LogInfo(c.Request.Context(), fmt.Sprintf("delayed stream video-model media rewrite result: model=%s attempted=%d succeeded=%d changed=%t",
-			model, rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
+			rewriteModel, rewriteResult.Attempted, rewriteResult.Succeeded, rewriteResult.Changed))
 	}
 
 	if err := helper.ObjectData(c, helper.GenerateStartEmptyResponse(responseId, createAt, model, nil)); err != nil {
@@ -403,10 +404,7 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 		}
 	}
 
-	responseModel := strings.TrimSpace(simpleResponse.Model)
-	if responseModel == "" {
-		responseModel = strings.TrimSpace(info.UpstreamModelName)
-	}
+	responseModel := service.ResolveVideoRewriteModelName(simpleResponse.Model, info.UpstreamModelName, info.OriginModelName)
 	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), responseModel, c.GetString(common.RequestIdKey), simpleResponse.Choices)
 	if !rewriteResult.Applied {
 		if service.IsVideoModelName(responseModel) {
@@ -776,10 +774,7 @@ func OpenaiHandlerWithUsage(c *gin.Context, info *relaycommon.RelayInfo, resp *h
 	if info != nil && info.RelayMode != relayconstant.RelayModeImagesGenerations && info.RelayMode != relayconstant.RelayModeImagesEdits {
 		var simpleResponse dto.OpenAITextResponse
 		if err := common.Unmarshal(responseBody, &simpleResponse); err == nil && len(simpleResponse.Choices) > 0 {
-			responseModel := strings.TrimSpace(simpleResponse.Model)
-			if responseModel == "" {
-				responseModel = strings.TrimSpace(info.UpstreamModelName)
-			}
+			responseModel := service.ResolveVideoRewriteModelName(simpleResponse.Model, info.UpstreamModelName, info.OriginModelName)
 
 			rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), responseModel, c.GetString(common.RequestIdKey), simpleResponse.Choices)
 			if !rewriteResult.Applied {

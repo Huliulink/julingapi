@@ -71,10 +71,7 @@ func OaiResponsesToChatHandler(c *gin.Context, info *relaycommon.RelayInfo, resp
 		chatResp.Usage = *usage
 	}
 
-	responseModel := strings.TrimSpace(chatResp.Model)
-	if responseModel == "" {
-		responseModel = strings.TrimSpace(info.UpstreamModelName)
-	}
+	responseModel := service.ResolveVideoRewriteModelName(chatResp.Model, info.UpstreamModelName, info.OriginModelName)
 	rewriteResult := service.RewriteVideoModelAssistantMediaToR2(c.Request.Context(), responseModel, c.GetString(common.RequestIdKey), chatResp.Choices)
 	if !rewriteResult.Applied {
 		if service.IsVideoModelName(responseModel) {

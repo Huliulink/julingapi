@@ -137,7 +137,59 @@ func RewriteVideoModelAssistantMediaToR2(ctx context.Context, modelName string, 
 }
 
 func IsVideoModelName(modelName string) bool {
-	return strings.Contains(strings.ToLower(strings.TrimSpace(modelName)), "video")
+	model := strings.ToLower(strings.TrimSpace(modelName))
+	if model == "" {
+		return false
+	}
+	if strings.Contains(model, "video") {
+		return true
+	}
+	// Some video models do not include "video" in their name.
+	videoHints := []string{
+		"veo",
+		"kling",
+		"vidu",
+		"jimeng",
+		"hailuo",
+		"seedance",
+		"-t2v",
+		"-i2v",
+		"-s2v",
+	}
+	for _, hint := range videoHints {
+		if strings.Contains(model, hint) {
+			return true
+		}
+	}
+	return false
+}
+
+func IsAnyVideoModelName(modelNames ...string) bool {
+	for _, modelName := range modelNames {
+		if IsVideoModelName(modelName) {
+			return true
+		}
+	}
+	return false
+}
+
+// ResolveVideoRewriteModelName chooses model name for rewrite checks:
+// prefer a recognized video model name; otherwise fallback to first non-empty.
+func ResolveVideoRewriteModelName(modelNames ...string) string {
+	first := ""
+	for _, raw := range modelNames {
+		model := strings.TrimSpace(raw)
+		if model == "" {
+			continue
+		}
+		if first == "" {
+			first = model
+		}
+		if IsVideoModelName(model) {
+			return model
+		}
+	}
+	return first
 }
 
 func rewriteTextURLsToR2(
