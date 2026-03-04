@@ -449,8 +449,14 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Status = model.TaskStatusQueued
 		taskResult.Progress = "10%"
 	case "done":
-		taskResult.Status = model.TaskStatusSuccess
-		taskResult.Progress = "100%"
+		if strings.TrimSpace(resTask.Data.VideoUrl) == "" {
+			// Jimeng may return done before final video_url is ready.
+			taskResult.Status = model.TaskStatusInProgress
+			taskResult.Progress = "95%"
+		} else {
+			taskResult.Status = model.TaskStatusSuccess
+			taskResult.Progress = "100%"
+		}
 	}
 	taskResult.Url = resTask.Data.VideoUrl
 	return &taskResult, nil

@@ -79,7 +79,7 @@ func GetVideoTaskStatus(c *gin.Context) {
 			return
 		}
 		if !taskHasR2Result(task) {
-			RelayTask(c)
+			respondR2TransferError(c, task, fmt.Errorf("r2 url not available after transfer"))
 			return
 		}
 	}
@@ -168,8 +168,8 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 	rules := []fieldRule{
 		{name: "video_url", fileName: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
 		{name: "output_url", fileName: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
-		{name: "image_url", fileName: fmt.Sprintf("%s/%s_image.jpg", prefix, task.TaskID), asMainURL: true},
-		{name: "thumbnail_url", fileName: fmt.Sprintf("%s/%s_thumb.jpg", prefix, task.TaskID), asMainURL: true},
+		{name: "image_url", fileName: fmt.Sprintf("%s/%s_image.jpg", prefix, task.TaskID), asMainURL: false},
+		{name: "thumbnail_url", fileName: fmt.Sprintf("%s/%s_thumb.jpg", prefix, task.TaskID), asMainURL: false},
 	}
 
 	for _, rule := range rules {
@@ -493,7 +493,14 @@ func VideoProxy(c *gin.Context) {
 			c.Redirect(http.StatusFound, r2URL)
 			return
 		}
-		// Non-transferable case: fallback to original proxy logic below.
+		// Strict R2 policy: never fallback to upstream URL when VideoR2Enable is ON.
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error": gin.H{
+				"message": "R2 transfer failed: r2 url not available after transfer",
+				"type":    "server_error",
+			},
+		})
+		return
 	}
 
 	// R2 URL -> 302 redirect, zero server bandwidth

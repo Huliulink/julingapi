@@ -447,9 +447,16 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	case "RUNNING":
 		taskResult.Status = model.TaskStatusInProgress
 	case "SUCCEEDED":
-		taskResult.Status = model.TaskStatusSuccess
-		// 阿里直接返回视频URL，不需要额外的代理端点
-		taskResult.Url = aliResp.Output.VideoURL
+		videoURL := strings.TrimSpace(aliResp.Output.VideoURL)
+		if videoURL == "" {
+			// Some regions may mark SUCCEEDED slightly earlier than URL propagation.
+			taskResult.Status = model.TaskStatusInProgress
+			taskResult.Progress = "95%"
+		} else {
+			taskResult.Status = model.TaskStatusSuccess
+			// 阿里直接返回视频URL，不需要额外的代理端点
+			taskResult.Url = videoURL
+		}
 	case "FAILED", "CANCELED", "UNKNOWN":
 		taskResult.Status = model.TaskStatusFailure
 		if aliResp.Message != "" {

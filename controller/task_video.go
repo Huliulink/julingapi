@@ -211,9 +211,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 						r2Result := service.TransferFileToR2(ctx, imageKey, imageURL)
 						if r2Result.Success {
 							taskData["image_url"] = r2Result.R2URL
-							if task.FailReason == "" {
-								task.FailReason = r2Result.R2URL
-							}
 							dataChanged = true
 						}
 					}

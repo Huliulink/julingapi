@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
@@ -152,13 +153,14 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	case "processing", "in_progress":
 		taskResult.Status = model.TaskStatusInProgress
 	case "completed":
-		taskResult.Status = model.TaskStatusSuccess
-		taskResult.Url = resTask.OutputURL
-		if taskResult.Url == "" {
-			taskResult.Url = resTask.VideoURL
-		}
-		if taskResult.Url == "" {
-			taskResult.Url = resTask.ImageURL
+		videoURL := pickXAIVideoURL(&resTask)
+		if videoURL == "" {
+			// xAI may report completed before the final video URL is materialized.
+			taskResult.Status = model.TaskStatusInProgress
+			taskResult.Progress = "95%"
+		} else {
+			taskResult.Status = model.TaskStatusSuccess
+			taskResult.Url = videoURL
 		}
 	case "failed", "cancelled":
 		taskResult.Status = model.TaskStatusFailure
@@ -176,5 +178,63 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 }
 
 func (a *TaskAdaptor) ConvertToOpenAIVideo(task *model.Task) ([]byte, error) {
-	return task.Data, nil
+	video := dto.NewOpenAIVideo()
+	video.ID = task.TaskID
+	video.TaskID = task.TaskID
+	video.Status = task.Status.ToVideoStatus()
+	video.SetProgressStr(task.Progress)
+	video.CreatedAt = task.CreatedAt
+	video.CompletedAt = task.UpdatedAt
+	video.Model = task.Properties.OriginModelName
+
+	var xaiResp responseTask
+	if err := common.Unmarshal(task.Data, &xaiResp); err == nil {
+		if video.Model == "" && xaiResp.Model != "" {
+			video.Model = xaiResp.Model
+		}
+		if videoURL := pickXAIVideoURL(&xaiResp); videoURL != "" {
+			video.SetMetadata("url", videoURL)
+			if xaiResp.OutputURL != "" {
+				video.SetMetadata("output_url", xaiResp.OutputURL)
+			}
+			if xaiResp.VideoURL != "" {
+				video.SetMetadata("video_url", xaiResp.VideoURL)
+			}
+		}
+		if xaiResp.ImageURL != "" {
+			video.SetMetadata("image_url", xaiResp.ImageURL)
+		}
+		if xaiResp.Error != nil && xaiResp.Error.Message != "" {
+			video.Error = &dto.OpenAIVideoError{
+				Message: xaiResp.Error.Message,
+				Code:    xaiResp.Error.Code,
+			}
+		}
+	}
+
+	if video.Metadata == nil && (strings.HasPrefix(task.FailReason, "http://") ||
+		strings.HasPrefix(task.FailReason, "https://") ||
+		strings.HasPrefix(task.FailReason, "data:")) {
+		video.SetMetadata("url", task.FailReason)
+	}
+	if video.Error == nil && task.Status == model.TaskStatusFailure {
+		video.Error = &dto.OpenAIVideoError{
+			Message: task.FailReason,
+			Code:    "task_failed",
+		}
+	}
+	return common.Marshal(video)
+}
+
+func pickXAIVideoURL(resTask *responseTask) string {
+	if resTask == nil {
+		return ""
+	}
+	if resTask.OutputURL != "" {
+		return resTask.OutputURL
+	}
+	if resTask.VideoURL != "" {
+		return resTask.VideoURL
+	}
+	return ""
 }

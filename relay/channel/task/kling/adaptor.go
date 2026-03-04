@@ -355,7 +355,8 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	case "processing":
 		taskInfo.Status = model.TaskStatusInProgress
 	case "succeed":
-		taskInfo.Status = model.TaskStatusSuccess
+		taskInfo.Status = model.TaskStatusInProgress
+		taskInfo.Progress = "95%"
 	case "failed":
 		taskInfo.Status = model.TaskStatusFailure
 	default:
@@ -364,6 +365,10 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	if videos := resPayload.Data.TaskResult.Videos; len(videos) > 0 {
 		video := videos[0]
 		taskInfo.Url = video.Url
+		if status == "succeed" && strings.TrimSpace(video.Url) != "" {
+			taskInfo.Status = model.TaskStatusSuccess
+			taskInfo.Progress = "100%"
+		}
 	}
 	return taskInfo, nil
 }

@@ -205,9 +205,15 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskResult.Progress = "50%"
 		}
 	case TaskStatusSuccess:
-		taskResult.Status = model.TaskStatusSuccess
-		taskResult.Progress = "100%"
-		taskResult.Url = a.buildVideoURL(resTask.TaskID, resTask.FileID)
+		videoURL := a.buildVideoURL(resTask.TaskID, resTask.FileID)
+		if strings.TrimSpace(videoURL) == "" {
+			taskResult.Status = model.TaskStatusInProgress
+			taskResult.Progress = "95%"
+		} else {
+			taskResult.Status = model.TaskStatusSuccess
+			taskResult.Progress = "100%"
+			taskResult.Url = videoURL
+		}
 	case TaskStatusFailed:
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"

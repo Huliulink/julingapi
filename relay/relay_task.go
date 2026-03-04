@@ -390,9 +390,6 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if err2 != nil {
 			return
 		}
-		if channelModel.Type != constant.ChannelTypeVertexAi && channelModel.Type != constant.ChannelTypeGemini {
-			return
-		}
 		baseURL := constant.ChannelBaseURLs[channelModel.Type]
 		if channelModel.GetBaseURL() != "" {
 			baseURL = channelModel.GetBaseURL()
@@ -402,7 +399,11 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if adaptor == nil {
 			return
 		}
-		resp, err2 := adaptor.FetchTask(baseURL, channelModel.Key, map[string]any{
+		requestKey := channelModel.Key
+		if channelModel.Type == constant.ChannelTypeGemini && strings.TrimSpace(originTask.PrivateData.Key) != "" {
+			requestKey = originTask.PrivateData.Key
+		}
+		resp, err2 := adaptor.FetchTask(baseURL, requestKey, map[string]any{
 			"task_id": originTask.TaskID,
 			"action":  originTask.Action,
 		}, proxy)
@@ -488,6 +489,10 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			originTask, err = relayR2TakeoverEnsureTask(waitCtx, originTask.TaskID)
 			if err != nil {
 				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: %w", err), "r2_transfer_failed", http.StatusBadGateway)
+				return
+			}
+			if !relayR2TakeoverHasR2Result(originTask) {
+				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: r2 url not available after transfer"), "r2_transfer_failed", http.StatusBadGateway)
 				return
 			}
 		}
@@ -620,8 +625,8 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 	rules := []fieldRule{
 		{name: "video_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
 		{name: "output_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
-		{name: "image_url", objectKey: fmt.Sprintf("%s/%s_image.jpg", prefix, task.TaskID), asMainURL: true},
-		{name: "thumbnail_url", objectKey: fmt.Sprintf("%s/%s_thumb.jpg", prefix, task.TaskID), asMainURL: true},
+		{name: "image_url", objectKey: fmt.Sprintf("%s/%s_image.jpg", prefix, task.TaskID), asMainURL: false},
+		{name: "thumbnail_url", objectKey: fmt.Sprintf("%s/%s_thumb.jpg", prefix, task.TaskID), asMainURL: false},
 	}
 
 	for _, rule := range rules {

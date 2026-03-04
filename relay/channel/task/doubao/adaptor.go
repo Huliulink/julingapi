@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -265,12 +266,18 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Status = model.TaskStatusInProgress
 		taskResult.Progress = "50%"
 	case "succeeded":
-		taskResult.Status = model.TaskStatusSuccess
-		taskResult.Progress = "100%"
-		taskResult.Url = resTask.Content.VideoURL
-		// 解析 usage 信息用于按倍率计费
-		taskResult.CompletionTokens = resTask.Usage.CompletionTokens
-		taskResult.TotalTokens = resTask.Usage.TotalTokens
+		if strings.TrimSpace(resTask.Content.VideoURL) == "" {
+			// Some upstreams report succeeded before the CDN URL is visible.
+			taskResult.Status = model.TaskStatusInProgress
+			taskResult.Progress = "95%"
+		} else {
+			taskResult.Status = model.TaskStatusSuccess
+			taskResult.Progress = "100%"
+			taskResult.Url = resTask.Content.VideoURL
+			// 解析 usage 信息用于按倍率计费
+			taskResult.CompletionTokens = resTask.Usage.CompletionTokens
+			taskResult.TotalTokens = resTask.Usage.TotalTokens
+		}
 	case "failed":
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"
