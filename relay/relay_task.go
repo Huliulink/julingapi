@@ -403,9 +403,22 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if channelModel.Type == constant.ChannelTypeGemini && strings.TrimSpace(originTask.PrivateData.Key) != "" {
 			requestKey = originTask.PrivateData.Key
 		}
+		queryModel := strings.TrimSpace(originTask.Properties.UpstreamModelName)
+		if queryModel == "" {
+			queryModel = strings.TrimSpace(originTask.Properties.OriginModelName)
+		}
+		if queryModel == "" && len(originTask.Data) > 0 {
+			var taskData map[string]any
+			if err := common.Unmarshal(originTask.Data, &taskData); err == nil {
+				if m, ok := taskData["model"].(string); ok {
+					queryModel = strings.TrimSpace(m)
+				}
+			}
+		}
 		resp, err2 := adaptor.FetchTask(baseURL, requestKey, map[string]any{
 			"task_id": originTask.TaskID,
 			"action":  originTask.Action,
+			"model":   queryModel,
 		}, proxy)
 		if err2 != nil || resp == nil {
 			return

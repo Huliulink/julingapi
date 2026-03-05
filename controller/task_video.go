@@ -83,9 +83,23 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	if privateData.Key != "" {
 		key = privateData.Key
 	}
+	queryModel := strings.TrimSpace(task.Properties.UpstreamModelName)
+	if queryModel == "" {
+		queryModel = strings.TrimSpace(task.Properties.OriginModelName)
+	}
+	if queryModel == "" && len(task.Data) > 0 {
+		var taskData map[string]any
+		if err := common.Unmarshal(task.Data, &taskData); err == nil {
+			if m, ok := taskData["model"].(string); ok {
+				queryModel = strings.TrimSpace(m)
+			}
+		}
+	}
+	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask query task_id=%s action=%s model=%s", taskId, task.Action, queryModel))
 	resp, err := adaptor.FetchTask(baseURL, key, map[string]any{
 		"task_id": taskId,
 		"action":  task.Action,
+		"model":   queryModel,
 	}, proxy)
 	if err != nil {
 		return fmt.Errorf("fetchTask failed for task %s: %w", taskId, err)

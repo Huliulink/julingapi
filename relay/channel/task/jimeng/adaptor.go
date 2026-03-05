@@ -216,47 +216,87 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 	if !ok {
 		return nil, fmt.Errorf("invalid task_id")
 	}
+	action, _ := body["action"].(string)
+	modelName, _ := body["model"].(string)
 
 	uri := fmt.Sprintf("%s/?Action=CVSync2AsyncGetResult&Version=2022-08-31", baseUrl)
 	if isNewAPIRelay(key) {
 		uri = fmt.Sprintf("%s/jimeng/?Action=CVSync2AsyncGetResult&Version=2022-08-31", a.baseURL)
 	}
-	payload := map[string]string{
-		"req_key": "jimeng_vgfm_t2v_l20", // This is fixed value from doc: https://www.volcengine.com/docs/85621/1544774
-		"task_id": taskID,
-	}
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshal fetch task payload failed")
-	}
-
-	req, err := http.NewRequest(http.MethodPost, uri, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	if isNewAPIRelay(key) {
-		req.Header.Set("Authorization", "Bearer "+key)
-	} else {
-		keyParts := strings.Split(key, "|")
-		if len(keyParts) != 2 {
-			return nil, fmt.Errorf("invalid api key format for jimeng: expected 'ak|sk'")
-		}
-		accessKey := strings.TrimSpace(keyParts[0])
-		secretKey := strings.TrimSpace(keyParts[1])
-
-		if err := a.signRequest(req, accessKey, secretKey); err != nil {
-			return nil, errors.Wrap(err, "sign request failed")
-		}
-	}
 	client, err := service.GetHttpClientWithProxy(proxy)
 	if err != nil {
 		return nil, fmt.Errorf("new proxy http client failed: %w", err)
 	}
-	return client.Do(req)
+	reqKeys := resolveQueryReqKeys(modelName, action)
+	if len(reqKeys) == 0 {
+		reqKeys = []string{"jimeng_vgfm_t2v_l20"}
+	}
+
+	var lastResp *http.Response
+	for idx, reqKey := range reqKeys {
+		payload := map[string]string{
+			"req_key": reqKey,
+			"task_id": taskID,
+		}
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return nil, errors.Wrap(err, "marshal fetch task payload failed")
+		}
+
+		req, err := http.NewRequest(http.MethodPost, uri, bytes.NewBuffer(payloadBytes))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Accept", "application/json")
+		req.Header.Set("Content-Type", "application/json")
+
+		if isNewAPIRelay(key) {
+			req.Header.Set("Authorization", "Bearer "+key)
+		} else {
+			keyParts := strings.Split(key, "|")
+			if len(keyParts) != 2 {
+				return nil, fmt.Errorf("invalid api key format for jimeng: expected 'ak|sk'")
+			}
+			accessKey := strings.TrimSpace(keyParts[0])
+			secretKey := strings.TrimSpace(keyParts[1])
+
+			if err := a.signRequest(req, accessKey, secretKey); err != nil {
+				return nil, errors.Wrap(err, "sign request failed")
+			}
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		respBody, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if err != nil {
+			return nil, errors.Wrap(err, "read fetch task response failed")
+		}
+		resp.Body = io.NopCloser(bytes.NewReader(respBody))
+
+		var probe responseTask
+		if err := json.Unmarshal(respBody, &probe); err != nil {
+			// Unrecognized body, return as-is so upper layer can handle raw response.
+			return resp, nil
+		}
+		common.SysLog(fmt.Sprintf("[jimeng] fetch task_id=%s model=%s action=%s req_key=%s code=%d status=%s", taskID, modelName, action, reqKey, probe.Code, probe.Data.Status))
+
+		lastResp = resp
+		if probe.Code == 10000 {
+			return resp, nil
+		}
+
+		if idx == len(reqKeys)-1 {
+			return resp, nil
+		}
+	}
+	if lastResp != nil {
+		return lastResp, nil
+	}
+	return nil, fmt.Errorf("jimeng fetch task failed: no req_key candidate available")
 }
 
 func (a *TaskAdaptor) GetModelList() []string {
@@ -428,6 +468,68 @@ func (a *TaskAdaptor) convertToRequestPayload(req *relaycommon.TaskSubmitReq) (*
 	}
 
 	return &r, nil
+}
+
+func resolveQueryReqKeys(modelName string, action string) []string {
+	modelName = strings.TrimSpace(modelName)
+	action = strings.TrimSpace(action)
+
+	var keys []string
+	addUnique := func(k string) {
+		k = strings.TrimSpace(k)
+		if k == "" {
+			return
+		}
+		for _, existing := range keys {
+			if existing == k {
+				return
+			}
+		}
+		keys = append(keys, k)
+	}
+
+	if modelName == "" {
+		addUnique("jimeng_vgfm_t2v_l20")
+		return keys
+	}
+
+	// If model is already a concrete req_key, use it directly first.
+	if strings.HasPrefix(modelName, "jimeng_") && !strings.Contains(modelName, "jimeng_v30") {
+		addUnique(modelName)
+	}
+
+	// Keep the same req_key mapping strategy as submit path for v30 models.
+	if modelName == "jimeng_v30_pro" {
+		addUnique("jimeng_ti2v_v30_pro")
+		return keys
+	}
+	if strings.Contains(modelName, "jimeng_v30") {
+		t2vKey := strings.Replace(modelName, "jimeng_v30", "jimeng_t2v_v30", 1)
+		i2vFirstKey := strings.TrimSuffix(strings.Replace(modelName, "jimeng_v30", "jimeng_i2v_first_v30", 1), "p")
+		i2vFirstTailKey := strings.TrimSuffix(strings.Replace(modelName, "jimeng_v30", "jimeng_i2v_first_tail_v30", 1), "p")
+
+		switch action {
+		case constant.TaskActionFirstTailGenerate:
+			addUnique(i2vFirstTailKey)
+			addUnique(i2vFirstKey)
+			addUnique(t2vKey)
+		case constant.TaskActionTextGenerate:
+			addUnique(t2vKey)
+			addUnique(i2vFirstKey)
+			addUnique(i2vFirstTailKey)
+		default:
+			// "generate" is ambiguous for Jimeng (text-to-video / image-to-video).
+			addUnique(i2vFirstKey)
+			addUnique(t2vKey)
+			addUnique(i2vFirstTailKey)
+		}
+		addUnique(modelName)
+		return keys
+	}
+
+	addUnique(modelName)
+	addUnique("jimeng_vgfm_t2v_l20")
+	return keys
 }
 
 func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, error) {
