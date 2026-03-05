@@ -82,6 +82,11 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	privateData := task.PrivateData
 	if privateData.Key != "" {
 		key = privateData.Key
+	} else if channel.ChannelInfo.IsMultiKey {
+		nextKey, _, keyErr := channel.GetNextEnabledKey()
+		if keyErr == nil && strings.TrimSpace(nextKey) != "" {
+			key = nextKey
+		}
 	}
 	queryModel := strings.TrimSpace(task.Properties.UpstreamModelName)
 	if queryModel == "" {
@@ -96,21 +101,18 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		}
 	}
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask query task_id=%s action=%s model=%s", taskId, task.Action, queryModel))
-	resp, err := adaptor.FetchTask(baseURL, key, map[string]any{
+	payload := map[string]any{
 		"task_id": taskId,
 		"action":  task.Action,
 		"model":   queryModel,
-	}, proxy)
+	}
+	responseBody, usedKey, err := fetchTaskResponseBody(adaptor, channel, task, baseURL, key, payload, proxy)
 	if err != nil {
 		return fmt.Errorf("fetchTask failed for task %s: %w", taskId, err)
 	}
-	//if resp.StatusCode != http.StatusOK {
-	//return fmt.Errorf("get Video Task status code: %d", resp.StatusCode)
-	//}
-	defer resp.Body.Close()
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("readAll failed for task %s: %w", taskId, err)
+
+	if usedKey != "" && strings.TrimSpace(task.PrivateData.Key) == "" && channel.ChannelInfo.IsMultiKey {
+		task.PrivateData.Key = usedKey
 	}
 
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask response: %s", string(responseBody)))
@@ -372,6 +374,96 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	}
 
 	return nil
+}
+
+func fetchTaskResponseBody(adaptor channel.TaskAdaptor, channel *model.Channel, task *model.Task, baseURL, primaryKey string, payload map[string]any, proxy string) ([]byte, string, error) {
+	keys := []string{primaryKey}
+	if task != nil && strings.TrimSpace(task.PrivateData.Key) == "" && channel != nil && channel.ChannelInfo.IsMultiKey {
+		for _, key := range channel.GetKeys() {
+			key = strings.TrimSpace(key)
+			if key == "" {
+				continue
+			}
+			duplicate := false
+			for _, existing := range keys {
+				if existing == key {
+					duplicate = true
+					break
+				}
+			}
+			if !duplicate {
+				keys = append(keys, key)
+			}
+		}
+	}
+
+	bestScore := -1
+	var bestBody []byte
+	bestKey := ""
+	var firstErr error
+
+	for _, key := range keys {
+		resp, err := adaptor.FetchTask(baseURL, key, payload, proxy)
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		body, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+
+		score := scoreTaskResponseBody(adaptor, body)
+		if score > bestScore {
+			bestScore = score
+			bestBody = body
+			bestKey = key
+		}
+		if score >= 5 {
+			break
+		}
+	}
+
+	if len(bestBody) > 0 {
+		return bestBody, bestKey, nil
+	}
+	if firstErr != nil {
+		return nil, "", firstErr
+	}
+	return nil, "", fmt.Errorf("fetch task returned empty response")
+}
+
+func scoreTaskResponseBody(adaptor channel.TaskAdaptor, body []byte) int {
+	var responseItems dto.TaskResponse[model.Task]
+	if err := common.Unmarshal(body, &responseItems); err == nil && responseItems.IsSuccess() {
+		return scoreTaskStatus(string(responseItems.Data.Status))
+	}
+
+	if taskInfo, err := adaptor.ParseTaskResult(body); err == nil && taskInfo != nil {
+		return scoreTaskStatus(taskInfo.Status)
+	}
+	return 0
+}
+
+func scoreTaskStatus(status string) int {
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case string(model.TaskStatusSuccess):
+		return 5
+	case string(model.TaskStatusInProgress):
+		return 4
+	case string(model.TaskStatusQueued), string(model.TaskStatusSubmitted):
+		return 3
+	case string(model.TaskStatusFailure):
+		return 1
+	default:
+		return 0
+	}
 }
 
 func redactVideoResponseBody(body []byte) []byte {

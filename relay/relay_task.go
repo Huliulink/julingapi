@@ -400,8 +400,13 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			return
 		}
 		requestKey := channelModel.Key
-		if channelModel.Type == constant.ChannelTypeGemini && strings.TrimSpace(originTask.PrivateData.Key) != "" {
+		if strings.TrimSpace(originTask.PrivateData.Key) != "" {
 			requestKey = originTask.PrivateData.Key
+		} else if channelModel.ChannelInfo.IsMultiKey {
+			nextKey, _, keyErr := channelModel.GetNextEnabledKey()
+			if keyErr == nil && strings.TrimSpace(nextKey) != "" {
+				requestKey = nextKey
+			}
 		}
 		queryModel := strings.TrimSpace(originTask.Properties.UpstreamModelName)
 		if queryModel == "" {

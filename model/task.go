@@ -131,7 +131,12 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 	properties := Properties{}
 	privateData := TaskPrivateData{}
 	if relayInfo != nil && relayInfo.ChannelMeta != nil {
-		if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeGemini {
+		// Async task query may require the same upstream credential as submit,
+		// especially in multi-key channels (e.g. Jimeng task polling).
+		// Persist submit-time key for all multi-key task channels.
+		if relayInfo.ChannelMeta.ChannelIsMultiKey {
+			privateData.Key = relayInfo.ChannelMeta.ApiKey
+		} else if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeGemini {
 			privateData.Key = relayInfo.ChannelMeta.ApiKey
 		}
 		if relayInfo.UpstreamModelName != "" {
