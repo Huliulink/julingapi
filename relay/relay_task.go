@@ -447,6 +447,9 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 					originTask.FailReason = ti.Url
 				}
 			}
+			if ti.Reason != "" && (originTask.Status == model.TaskStatusFailure || originTask.FailReason == "") {
+				originTask.FailReason = ti.Reason
+			}
 			_ = originTask.Update()
 			var raw map[string]any
 			_ = json.Unmarshal(body, &raw)
@@ -523,6 +526,13 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		safeTask := originTask
 		if relayR2TakeoverHasR2Result(originTask) {
 			safeTask = relayR2TakeoverSanitizeTask(originTask)
+		}
+		if safeTask != nil && safeTask.Status == model.TaskStatusFailure {
+			respBody, err = buildLegacyFailedVideoTaskResponse(safeTask)
+			if err != nil {
+				taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
+			}
+			return
 		}
 		respBody, err = common.Marshal(dto.TaskResponse[any]{
 			Code: "success",
@@ -812,6 +822,34 @@ func relayR2TakeoverSanitizeTask(task *model.Task) *model.Task {
 		}
 	}
 	return &safe
+}
+
+func buildLegacyFailedVideoTaskResponse(task *model.Task) ([]byte, error) {
+	if task == nil {
+		return common.Marshal(dto.TaskResponse[any]{
+			Code: "success",
+			Data: map[string]any{
+				"error":    nil,
+				"format":   "mp4",
+				"metadata": nil,
+				"status":   "failed",
+				"task_id":  "",
+				"url":      "",
+			},
+		})
+	}
+
+	return common.Marshal(dto.TaskResponse[any]{
+		Code: "success",
+		Data: map[string]any{
+			"error":    nil,
+			"format":   "mp4",
+			"metadata": nil,
+			"status":   "failed",
+			"task_id":  task.TaskID,
+			"url":      task.FailReason,
+		},
+	})
 }
 
 func TaskModel2Dto(task *model.Task) *dto.TaskDto {

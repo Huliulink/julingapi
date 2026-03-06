@@ -359,6 +359,14 @@ func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
 	}
 
 	video.Metadata = nil
+	if task != nil && task.Status == model.TaskStatusFailure && strings.TrimSpace(task.FailReason) != "" {
+		video.Error = &dto.OpenAIVideoError{
+			Message: task.FailReason,
+			Code:    "task_failed",
+		}
+		return video
+	}
+
 	if service.IsR2URL(task.FailReason) {
 		video.SetMetadata("url", task.FailReason)
 	}
