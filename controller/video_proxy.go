@@ -84,6 +84,12 @@ func GetVideoTaskStatus(c *gin.Context) {
 		}
 	}
 
+	// Always return structured error for failed tasks, even when R2 takeover is enabled.
+	if task.Status == model.TaskStatusFailure {
+		c.JSON(http.StatusOK, buildVideoResponse(task, true))
+		return
+	}
+
 	if rawPayload, ok := buildR2TaskDataPayload(task); ok {
 		c.Data(http.StatusOK, "application/json", rawPayload)
 		return
@@ -359,11 +365,16 @@ func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
 	}
 
 	video.Metadata = nil
-	if task != nil && task.Status == model.TaskStatusFailure && strings.TrimSpace(task.FailReason) != "" {
+	if task != nil && task.Status == model.TaskStatusFailure {
+		reason := service.ExtractTaskFailureReason(task.FailReason, task.Data)
+		if reason == "" {
+			reason = "task failed"
+		}
 		video.Error = &dto.OpenAIVideoError{
-			Message: task.FailReason,
+			Message: reason,
 			Code:    "task_failed",
 		}
+		video.SetMetadata("message", reason)
 		return video
 	}
 

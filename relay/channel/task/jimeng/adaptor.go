@@ -534,7 +534,7 @@ func resolveQueryReqKeys(modelName string, action string) []string {
 
 func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, error) {
 	resTask := responseTask{}
-	if err := json.Unmarshal(respBody, &resTask); err != nil {
+	if err := common.Unmarshal(respBody, &resTask); err != nil {
 		return nil, errors.Wrap(err, "unmarshal task result failed")
 	}
 	taskResult := relaycommon.TaskInfo{}
@@ -542,11 +542,11 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Code = 0
 	} else {
 		taskResult.Code = resTask.Code // todo uni code
-		taskResult.Reason = resTask.Message
+		taskResult.Reason = buildJimengFailureReason(&resTask)
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"
 	}
-	switch resTask.Data.Status {
+	switch strings.ToLower(strings.TrimSpace(resTask.Data.Status)) {
 	case "in_queue":
 		taskResult.Status = model.TaskStatusQueued
 		taskResult.Progress = "10%"
@@ -559,8 +559,17 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskResult.Status = model.TaskStatusSuccess
 			taskResult.Progress = "100%"
 		}
+	case "failed", "fail", "error", "aborted", "canceled", "cancelled":
+		taskResult.Status = model.TaskStatusFailure
+		taskResult.Progress = "100%"
+		if strings.TrimSpace(taskResult.Reason) == "" {
+			taskResult.Reason = buildJimengFailureReason(&resTask)
+		}
 	}
 	taskResult.Url = resTask.Data.VideoUrl
+	if taskResult.Status == model.TaskStatusFailure && strings.TrimSpace(taskResult.Reason) == "" {
+		taskResult.Reason = buildJimengFailureReason(&resTask)
+	}
 	return &taskResult, nil
 }
 
@@ -578,15 +587,90 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 	openAIVideo.CreatedAt = originTask.CreatedAt
 	openAIVideo.CompletedAt = originTask.UpdatedAt
 
-	if jimengResp.Code != 10000 {
+	if originTask.Status == model.TaskStatusFailure || jimengResp.Code != 10000 {
+		reason := buildJimengFailureReason(&jimengResp)
+		if reason == "" {
+			reason = service.ExtractTaskFailureReason(originTask.FailReason, originTask.Data)
+		}
+		if reason == "" {
+			reason = "task failed"
+		}
 		openAIVideo.Error = &dto.OpenAIVideoError{
-			Message: jimengResp.Message,
+			Message: reason,
 			Code:    fmt.Sprintf("%d", jimengResp.Code),
 		}
+		openAIVideo.SetMetadata("message", reason)
 	}
 
 	jsonData, _ := common.Marshal(openAIVideo)
 	return jsonData, nil
+}
+
+func buildJimengFailureReason(resTask *responseTask) string {
+	if resTask == nil {
+		return ""
+	}
+
+	reason := strings.TrimSpace(resTask.Message)
+	if respReason := extractJimengRespDataReason(strings.TrimSpace(resTask.Data.RespData)); respReason != "" {
+		if reason == "" {
+			reason = respReason
+		} else if !strings.Contains(reason, respReason) {
+			reason = reason + " | " + respReason
+		}
+	}
+
+	status := strings.TrimSpace(resTask.Data.Status)
+	if reason == "" && status != "" && status != "done" && status != "in_queue" {
+		reason = "jimeng status: " + status
+	}
+	if reason == "" && resTask.Code != 10000 {
+		reason = fmt.Sprintf("jimeng error code: %d", resTask.Code)
+	}
+
+	if requestID := strings.TrimSpace(resTask.RequestId); requestID != "" {
+		if reason == "" {
+			reason = "request_id=" + requestID
+		} else {
+			reason = fmt.Sprintf("%s (request_id=%s)", reason, requestID)
+		}
+	}
+	return limitJimengReason(reason)
+}
+
+func extractJimengRespDataReason(respData string) string {
+	if respData == "" {
+		return ""
+	}
+
+	var payload map[string]any
+	if err := common.UnmarshalJsonStr(respData, &payload); err != nil {
+		return limitJimengReason(respData)
+	}
+	for _, key := range []string{"message", "Message", "reason", "Reason", "status_message", "StatusMessage", "error_message", "error_msg"} {
+		if v, ok := payload[key]; ok {
+			if s := strings.TrimSpace(fmt.Sprintf("%v", v)); s != "" {
+				return s
+			}
+		}
+	}
+	if errVal, ok := payload["error"]; ok {
+		if s := strings.TrimSpace(fmt.Sprintf("%v", errVal)); s != "" {
+			return s
+		}
+	}
+	return limitJimengReason(respData)
+}
+
+func limitJimengReason(reason string) string {
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		return ""
+	}
+	if len(reason) <= 1024 {
+		return reason
+	}
+	return reason[:1024] + "..."
 }
 
 func isNewAPIRelay(apiKey string) bool {

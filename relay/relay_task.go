@@ -838,6 +838,10 @@ func buildLegacyFailedVideoTaskResponse(task *model.Task) ([]byte, error) {
 			},
 		})
 	}
+	failReason := service.ExtractTaskFailureReason(task.FailReason, task.Data)
+	if failReason == "" {
+		failReason = "task failed"
+	}
 
 	return common.Marshal(dto.TaskResponse[any]{
 		Code: "success",
@@ -847,7 +851,7 @@ func buildLegacyFailedVideoTaskResponse(task *model.Task) ([]byte, error) {
 			"metadata": nil,
 			"status":   "failed",
 			"task_id":  task.TaskID,
-			"url":      task.FailReason,
+			"url":      failReason,
 		},
 	})
 }
