@@ -499,20 +499,34 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		defer cancel()
 
 		if relayR2TakeoverInProgress(originTask) {
-			originTask, err = relayR2TakeoverWaitTask(waitCtx, originTask.TaskID)
-			if err != nil {
-				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer pending: %w", err), "r2_transfer_failed", http.StatusBadGateway)
+			nextTask, waitErr := relayR2TakeoverWaitTask(waitCtx, originTask.TaskID)
+			if waitErr != nil {
+				if fallbackBody, ok, fallbackErr := relayR2TakeoverBuildSoraFallbackResponse(originTask); fallbackErr == nil && ok {
+					respBody = fallbackBody
+					return
+				}
+				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer pending: %w", waitErr), "r2_transfer_failed", http.StatusBadGateway)
 				return
 			}
+			originTask = nextTask
 		}
 
 		if originTask.Status == model.TaskStatusSuccess && !relayR2TakeoverHasR2Result(originTask) {
-			originTask, err = relayR2TakeoverEnsureTask(waitCtx, originTask.TaskID)
-			if err != nil {
-				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: %w", err), "r2_transfer_failed", http.StatusBadGateway)
+			nextTask, transferErr := relayR2TakeoverEnsureTask(waitCtx, originTask.TaskID)
+			if transferErr != nil {
+				if fallbackBody, ok, fallbackErr := relayR2TakeoverBuildSoraFallbackResponse(originTask); fallbackErr == nil && ok {
+					respBody = fallbackBody
+					return
+				}
+				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: %w", transferErr), "r2_transfer_failed", http.StatusBadGateway)
 				return
 			}
+			originTask = nextTask
 			if !relayR2TakeoverHasR2Result(originTask) {
+				if fallbackBody, ok, fallbackErr := relayR2TakeoverBuildSoraFallbackResponse(originTask); fallbackErr == nil && ok {
+					respBody = fallbackBody
+					return
+				}
 				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: r2 url not available after transfer"), "r2_transfer_failed", http.StatusBadGateway)
 				return
 			}
@@ -851,6 +865,57 @@ func relayR2TakeoverSanitizeTask(task *model.Task) *model.Task {
 		}
 	}
 	return &safe
+}
+
+func relayR2TakeoverIsSoraTask(task *model.Task) bool {
+	if task == nil {
+		return false
+	}
+	return task.Platform == constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora))
+}
+
+func relayR2TakeoverSoraFallbackURL(task *model.Task) string {
+	if task == nil || len(task.Data) == 0 {
+		return ""
+	}
+
+	var taskData map[string]interface{}
+	if err := common.Unmarshal(task.Data, &taskData); err != nil {
+		return ""
+	}
+
+	for _, key := range []string{"url", "video_url", "output_url"} {
+		if v, ok := taskData[key].(string); ok && strings.TrimSpace(v) != "" && !service.IsR2URL(v) {
+			return v
+		}
+	}
+	return ""
+}
+
+func relayR2TakeoverBuildSoraFallbackResponse(task *model.Task) ([]byte, bool, error) {
+	if !relayR2TakeoverIsSoraTask(task) {
+		return nil, false, nil
+	}
+	fallbackURL := relayR2TakeoverSoraFallbackURL(task)
+	if fallbackURL == "" {
+		return nil, false, nil
+	}
+
+	body, err := common.Marshal(dto.TaskResponse[any]{
+		Code: "success",
+		Data: map[string]any{
+			"error":    nil,
+			"format":   "mp4",
+			"metadata": nil,
+			"status":   "succeeded",
+			"task_id":  task.TaskID,
+			"url":      fallbackURL,
+		},
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	return body, true, nil
 }
 
 func buildLegacyFailedVideoTaskResponse(task *model.Task) ([]byte, error) {

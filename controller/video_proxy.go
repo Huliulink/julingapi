@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -67,6 +68,9 @@ func GetVideoTaskStatus(c *gin.Context) {
 	if isR2TransferInProgress(task) {
 		nextTask, waitErr := waitForR2TransferState(waitCtx, task.TaskID)
 		if waitErr != nil {
+			if respondSoraUpstreamFallback(c, task, waitErr) {
+				return
+			}
 			respondR2TransferError(c, task, waitErr)
 			return
 		}
@@ -76,11 +80,17 @@ func GetVideoTaskStatus(c *gin.Context) {
 	if task.Status == model.TaskStatusSuccess && !taskHasR2Result(task) {
 		nextTask, transferErr := ensureTaskTransferredToR2(waitCtx, task.TaskID)
 		if transferErr != nil {
+			if respondSoraUpstreamFallback(c, task, transferErr) {
+				return
+			}
 			respondR2TransferError(c, task, transferErr)
 			return
 		}
 		task = nextTask
 		if !taskHasR2Result(task) {
+			if respondSoraUpstreamFallback(c, task, fmt.Errorf("r2 url not available after transfer")) {
+				return
+			}
 			respondR2TransferError(c, task, fmt.Errorf("r2 url not available after transfer"))
 			return
 		}
@@ -463,6 +473,70 @@ func respondR2TransferError(c *gin.Context, task *model.Task, err error) {
 	c.JSON(http.StatusOK, video)
 }
 
+func isSoraTask(task *model.Task) bool {
+	if task == nil {
+		return false
+	}
+	if task.Platform == constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora)) {
+		return true
+	}
+	if task.ChannelId == 0 {
+		return false
+	}
+	channel, err := model.CacheGetChannel(task.ChannelId)
+	return err == nil && channel != nil && channel.Type == constant.ChannelTypeSora
+}
+
+func extractSoraUpstreamFallbackURL(task *model.Task) string {
+	if task == nil || len(task.Data) == 0 {
+		return ""
+	}
+
+	var payload map[string]interface{}
+	if err := common.Unmarshal(task.Data, &payload); err != nil {
+		return ""
+	}
+
+	for _, key := range []string{"url", "video_url", "output_url"} {
+		if rawURL, ok := payload[key].(string); ok && strings.TrimSpace(rawURL) != "" && !service.IsR2URL(rawURL) {
+			return rawURL
+		}
+	}
+	return ""
+}
+
+func buildSoraUpstreamFallbackPayload(task *model.Task) ([]byte, bool) {
+	if !isSoraTask(task) || len(task.Data) == 0 {
+		return nil, false
+	}
+
+	var payload map[string]interface{}
+	if err := common.Unmarshal(task.Data, &payload); err != nil || payload == nil {
+		return nil, false
+	}
+
+	if extractSoraUpstreamFallbackURL(task) == "" {
+		return nil, false
+	}
+
+	delete(payload, "error")
+	b, err := common.Marshal(payload)
+	if err != nil {
+		return nil, false
+	}
+	return b, true
+}
+
+func respondSoraUpstreamFallback(c *gin.Context, task *model.Task, cause error) bool {
+	payload, ok := buildSoraUpstreamFallbackPayload(task)
+	if !ok {
+		return false
+	}
+	logger.LogWarn(c.Request.Context(), fmt.Sprintf("task %s fallback to upstream sora url after r2 transfer error: %s", task.TaskID, cause.Error()))
+	c.Data(http.StatusOK, "application/json", payload)
+	return true
+}
+
 func VideoProxy(c *gin.Context) {
 	taskID := c.Param("task_id")
 	if taskID == "" {
@@ -513,29 +587,43 @@ func VideoProxy(c *gin.Context) {
 		defer cancel()
 
 		if isR2TransferInProgress(task) {
-			task, err = waitForR2TransferState(waitCtx, task.TaskID)
-			if err != nil {
+			nextTask, waitErr := waitForR2TransferState(waitCtx, task.TaskID)
+			if waitErr != nil {
+				if isSoraTask(task) {
+					if fallbackURL := extractSoraUpstreamFallbackURL(task); fallbackURL != "" {
+						c.Redirect(http.StatusFound, fallbackURL)
+						return
+					}
+				}
 				c.JSON(http.StatusBadGateway, gin.H{
 					"error": gin.H{
-						"message": fmt.Sprintf("R2 transfer pending: %s", err.Error()),
+						"message": fmt.Sprintf("R2 transfer pending: %s", waitErr.Error()),
 						"type":    "server_error",
 					},
 				})
 				return
 			}
+			task = nextTask
 		}
 
 		if !service.IsR2URL(task.FailReason) {
-			task, err = ensureTaskTransferredToR2(waitCtx, task.TaskID)
-			if err != nil {
+			nextTask, transferErr := ensureTaskTransferredToR2(waitCtx, task.TaskID)
+			if transferErr != nil {
+				if isSoraTask(task) {
+					if fallbackURL := extractSoraUpstreamFallbackURL(task); fallbackURL != "" {
+						c.Redirect(http.StatusFound, fallbackURL)
+						return
+					}
+				}
 				c.JSON(http.StatusBadGateway, gin.H{
 					"error": gin.H{
-						"message": fmt.Sprintf("R2 transfer failed: %s", err.Error()),
+						"message": fmt.Sprintf("R2 transfer failed: %s", transferErr.Error()),
 						"type":    "server_error",
 					},
 				})
 				return
 			}
+			task = nextTask
 		}
 
 		r2URL := taskPrimaryR2URL(task)
@@ -543,7 +631,12 @@ func VideoProxy(c *gin.Context) {
 			c.Redirect(http.StatusFound, r2URL)
 			return
 		}
-		// Strict R2 policy: never fallback to upstream URL when VideoR2Enable is ON.
+		if isSoraTask(task) {
+			if fallbackURL := extractSoraUpstreamFallbackURL(task); fallbackURL != "" {
+				c.Redirect(http.StatusFound, fallbackURL)
+				return
+			}
+		}
 		c.JSON(http.StatusBadGateway, gin.H{
 			"error": gin.H{
 				"message": "R2 transfer failed: r2 url not available after transfer",
