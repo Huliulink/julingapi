@@ -155,6 +155,7 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 	prefix := storage_setting.GetVideoR2Prefix()
 	mainR2URL := ""
 	dataChanged := false
+	var transferChannel *model.Channel
 
 	var taskData map[string]interface{}
 	if len(task.Data) > 0 {
@@ -210,7 +211,31 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 			}
 		} else {
 			if strings.Contains(task.FailReason, "/v1/videos/") {
-				// keep original URL for fallback
+				if task.ChannelId != 0 {
+					channel, err := model.CacheGetChannel(task.ChannelId)
+					if err != nil {
+						return nil, fmt.Errorf("get channel for protected transfer failed: %w", err)
+					}
+					transferChannel = channel
+				}
+				if transferChannel != nil && transferChannel.Type == constant.ChannelTypeSora {
+					fileName := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
+					authKey := strings.TrimSpace(task.PrivateData.Key)
+					if authKey == "" {
+						authKey = strings.TrimSpace(transferChannel.Key)
+					}
+					if authKey == "" {
+						return nil, fmt.Errorf("missing sora api key for protected transfer")
+					}
+					res := service.TransferAuthenticatedFileToR2(ctx, fileName, task.FailReason, "Bearer "+authKey, transferChannel.GetSetting().Proxy)
+					if !res.Success {
+						return nil, fmt.Errorf("transfer protected main video failed: %w", res.Error)
+					}
+					task.FailReason = res.R2URL
+					if mainR2URL == "" {
+						mainR2URL = res.R2URL
+					}
+				}
 			} else {
 				fileName := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
 				res := service.TransferFileToR2(ctx, fileName, task.FailReason)

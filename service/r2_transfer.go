@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -73,6 +74,70 @@ func downloadAndUpload(ctx context.Context, objectKey string, videoURL string) e
 		return fmt.Errorf("upload to R2 failed: %w", err)
 	}
 
+	return nil
+}
+
+// TransferAuthenticatedFileToR2 downloads a protected file with the given authorization header
+// and uploads it to R2.
+func TransferAuthenticatedFileToR2(ctx context.Context, objectKey string, originalURL string, authorization string, proxy string) R2TransferResult {
+	if !common.IsR2ClientReady() {
+		return R2TransferResult{Success: false, Error: fmt.Errorf("R2 client not ready")}
+	}
+	if originalURL == "" || strings.HasPrefix(originalURL, "data:") {
+		return R2TransferResult{Success: false, Error: fmt.Errorf("invalid URL")}
+	}
+	if strings.TrimSpace(authorization) == "" {
+		return R2TransferResult{Success: false, Error: fmt.Errorf("authorization is required")}
+	}
+
+	var lastErr error
+	for attempt := 1; attempt <= r2MaxRetries; attempt++ {
+		if attempt > 1 {
+			logger.LogWarn(ctx, fmt.Sprintf("R2 authenticated transfer retry %d/%d for %s", attempt, r2MaxRetries, objectKey))
+			time.Sleep(r2RetryInterval)
+		}
+		err := downloadAndUploadAuthenticated(ctx, objectKey, originalURL, authorization, proxy)
+		if err == nil {
+			r2URL := common.GetR2PublicURL(objectKey)
+			logger.LogInfo(ctx, fmt.Sprintf("R2 authenticated transfer success: %s -> %s", objectKey, r2URL))
+			return R2TransferResult{Success: true, R2URL: r2URL}
+		}
+		lastErr = err
+		logger.LogError(ctx, fmt.Sprintf("R2 authenticated transfer attempt %d failed for %s: %v", attempt, objectKey, err))
+	}
+	return R2TransferResult{Success: false, Error: lastErr}
+}
+
+func downloadAndUploadAuthenticated(ctx context.Context, objectKey string, fileURL string, authorization string, proxy string) error {
+	client, err := GetHttpClientWithProxy(proxy)
+	if err != nil {
+		return fmt.Errorf("create proxy client failed: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileURL, nil)
+	if err != nil {
+		return fmt.Errorf("create request failed: %w", err)
+	}
+	req.Header.Set("Authorization", authorization)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("download failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("download returned status %d", resp.StatusCode)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "video/mp4"
+	}
+
+	if err := common.UploadToR2(ctx, objectKey, resp.Body, resp.ContentLength, contentType); err != nil {
+		return fmt.Errorf("upload to R2 failed: %w", err)
+	}
 	return nil
 }
 
