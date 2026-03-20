@@ -675,6 +675,9 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 		}
 		res := service.TransferFileToR2(ctx, rule.objectKey, rawURL)
 		if !res.Success {
+			if rule.asMainURL && strings.Contains(task.FailReason, "/v1/videos/") {
+				continue
+			}
 			return nil, fmt.Errorf("transfer %s failed: %w", rule.name, res.Error)
 		}
 		taskData[rule.name] = res.R2URL
