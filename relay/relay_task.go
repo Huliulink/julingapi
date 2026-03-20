@@ -678,16 +678,20 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 		if !ok || strings.TrimSpace(rawURL) == "" {
 			continue
 		}
+		sourceURL := rawURL
+		if relayR2TakeoverIsSoraTask(task) && rule.asMainURL {
+			sourceURL = relayNormalizeSoraUpstreamURL(rawURL)
+		}
 		if service.IsR2URL(rawURL) {
 			if mainR2URL == "" && rule.asMainURL {
 				mainR2URL = rawURL
 			}
 			continue
 		}
-		if strings.Contains(rawURL, "/v1/videos/") {
+		if strings.Contains(sourceURL, "/v1/videos/") {
 			continue
 		}
-		res := service.TransferFileToR2(ctx, rule.objectKey, rawURL)
+		res := service.TransferFileToR2(ctx, rule.objectKey, sourceURL)
 		if !res.Success {
 			if rule.asMainURL && strings.Contains(task.FailReason, "/v1/videos/") {
 				continue
@@ -908,24 +912,31 @@ func relayR2TakeoverSoraFallbackURL(task *model.Task) string {
 
 	for _, key := range []string{"url", "video_url", "output_url"} {
 		if v, ok := taskData[key].(string); ok && strings.TrimSpace(v) != "" && !service.IsR2URL(v) {
-			return v
+			return relayNormalizeSoraUpstreamURL(v)
 		}
 	}
 	if metadata, ok := taskData["metadata"].(map[string]interface{}); ok {
 		for _, key := range []string{"url", "video_url", "output_url"} {
 			if v, ok := metadata[key].(string); ok && strings.TrimSpace(v) != "" && !service.IsR2URL(v) {
-				return v
+				return relayNormalizeSoraUpstreamURL(v)
 			}
 		}
 	}
 	if response, ok := taskData["response"].(map[string]interface{}); ok {
 		for _, key := range []string{"url", "video_url", "output_url"} {
 			if v, ok := response[key].(string); ok && strings.TrimSpace(v) != "" && !service.IsR2URL(v) {
-				return v
+				return relayNormalizeSoraUpstreamURL(v)
 			}
 		}
 	}
 	return ""
+}
+
+func relayNormalizeSoraUpstreamURL(rawURL string) string {
+	rawURL = strings.TrimSpace(rawURL)
+	rawURL = strings.Replace(rawURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
+	rawURL = strings.Replace(rawURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
+	return rawURL
 }
 
 func relayR2TakeoverBuildSoraFallbackResponse(task *model.Task) ([]byte, bool, error) {

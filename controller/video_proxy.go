@@ -197,16 +197,20 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 		if !ok || strings.TrimSpace(rawURL) == "" {
 			continue
 		}
+		sourceURL := rawURL
+		if isSoraTask(task) && rule.asMainURL {
+			sourceURL = normalizeSoraUpstreamURL(rawURL)
+		}
 		if service.IsR2URL(rawURL) {
 			if mainR2URL == "" && rule.asMainURL {
 				mainR2URL = rawURL
 			}
 			continue
 		}
-		if strings.Contains(rawURL, "/v1/videos/") {
+		if strings.Contains(sourceURL, "/v1/videos/") {
 			continue
 		}
-		res := service.TransferFileToR2(ctx, rule.fileName, rawURL)
+		res := service.TransferFileToR2(ctx, rule.fileName, sourceURL)
 		if !res.Success {
 			if rule.asMainURL && strings.Contains(task.FailReason, "/v1/videos/") {
 				continue
@@ -507,16 +511,16 @@ func extractSoraUpstreamFallbackURL(task *model.Task) string {
 	}
 
 	if rawURL := firstNonR2URL(payload, "url", "video_url", "output_url"); rawURL != "" {
-		return rawURL
+		return normalizeSoraUpstreamURL(rawURL)
 	}
 	if metadata, ok := payload["metadata"].(map[string]interface{}); ok {
 		if rawURL := firstNonR2URL(metadata, "url", "video_url", "output_url"); rawURL != "" {
-			return rawURL
+			return normalizeSoraUpstreamURL(rawURL)
 		}
 	}
 	if response, ok := payload["response"].(map[string]interface{}); ok {
 		if rawURL := firstNonR2URL(response, "url", "video_url", "output_url"); rawURL != "" {
-			return rawURL
+			return normalizeSoraUpstreamURL(rawURL)
 		}
 	}
 	return ""
@@ -559,6 +563,13 @@ func taskDataLooksLikeSora(task *model.Task) bool {
 	return false
 }
 
+func normalizeSoraUpstreamURL(rawURL string) string {
+	rawURL = strings.TrimSpace(rawURL)
+	rawURL = strings.Replace(rawURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
+	rawURL = strings.Replace(rawURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
+	return rawURL
+}
+
 func buildSoraUpstreamFallbackPayload(task *model.Task) ([]byte, bool) {
 	if !isSoraTask(task) || len(task.Data) == 0 {
 		return nil, false
@@ -569,11 +580,24 @@ func buildSoraUpstreamFallbackPayload(task *model.Task) ([]byte, bool) {
 		return nil, false
 	}
 
-	if extractSoraUpstreamFallbackURL(task) == "" {
+	fallbackURL := extractSoraUpstreamFallbackURL(task)
+	if fallbackURL == "" {
 		return nil, false
 	}
 
 	delete(payload, "error")
+	payload["url"] = fallbackURL
+	for _, key := range []string{"video_url", "output_url"} {
+		if rawURL, ok := payload[key].(string); ok && strings.TrimSpace(rawURL) != "" {
+			payload[key] = normalizeSoraUpstreamURL(rawURL)
+		}
+	}
+	if metadata, ok := payload["metadata"].(map[string]interface{}); ok {
+		delete(metadata, "permalink")
+		if len(metadata) == 0 {
+			delete(payload, "metadata")
+		}
+	}
 	b, err := common.Marshal(payload)
 	if err != nil {
 		return nil, false
