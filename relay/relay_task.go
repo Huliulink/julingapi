@@ -652,6 +652,7 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 		asMainURL bool
 	}
 	rules := []fieldRule{
+		{name: "url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
 		{name: "video_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
 		{name: "output_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID), asMainURL: true},
 		{name: "image_url", objectKey: fmt.Sprintf("%s/%s_image.jpg", prefix, task.TaskID), asMainURL: false},

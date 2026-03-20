@@ -188,6 +188,16 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			if err := json.Unmarshal(task.Data, &taskData); err == nil {
 				dataChanged := false
 
+				if rawURL, ok := taskData["url"].(string); ok && rawURL != "" && !service.IsR2URL(rawURL) {
+					videoKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
+					r2Result := service.TransferFileToR2(ctx, videoKey, rawURL)
+					if r2Result.Success {
+						taskData["url"] = r2Result.R2URL
+						task.FailReason = r2Result.R2URL
+						dataChanged = true
+					}
+				}
+
 				// 转存 video_url
 				if videoURL, ok := taskData["video_url"].(string); ok && videoURL != "" && !service.IsR2URL(videoURL) {
 					videoKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
