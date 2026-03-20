@@ -659,6 +659,12 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 	if taskData == nil {
 		taskData = map[string]interface{}{}
 	}
+	if relayR2TakeoverIsSoraTask(task) && task.ChannelId != 0 {
+		channel, err := model.CacheGetChannel(task.ChannelId)
+		if err == nil && channel != nil {
+			transferChannel = channel
+		}
+	}
 
 	type fieldRule struct {
 		name      string
@@ -691,7 +697,12 @@ func relayR2TakeoverTransferTask(ctx context.Context, task *model.Task) (*model.
 		if strings.Contains(sourceURL, "/v1/videos/") {
 			continue
 		}
-		res := service.TransferFileToR2(ctx, rule.objectKey, sourceURL)
+		var res service.R2TransferResult
+		if relayR2TakeoverIsSoraTask(task) && rule.asMainURL && transferChannel != nil {
+			res = service.TransferFileToR2WithProxy(ctx, rule.objectKey, sourceURL, transferChannel.GetSetting().Proxy)
+		} else {
+			res = service.TransferFileToR2(ctx, rule.objectKey, sourceURL)
+		}
 		if !res.Success {
 			if rule.asMainURL && strings.Contains(task.FailReason, "/v1/videos/") {
 				continue

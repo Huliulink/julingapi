@@ -178,6 +178,12 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 	if taskData == nil {
 		taskData = map[string]interface{}{}
 	}
+	if isSoraTask(task) && task.ChannelId != 0 {
+		channel, err := model.CacheGetChannel(task.ChannelId)
+		if err == nil && channel != nil {
+			transferChannel = channel
+		}
+	}
 
 	type fieldRule struct {
 		name      string
@@ -210,7 +216,12 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 		if strings.Contains(sourceURL, "/v1/videos/") {
 			continue
 		}
-		res := service.TransferFileToR2(ctx, rule.fileName, sourceURL)
+		var res service.R2TransferResult
+		if isSoraTask(task) && rule.asMainURL && transferChannel != nil {
+			res = service.TransferFileToR2WithProxy(ctx, rule.fileName, sourceURL, transferChannel.GetSetting().Proxy)
+		} else {
+			res = service.TransferFileToR2(ctx, rule.fileName, sourceURL)
+		}
 		if !res.Success {
 			if rule.asMainURL && strings.Contains(task.FailReason, "/v1/videos/") {
 				continue
