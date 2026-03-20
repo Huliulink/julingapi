@@ -454,6 +454,9 @@ func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
 }
 
 func respondR2TransferError(c *gin.Context, task *model.Task, err error) {
+	if respondSoraUpstreamFallback(c, task, err) {
+		return
+	}
 	if task == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"message": err.Error(), "type": "server_error"},
@@ -480,11 +483,17 @@ func isSoraTask(task *model.Task) bool {
 	if task.Platform == constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora)) {
 		return true
 	}
+	if looksLikeSoraModel(task.Properties.OriginModelName) || looksLikeSoraModel(task.Properties.UpstreamModelName) {
+		return true
+	}
 	if task.ChannelId == 0 {
-		return false
+		return taskDataLooksLikeSora(task)
 	}
 	channel, err := model.CacheGetChannel(task.ChannelId)
-	return err == nil && channel != nil && channel.Type == constant.ChannelTypeSora
+	if err == nil && channel != nil && channel.Type == constant.ChannelTypeSora {
+		return true
+	}
+	return taskDataLooksLikeSora(task)
 }
 
 func extractSoraUpstreamFallbackURL(task *model.Task) string {
@@ -497,12 +506,57 @@ func extractSoraUpstreamFallbackURL(task *model.Task) string {
 		return ""
 	}
 
-	for _, key := range []string{"url", "video_url", "output_url"} {
+	if rawURL := firstNonR2URL(payload, "url", "video_url", "output_url"); rawURL != "" {
+		return rawURL
+	}
+	if metadata, ok := payload["metadata"].(map[string]interface{}); ok {
+		if rawURL := firstNonR2URL(metadata, "url", "video_url", "output_url"); rawURL != "" {
+			return rawURL
+		}
+	}
+	if response, ok := payload["response"].(map[string]interface{}); ok {
+		if rawURL := firstNonR2URL(response, "url", "video_url", "output_url"); rawURL != "" {
+			return rawURL
+		}
+	}
+	return ""
+}
+
+func firstNonR2URL(payload map[string]interface{}, keys ...string) string {
+	if payload == nil {
+		return ""
+	}
+	for _, key := range keys {
 		if rawURL, ok := payload[key].(string); ok && strings.TrimSpace(rawURL) != "" && !service.IsR2URL(rawURL) {
 			return rawURL
 		}
 	}
 	return ""
+}
+
+func looksLikeSoraModel(modelName string) bool {
+	return strings.Contains(strings.ToLower(strings.TrimSpace(modelName)), "sora")
+}
+
+func taskDataLooksLikeSora(task *model.Task) bool {
+	if task == nil || len(task.Data) == 0 {
+		return false
+	}
+
+	var payload map[string]interface{}
+	if err := common.Unmarshal(task.Data, &payload); err != nil {
+		return false
+	}
+
+	if modelName, ok := payload["model"].(string); ok && looksLikeSoraModel(modelName) {
+		return true
+	}
+	if metadata, ok := payload["metadata"].(map[string]interface{}); ok {
+		if permalink, ok := metadata["permalink"].(string); ok && strings.Contains(strings.ToLower(permalink), "sora") {
+			return true
+		}
+	}
+	return false
 }
 
 func buildSoraUpstreamFallbackPayload(task *model.Task) ([]byte, bool) {

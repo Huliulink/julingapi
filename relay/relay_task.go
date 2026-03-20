@@ -871,7 +871,29 @@ func relayR2TakeoverIsSoraTask(task *model.Task) bool {
 	if task == nil {
 		return false
 	}
-	return task.Platform == constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora))
+	if task.Platform == constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora)) {
+		return true
+	}
+	if strings.Contains(strings.ToLower(strings.TrimSpace(task.Properties.OriginModelName)), "sora") ||
+		strings.Contains(strings.ToLower(strings.TrimSpace(task.Properties.UpstreamModelName)), "sora") {
+		return true
+	}
+	if len(task.Data) == 0 {
+		return false
+	}
+	var taskData map[string]interface{}
+	if err := common.Unmarshal(task.Data, &taskData); err != nil {
+		return false
+	}
+	if modelName, ok := taskData["model"].(string); ok && strings.Contains(strings.ToLower(strings.TrimSpace(modelName)), "sora") {
+		return true
+	}
+	if metadata, ok := taskData["metadata"].(map[string]interface{}); ok {
+		if permalink, ok := metadata["permalink"].(string); ok && strings.Contains(strings.ToLower(permalink), "sora") {
+			return true
+		}
+	}
+	return false
 }
 
 func relayR2TakeoverSoraFallbackURL(task *model.Task) string {
@@ -887,6 +909,20 @@ func relayR2TakeoverSoraFallbackURL(task *model.Task) string {
 	for _, key := range []string{"url", "video_url", "output_url"} {
 		if v, ok := taskData[key].(string); ok && strings.TrimSpace(v) != "" && !service.IsR2URL(v) {
 			return v
+		}
+	}
+	if metadata, ok := taskData["metadata"].(map[string]interface{}); ok {
+		for _, key := range []string{"url", "video_url", "output_url"} {
+			if v, ok := metadata[key].(string); ok && strings.TrimSpace(v) != "" && !service.IsR2URL(v) {
+				return v
+			}
+		}
+	}
+	if response, ok := taskData["response"].(map[string]interface{}); ok {
+		for _, key := range []string{"url", "video_url", "output_url"} {
+			if v, ok := response[key].(string); ok && strings.TrimSpace(v) != "" && !service.IsR2URL(v) {
+				return v
+			}
 		}
 	}
 	return ""
