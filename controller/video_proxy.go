@@ -65,19 +65,21 @@ func GetVideoTaskStatus(c *gin.Context) {
 	defer cancel()
 
 	if isR2TransferInProgress(task) {
-		task, err = waitForR2TransferState(waitCtx, task.TaskID)
-		if err != nil {
-			respondR2TransferError(c, task, err)
+		nextTask, waitErr := waitForR2TransferState(waitCtx, task.TaskID)
+		if waitErr != nil {
+			respondR2TransferError(c, task, waitErr)
 			return
 		}
+		task = nextTask
 	}
 
 	if task.Status == model.TaskStatusSuccess && !taskHasR2Result(task) {
-		task, err = ensureTaskTransferredToR2(waitCtx, task.TaskID)
-		if err != nil {
-			respondR2TransferError(c, task, err)
+		nextTask, transferErr := ensureTaskTransferredToR2(waitCtx, task.TaskID)
+		if transferErr != nil {
+			respondR2TransferError(c, task, transferErr)
 			return
 		}
+		task = nextTask
 		if !taskHasR2Result(task) {
 			respondR2TransferError(c, task, fmt.Errorf("r2 url not available after transfer"))
 			return
@@ -441,7 +443,7 @@ func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
 func respondR2TransferError(c *gin.Context, task *model.Task, err error) {
 	if task == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"message": "task not found", "type": "server_error"},
+			"error": gin.H{"message": err.Error(), "type": "server_error"},
 		})
 		return
 	}
