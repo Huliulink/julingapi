@@ -245,6 +245,35 @@ func TransferFileToR2(ctx context.Context, objectKey string, originalURL string)
 	return R2TransferResult{Success: false, Error: lastErr}
 }
 
+// TransferSoraMainFileToR2 prefers the authenticated Sora content endpoint and
+// falls back to the upstream media URL when needed.
+func TransferSoraMainFileToR2(ctx context.Context, objectKey string, rawURL string, protectedURL string, authKey string, proxy string) R2TransferResult {
+	rawURL = strings.TrimSpace(rawURL)
+	protectedURL = strings.TrimSpace(protectedURL)
+	authKey = strings.TrimSpace(authKey)
+
+	if protectedURL != "" && authKey != "" {
+		res := TransferAuthenticatedFileToR2(ctx, objectKey, protectedURL, "Bearer "+authKey, proxy)
+		if res.Success {
+			return res
+		}
+		logger.LogWarn(ctx, fmt.Sprintf("Sora protected transfer failed for %s, fallback to upstream media url: %v", objectKey, res.Error))
+		if rawURL == "" || rawURL == protectedURL {
+			return res
+		}
+	}
+
+	if rawURL != "" {
+		return TransferFileToR2WithProxy(ctx, objectKey, rawURL, proxy)
+	}
+
+	if protectedURL != "" && authKey == "" {
+		return R2TransferResult{Success: false, Error: fmt.Errorf("missing sora api key for protected transfer")}
+	}
+
+	return R2TransferResult{Success: false, Error: fmt.Errorf("invalid sora source URL")}
+}
+
 // IsR2URL checks if a URL is an R2 URL by matching the custom domain
 func IsR2URL(url string) bool {
 	cfg := common.GetR2Config()

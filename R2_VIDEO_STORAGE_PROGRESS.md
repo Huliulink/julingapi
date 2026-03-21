@@ -95,3 +95,4 @@
   - When media fields are transferred to R2, `FailReason` is now updated to main R2 URL even if original `FailReason` was non-R2.
   - This keeps query redirect and auto-delete cleanup behavior consistent.
 - [x] `/v1/videos/:task_id` now prefers returning sanitized original task JSON payload with R2 links (when available), keeping response shape closer to upstream while hiding upstream URLs.
+- [x] Sora R2 main-video transfer now prefers authenticated `/v1/videos/{id}/content` before falling back to upstream media URLs, reducing raw playback-link download failures without affecting other R2 platforms.

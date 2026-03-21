@@ -187,21 +187,26 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			var taskData map[string]interface{}
 			if err := json.Unmarshal(task.Data, &taskData); err == nil {
 				dataChanged := false
+				mainR2URL := ""
 				var r2Result service.R2TransferResult
 
 				if rawURL, ok := taskData["url"].(string); ok && rawURL != "" && !service.IsR2URL(rawURL) {
-					transferURL := rawURL
-					if channel.Type == constant.ChannelTypeSora {
-						transferURL = strings.Replace(transferURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-						transferURL = strings.Replace(transferURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-					}
 					videoKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
 					if channel.Type == constant.ChannelTypeSora {
-						r2Result = service.TransferFileToR2WithProxy(ctx, videoKey, transferURL, channel.GetSetting().Proxy)
+						if mainR2URL == "" {
+							r2Result = transferSoraMainURLToR2(ctx, task, channel, videoKey, rawURL)
+							if r2Result.Success {
+								mainR2URL = r2Result.R2URL
+							}
+						}
 					} else {
-						r2Result = service.TransferFileToR2(ctx, videoKey, transferURL)
+						r2Result = service.TransferFileToR2(ctx, videoKey, rawURL)
 					}
-					if r2Result.Success {
+					if mainR2URL != "" {
+						taskData["url"] = mainR2URL
+						task.FailReason = mainR2URL
+						dataChanged = true
+					} else if r2Result.Success {
 						taskData["url"] = r2Result.R2URL
 						task.FailReason = r2Result.R2URL
 						dataChanged = true
@@ -210,18 +215,22 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 
 				// 转存 video_url
 				if videoURL, ok := taskData["video_url"].(string); ok && videoURL != "" && !service.IsR2URL(videoURL) {
-					transferURL := videoURL
-					if channel.Type == constant.ChannelTypeSora {
-						transferURL = strings.Replace(transferURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-						transferURL = strings.Replace(transferURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-					}
 					videoKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
 					if channel.Type == constant.ChannelTypeSora {
-						r2Result = service.TransferFileToR2WithProxy(ctx, videoKey, transferURL, channel.GetSetting().Proxy)
+						if mainR2URL == "" {
+							r2Result = transferSoraMainURLToR2(ctx, task, channel, videoKey, videoURL)
+							if r2Result.Success {
+								mainR2URL = r2Result.R2URL
+							}
+						}
 					} else {
-						r2Result = service.TransferFileToR2(ctx, videoKey, transferURL)
+						r2Result = service.TransferFileToR2(ctx, videoKey, videoURL)
 					}
-					if r2Result.Success {
+					if mainR2URL != "" {
+						taskData["video_url"] = mainR2URL
+						task.FailReason = mainR2URL
+						dataChanged = true
+					} else if r2Result.Success {
 						taskData["video_url"] = r2Result.R2URL
 						task.FailReason = r2Result.R2URL
 						dataChanged = true
@@ -240,18 +249,24 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 
 				// 转存 output_url (部分上游使用此字段)
 					if outputURL, ok := taskData["output_url"].(string); ok && outputURL != "" && !service.IsR2URL(outputURL) {
-						transferURL := outputURL
-						if channel.Type == constant.ChannelTypeSora {
-							transferURL = strings.Replace(transferURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-							transferURL = strings.Replace(transferURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-						}
 						outputKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
 						if channel.Type == constant.ChannelTypeSora {
-							r2Result = service.TransferFileToR2WithProxy(ctx, outputKey, transferURL, channel.GetSetting().Proxy)
+							if mainR2URL == "" {
+								r2Result = transferSoraMainURLToR2(ctx, task, channel, outputKey, outputURL)
+								if r2Result.Success {
+									mainR2URL = r2Result.R2URL
+								}
+							}
 						} else {
-							r2Result = service.TransferFileToR2(ctx, outputKey, transferURL)
+							r2Result = service.TransferFileToR2(ctx, outputKey, outputURL)
 						}
-						if r2Result.Success {
+						if mainR2URL != "" {
+							taskData["output_url"] = mainR2URL
+							if task.FailReason == "" {
+								task.FailReason = mainR2URL
+							}
+							dataChanged = true
+						} else if r2Result.Success {
 							taskData["output_url"] = r2Result.R2URL
 							if task.FailReason == "" {
 								task.FailReason = r2Result.R2URL
@@ -277,10 +292,18 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			}
 			// 如果 FailReason 还没设置（比如 URL 字段名不是以上几种），走原始逻辑
 			// 跳过需要鉴权的 proxy URL（如 /v1/videos/.../content），匿名下载会失败
-			if task.FailReason != "" && !service.IsR2URL(task.FailReason) && !strings.Contains(task.FailReason, "/v1/videos/") {
-				r2Result := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
-				if r2Result.Success {
-					task.FailReason = r2Result.R2URL
+			if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
+			if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
+				if channel.Type == constant.ChannelTypeSora && strings.Contains(task.FailReason, "/v1/videos/") {
+					r2Result := transferSoraMainURLToR2(ctx, task, channel, fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId), "")
+					if r2Result.Success {
+						task.FailReason = r2Result.R2URL
+					}
+				} else if !strings.Contains(task.FailReason, "/v1/videos/") {
+					r2Result := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
+					if r2Result.Success {
+						task.FailReason = r2Result.R2URL
+					}
 				}
 			}
 		}

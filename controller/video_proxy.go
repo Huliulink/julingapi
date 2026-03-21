@@ -213,16 +213,24 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 			}
 			continue
 		}
+		if isSoraTask(task) && rule.asMainURL && mainR2URL != "" {
+			taskData[rule.name] = mainR2URL
+			dataChanged = true
+			continue
+		}
 		if strings.Contains(sourceURL, "/v1/videos/") {
 			continue
 		}
 		var res service.R2TransferResult
 		if isSoraTask(task) && rule.asMainURL && transferChannel != nil {
-			res = service.TransferFileToR2WithProxy(ctx, rule.fileName, sourceURL, transferChannel.GetSetting().Proxy)
+			res = transferSoraMainURLToR2(ctx, task, transferChannel, rule.fileName, sourceURL)
 		} else {
 			res = service.TransferFileToR2(ctx, rule.fileName, sourceURL)
 		}
 		if !res.Success {
+			if isSoraTask(task) && rule.asMainURL && transferChannel != nil {
+				return nil, fmt.Errorf("transfer %s failed: %w", rule.name, res.Error)
+			}
 			if rule.asMainURL && strings.Contains(task.FailReason, "/v1/videos/") {
 				continue
 			}
@@ -251,14 +259,7 @@ func transferTaskToR2(ctx context.Context, task *model.Task) (*model.Task, error
 				}
 				if transferChannel != nil && transferChannel.Type == constant.ChannelTypeSora {
 					fileName := fmt.Sprintf("%s/%s.mp4", prefix, task.TaskID)
-					authKey := strings.TrimSpace(task.PrivateData.Key)
-					if authKey == "" {
-						authKey = strings.TrimSpace(transferChannel.Key)
-					}
-					if authKey == "" {
-						return nil, fmt.Errorf("missing sora api key for protected transfer")
-					}
-					res := service.TransferAuthenticatedFileToR2(ctx, fileName, task.FailReason, "Bearer "+authKey, transferChannel.GetSetting().Proxy)
+					res := transferSoraMainURLToR2(ctx, task, transferChannel, fileName, "")
 					if !res.Success {
 						return nil, fmt.Errorf("transfer protected main video failed: %w", res.Error)
 					}
