@@ -88,6 +88,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			key = nextKey
 		}
 	}
+
 	queryModel := strings.TrimSpace(task.Properties.UpstreamModelName)
 	if queryModel == "" {
 		queryModel = strings.TrimSpace(task.Properties.OriginModelName)
@@ -100,6 +101,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			}
 		}
 	}
+
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask query task_id=%s action=%s model=%s", taskId, task.Action, queryModel))
 	payload := map[string]any{
 		"task_id": taskId,
@@ -110,7 +112,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	if err != nil {
 		return fmt.Errorf("fetchTask failed for task %s: %w", taskId, err)
 	}
-
 	if usedKey != "" && strings.TrimSpace(task.PrivateData.Key) == "" && channel.ChannelInfo.IsMultiKey {
 		task.PrivateData.Key = usedKey
 	}
@@ -118,7 +119,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask response: %s", string(responseBody)))
 
 	taskResult := &relaycommon.TaskInfo{}
-	// try parse as New API response format
 	var responseItems dto.TaskResponse[model.Task]
 	if err = common.Unmarshal(responseBody, &responseItems); err == nil && responseItems.IsSuccess() {
 		logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask parsed as new api response format: %+v", responseItems))
@@ -139,11 +139,9 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 
 	now := time.Now().Unix()
 	if taskResult.Status == "" {
-		//return fmt.Errorf("task %s status is empty", taskId)
 		taskResult = relaycommon.FailTaskInfo("upstream returned empty status")
 	}
 
-	// 记录原本的状态，防止重复退款
 	shouldRefund := false
 	quota := task.Quota
 	preStatus := task.Status
@@ -164,162 +162,135 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		if task.FinishTime == 0 {
 			task.FinishTime = now
 		}
-		if !(len(taskResult.Url) > 5 && taskResult.Url[:5] == "data:") {
+		if !strings.HasPrefix(taskResult.Url, "data:") {
 			task.FailReason = taskResult.Url
 		}
 
-		// R2 云存储转存：将视频和缩略图转存到 R2，替换 task.Data 中的 URL
 		if storage_setting.IsVideoR2Enabled() {
-			// 转存开始前：先将状态置为 IN_PROGRESS/95%，清空 FailReason，
-			// 防止用户查询时看到上游裸链接
 			savedFailReason := task.FailReason
 			task.Status = model.TaskStatusInProgress
 			task.Progress = "95%"
-			task.FailReason = "" // 清空，避免泄露上游 URL
+			task.FailReason = ""
 			if saveErr := task.Update(); saveErr != nil {
 				logger.LogWarn(ctx, "pre-R2-transfer status save failed: "+saveErr.Error())
 			}
-			// 恢复，供下面的 R2 转存逻辑使用
+
 			task.Status = model.TaskStatusSuccess
 			task.Progress = "100%"
 			task.FailReason = savedFailReason
-			platformPrefix := storage_setting.GetVideoR2Prefix()
+
+			prefix := storage_setting.GetVideoR2Prefix()
+			isSoraTask := channel.Type == constant.ChannelTypeSora
 			var taskData map[string]interface{}
 			if err := json.Unmarshal(task.Data, &taskData); err == nil {
+				type fieldRule struct {
+					name      string
+					objectKey string
+					asMainURL bool
+				}
+				rules := []fieldRule{
+					{name: "url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, taskId), asMainURL: true},
+					{name: "video_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, taskId), asMainURL: true},
+					{name: "output_url", objectKey: fmt.Sprintf("%s/%s.mp4", prefix, taskId), asMainURL: true},
+					{name: "image_url", objectKey: fmt.Sprintf("%s/%s_image.jpg", prefix, taskId), asMainURL: false},
+					{name: "thumbnail_url", objectKey: fmt.Sprintf("%s/%s_thumb.jpg", prefix, taskId), asMainURL: false},
+				}
+
 				dataChanged := false
 				mainR2URL := ""
-				var r2Result service.R2TransferResult
+				for _, rule := range rules {
+					rawURL, ok := taskData[rule.name].(string)
+					if !ok || strings.TrimSpace(rawURL) == "" {
+						continue
+					}
+					rawURL = strings.TrimSpace(rawURL)
 
-				if rawURL, ok := taskData["url"].(string); ok && rawURL != "" && !service.IsR2URL(rawURL) {
-					videoKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
-					if channel.Type == constant.ChannelTypeSora {
-						if mainR2URL == "" {
-							r2Result = transferSoraMainURLToR2(ctx, task, channel, videoKey, rawURL)
-							if r2Result.Success {
-								mainR2URL = r2Result.R2URL
-							}
+					if service.IsR2URL(rawURL) {
+						if rule.asMainURL && mainR2URL == "" {
+							mainR2URL = rawURL
 						}
+						continue
+					}
+					if isSoraTask && rule.asMainURL && mainR2URL != "" {
+						taskData[rule.name] = mainR2URL
+						dataChanged = true
+						continue
+					}
+
+					sourceURL := rawURL
+					if isSoraTask && rule.asMainURL {
+						sourceURL = normalizeSoraUpstreamURL(rawURL)
+					}
+					if strings.Contains(sourceURL, "/v1/videos/") {
+						continue
+					}
+
+					var res service.R2TransferResult
+					if isSoraTask && rule.asMainURL {
+						res = transferSoraMainURLToR2(ctx, task, channel, rule.objectKey, sourceURL)
 					} else {
-						r2Result = service.TransferFileToR2(ctx, videoKey, rawURL)
+						res = service.TransferFileToR2(ctx, rule.objectKey, sourceURL)
 					}
-					if mainR2URL != "" {
-						taskData["url"] = mainR2URL
-						task.FailReason = mainR2URL
-						dataChanged = true
-					} else if r2Result.Success {
-						taskData["url"] = r2Result.R2URL
-						task.FailReason = r2Result.R2URL
-						dataChanged = true
+					if !res.Success {
+						continue
+					}
+
+					taskData[rule.name] = res.R2URL
+					dataChanged = true
+					if rule.asMainURL && mainR2URL == "" {
+						mainR2URL = res.R2URL
 					}
 				}
 
-				// 转存 video_url
-				if videoURL, ok := taskData["video_url"].(string); ok && videoURL != "" && !service.IsR2URL(videoURL) {
-					videoKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
-					if channel.Type == constant.ChannelTypeSora {
-						if mainR2URL == "" {
-							r2Result = transferSoraMainURLToR2(ctx, task, channel, videoKey, videoURL)
-							if r2Result.Success {
-								mainR2URL = r2Result.R2URL
-							}
-						}
-					} else {
-						r2Result = service.TransferFileToR2(ctx, videoKey, videoURL)
-					}
-					if mainR2URL != "" {
-						taskData["video_url"] = mainR2URL
-						task.FailReason = mainR2URL
-						dataChanged = true
-					} else if r2Result.Success {
-						taskData["video_url"] = r2Result.R2URL
-						task.FailReason = r2Result.R2URL
-						dataChanged = true
-					}
-				}
-
-				// 转存 thumbnail_url
-				if thumbURL, ok := taskData["thumbnail_url"].(string); ok && thumbURL != "" && !service.IsR2URL(thumbURL) {
-					thumbKey := fmt.Sprintf("%s/%s_thumb.jpg", platformPrefix, taskId)
-					r2Result := service.TransferFileToR2(ctx, thumbKey, thumbURL)
-					if r2Result.Success {
-						taskData["thumbnail_url"] = r2Result.R2URL
-						dataChanged = true
-					}
-				}
-
-				// 转存 output_url (部分上游使用此字段)
-					if outputURL, ok := taskData["output_url"].(string); ok && outputURL != "" && !service.IsR2URL(outputURL) {
-						outputKey := fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId)
-						if channel.Type == constant.ChannelTypeSora {
+				if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
+					mainKey := fmt.Sprintf("%s/%s.mp4", prefix, taskId)
+					if isSoraTask && strings.Contains(task.FailReason, "/v1/videos/") {
+						res := transferSoraMainURLToR2(ctx, task, channel, mainKey, "")
+						if res.Success {
+							task.FailReason = res.R2URL
 							if mainR2URL == "" {
-								r2Result = transferSoraMainURLToR2(ctx, task, channel, outputKey, outputURL)
-								if r2Result.Success {
-									mainR2URL = r2Result.R2URL
-								}
+								mainR2URL = res.R2URL
 							}
-						} else {
-							r2Result = service.TransferFileToR2(ctx, outputKey, outputURL)
 						}
-						if mainR2URL != "" {
-							taskData["output_url"] = mainR2URL
-							if task.FailReason == "" {
-								task.FailReason = mainR2URL
+					} else if !strings.Contains(task.FailReason, "/v1/videos/") {
+						res := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
+						if res.Success {
+							task.FailReason = res.R2URL
+							if mainR2URL == "" {
+								mainR2URL = res.R2URL
 							}
-							dataChanged = true
-						} else if r2Result.Success {
-							taskData["output_url"] = r2Result.R2URL
-							if task.FailReason == "" {
-								task.FailReason = r2Result.R2URL
-							}
-							dataChanged = true
 						}
 					}
-
-					if imageURL, ok := taskData["image_url"].(string); ok && imageURL != "" && !service.IsR2URL(imageURL) {
-						imageKey := fmt.Sprintf("%s/%s_image.jpg", platformPrefix, taskId)
-						r2Result := service.TransferFileToR2(ctx, imageKey, imageURL)
-						if r2Result.Success {
-							taskData["image_url"] = r2Result.R2URL
-							dataChanged = true
-						}
-					}
-
-					if dataChanged {
-						if newData, err := common.Marshal(taskData); err == nil {
-							task.Data = newData
-						}
 				}
-			}
-			// 如果 FailReason 还没设置（比如 URL 字段名不是以上几种），走原始逻辑
-			// 跳过需要鉴权的 proxy URL（如 /v1/videos/.../content），匿名下载会失败
-			if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
-			if task.FailReason != "" && !service.IsR2URL(task.FailReason) {
-				if channel.Type == constant.ChannelTypeSora && strings.Contains(task.FailReason, "/v1/videos/") {
-					r2Result := transferSoraMainURLToR2(ctx, task, channel, fmt.Sprintf("%s/%s.mp4", platformPrefix, taskId), "")
-					if r2Result.Success {
-						task.FailReason = r2Result.R2URL
+
+				if isSoraTask && mainR2URL != "" {
+					for _, field := range []string{"url", "video_url", "output_url"} {
+						rawURL, ok := taskData[field].(string)
+						if !ok || strings.TrimSpace(rawURL) == "" || service.IsR2URL(rawURL) {
+							continue
+						}
+						taskData[field] = mainR2URL
+						dataChanged = true
 					}
-				} else if !strings.Contains(task.FailReason, "/v1/videos/") {
-					r2Result := service.TransferVideoToR2(ctx, channel.Type, taskId, task.FailReason)
-					if r2Result.Success {
-						task.FailReason = r2Result.R2URL
+				}
+
+				if mainR2URL != "" && !service.IsR2URL(task.FailReason) {
+					task.FailReason = mainR2URL
+				}
+				if dataChanged {
+					if newData, err := common.Marshal(taskData); err == nil {
+						task.Data = newData
 					}
 				}
 			}
 		}
 
-		// 如果返回了 total_tokens 并且配置了模型倍率(非固定价格),则重新计费
-		if taskResult.TotalTokens > 0 {
-			// 获取模型名称
 		if taskResult.TotalTokens > 0 {
 			var taskData map[string]interface{}
 			if err := json.Unmarshal(task.Data, &taskData); err == nil {
 				if modelName, ok := taskData["model"].(string); ok && modelName != "" {
-					// 获取模型价格和倍率
 					modelRatio, hasRatioSetting, _ := ratio_setting.GetModelRatio(modelName)
-					// 只有配置了倍率(非固定价格)时才按 token 重新计费
 					if hasRatioSetting && modelRatio > 0 {
-						// 获取用户和组的倍率信息
 						group := task.Group
 						if group == "" {
 							user, err := model.GetUserById(task.UserId, false)
@@ -331,23 +302,18 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 							groupRatio := ratio_setting.GetGroupRatio(group)
 							userGroupRatio, hasUserGroupRatio := ratio_setting.GetGroupGroupRatio(group, group)
 
-							var finalGroupRatio float64
+							finalGroupRatio := groupRatio
 							if hasUserGroupRatio {
 								finalGroupRatio = userGroupRatio
-							} else {
-								finalGroupRatio = groupRatio
 							}
 
-							// 计算实际应扣费额度: totalTokens * modelRatio * groupRatio
 							actualQuota := int(float64(taskResult.TotalTokens) * modelRatio * finalGroupRatio)
-
-							// 计算差额
 							preConsumedQuota := task.Quota
 							quotaDelta := actualQuota - preConsumedQuota
 
 							if quotaDelta > 0 {
-								// 需要补扣费
-								logger.LogInfo(ctx, fmt.Sprintf("视频任务 %s 预扣费后补扣费：%s（实际消耗：%s，预扣费：%s，tokens：%d）",
+								logger.LogInfo(ctx, fmt.Sprintf(
+									"video task %s token reconciliation consumes extra quota: delta=%s actual=%s previous=%s tokens=%d",
 									task.TaskID,
 									logger.LogQuota(quotaDelta),
 									logger.LogQuota(actualQuota),
@@ -355,22 +321,26 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 									taskResult.TotalTokens,
 								))
 								if err := model.DecreaseUserQuota(task.UserId, quotaDelta); err != nil {
-									logger.LogError(ctx, fmt.Sprintf("补扣费失败: %s", err.Error()))
+									logger.LogError(ctx, fmt.Sprintf("failed to decrease user quota: %s", err.Error()))
 								} else {
 									model.UpdateUserUsedQuotaAndRequestCount(task.UserId, quotaDelta)
 									model.UpdateChannelUsedQuota(task.ChannelId, quotaDelta)
-									task.Quota = actualQuota // 更新任务记录的实际扣费额度
-
-									// 记录消费日志
-									logContent := fmt.Sprintf("视频任务成功补扣费，模型倍率 %.2f，分组倍率 %.2f，tokens %d，预扣费 %s，实际扣费 %s，补扣费 %s",
-										modelRatio, finalGroupRatio, taskResult.TotalTokens,
-										logger.LogQuota(preConsumedQuota), logger.LogQuota(actualQuota), logger.LogQuota(quotaDelta))
+									task.Quota = actualQuota
+									logContent := fmt.Sprintf(
+										"Video async task token reconciliation consumed extra quota. Model ratio %.2f, group ratio %.2f, tokens %d, previous %s, actual %s, delta %s",
+										modelRatio,
+										finalGroupRatio,
+										taskResult.TotalTokens,
+										logger.LogQuota(preConsumedQuota),
+										logger.LogQuota(actualQuota),
+										logger.LogQuota(quotaDelta),
+									)
 									model.RecordLog(task.UserId, model.LogTypeSystem, logContent)
 								}
 							} else if quotaDelta < 0 {
-								// 需要退还多扣的费用
 								refundQuota := -quotaDelta
-								logger.LogInfo(ctx, fmt.Sprintf("视频任务 %s 预扣费后返还：%s（实际消耗：%s，预扣费：%s，tokens：%d）",
+								logger.LogInfo(ctx, fmt.Sprintf(
+									"video task %s token reconciliation refunds quota: refund=%s actual=%s previous=%s tokens=%d",
 									task.TaskID,
 									logger.LogQuota(refundQuota),
 									logger.LogQuota(actualQuota),
@@ -378,20 +348,27 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 									taskResult.TotalTokens,
 								))
 								if err := model.IncreaseUserQuota(task.UserId, refundQuota, false); err != nil {
-									logger.LogError(ctx, fmt.Sprintf("退还预扣费失败: %s", err.Error()))
+									logger.LogError(ctx, fmt.Sprintf("failed to refund user quota: %s", err.Error()))
 								} else {
-									task.Quota = actualQuota // 更新任务记录的实际扣费额度
-
-									// 记录退款日志
-									logContent := fmt.Sprintf("视频任务成功退还多扣费用，模型倍率 %.2f，分组倍率 %.2f，tokens %d，预扣费 %s，实际扣费 %s，退还 %s",
-										modelRatio, finalGroupRatio, taskResult.TotalTokens,
-										logger.LogQuota(preConsumedQuota), logger.LogQuota(actualQuota), logger.LogQuota(refundQuota))
+									task.Quota = actualQuota
+									logContent := fmt.Sprintf(
+										"Video async task token reconciliation refunded quota. Model ratio %.2f, group ratio %.2f, tokens %d, previous %s, actual %s, refund %s",
+										modelRatio,
+										finalGroupRatio,
+										taskResult.TotalTokens,
+										logger.LogQuota(preConsumedQuota),
+										logger.LogQuota(actualQuota),
+										logger.LogQuota(refundQuota),
+									)
 									model.RecordLog(task.UserId, model.LogTypeSystem, logContent)
 								}
 							} else {
-								// quotaDelta == 0, 预扣费刚好准确
-								logger.LogInfo(ctx, fmt.Sprintf("视频任务 %s 预扣费准确（%s，tokens：%d）",
-									task.TaskID, logger.LogQuota(actualQuota), taskResult.TotalTokens))
+								logger.LogInfo(ctx, fmt.Sprintf(
+									"video task %s token reconciliation unchanged: quota=%s tokens=%d",
+									task.TaskID,
+									logger.LogQuota(actualQuota),
+									taskResult.TotalTokens,
+								))
 							}
 						}
 					}
@@ -421,6 +398,7 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	default:
 		return fmt.Errorf("unknown task status %s for task %s", taskResult.Status, taskId)
 	}
+
 	if taskResult.Progress != "" {
 		task.Progress = taskResult.Progress
 	}
@@ -430,7 +408,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	}
 
 	if shouldRefund {
-		// 任务失败且之前状态不是失败才退还额度，防止重复退还
 		if err := model.IncreaseUserQuota(task.UserId, quota, false); err != nil {
 			logger.LogWarn(ctx, "Failed to increase user quota: "+err.Error())
 		}
