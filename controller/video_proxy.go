@@ -15,6 +15,7 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/storage_setting"
 
@@ -51,6 +52,14 @@ func GetVideoTaskStatus(c *gin.Context) {
 	if !exists || task == nil {
 		RelayTask(c)
 		return
+	}
+
+	if task.Status != model.TaskStatusSuccess && task.Status != model.TaskStatusFailure {
+		if refreshedTask, refreshErr := refreshVideoTaskStatus(c.Request.Context(), task); refreshErr != nil {
+			logger.LogWarn(c.Request.Context(), fmt.Sprintf("refresh video task %s before response failed: %v", taskID, refreshErr))
+		} else if refreshedTask != nil {
+			task = refreshedTask
+		}
 	}
 
 	if !storage_setting.IsVideoR2Enabled() {
@@ -445,6 +454,33 @@ func getVideoTaskID(c *gin.Context) string {
 		return taskID
 	}
 	return strings.TrimSpace(c.Query("task_id"))
+}
+
+func refreshVideoTaskStatus(ctx context.Context, task *model.Task) (*model.Task, error) {
+	if task == nil {
+		return nil, fmt.Errorf("task is nil")
+	}
+	if task.ChannelId == 0 {
+		return task, nil
+	}
+
+	channelModel, err := model.CacheGetChannel(task.ChannelId)
+	if err != nil {
+		return nil, fmt.Errorf("get channel failed: %w", err)
+	}
+
+	adaptor := relay.GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channelModel.Type)))
+	if adaptor == nil {
+		return task, nil
+	}
+
+	taskMap := map[string]*model.Task{
+		task.TaskID: task,
+	}
+	if err := updateVideoSingleTask(ctx, adaptor, channelModel, task.TaskID, taskMap); err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
 func respondVideoTaskStatus(c *gin.Context, task *model.Task, preferR2 bool) {
