@@ -188,7 +188,6 @@ func SetRelayRouter(router *gin.Engine) {
 		relayGeminiRouter.POST("/models/*path", func(c *gin.Context) {
 			controller.Relay(c, types.RelayFormatGemini)
 		})
-		relayGeminiRouter.GET("/models/*path", controller.GetGeminiVideoTaskStatus)
 	}
 }
 

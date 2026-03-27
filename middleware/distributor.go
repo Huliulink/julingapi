@@ -232,13 +232,6 @@ func getModelRequest(c *gin.Context) (*ModelRequest, bool, error) {
 		relayMode := relayconstant.RelayModeVideoSubmit
 		c.Set("relay_mode", relayMode)
 		shouldSelectChannel = false
-	} else if strings.HasPrefix(c.Request.URL.Path, "/api/v1/tasks/") ||
-		strings.HasPrefix(c.Request.URL.Path, "/api/v3/contents/generations/tasks/") ||
-		strings.HasPrefix(c.Request.URL.Path, "/ent/v2/tasks/") ||
-		strings.HasPrefix(c.Request.URL.Path, "/jimeng") ||
-		strings.HasPrefix(c.Request.URL.Path, "/v1/files/retrieve") ||
-		strings.HasPrefix(c.Request.URL.Path, "/v1/query/video_generation") {
-		shouldSelectChannel = false
 	} else if strings.Contains(c.Request.URL.Path, "/v1/videos") {
 		//curl https://api.openai.com/v1/videos \
 		//  -H "Authorization: Bearer $OPENAI_API_KEY" \
@@ -282,9 +275,6 @@ func getModelRequest(c *gin.Context) (*ModelRequest, bool, error) {
 		modelName := extractModelNameFromGeminiPath(c.Request.URL.Path)
 		if modelName != "" {
 			modelRequest.Model = modelName
-		}
-		if c.Request.Method == http.MethodGet && strings.Contains(c.Request.URL.Path, "/operations/") {
-			shouldSelectChannel = false
 		}
 		c.Set("relay_mode", relayMode)
 	} else if !strings.HasPrefix(c.Request.URL.Path, "/v1/audio/transcriptions") && !strings.Contains(c.Request.Header.Get("Content-Type"), "multipart/form-data") {
