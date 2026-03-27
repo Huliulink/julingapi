@@ -477,18 +477,22 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 				status = "queued"
 			}
 			if !strings.HasPrefix(c.Request.RequestURI, "/v1/videos/") {
-				out := map[string]any{
-					"error":    nil,
-					"format":   format,
-					"metadata": nil,
-					"status":   status,
-					"task_id":  originTask.TaskID,
-					"url":      originTask.FailReason,
+				if compatBody, ok, compatErr := service.BuildCompatibleVideoTaskResponse(originTask, service.VideoTaskCompatOptions{PreferR2: false}); compatErr == nil && ok {
+					respBody = compatBody
+				} else {
+					out := map[string]any{
+						"error":    nil,
+						"format":   format,
+						"metadata": nil,
+						"status":   status,
+						"task_id":  originTask.TaskID,
+						"url":      originTask.FailReason,
+					}
+					respBody, _ = json.Marshal(dto.TaskResponse[any]{
+						Code: "success",
+						Data: out,
+					})
 				}
-				respBody, _ = json.Marshal(dto.TaskResponse[any]{
-					Code: "success",
-					Data: out,
-				})
 			}
 		}
 	}()
@@ -542,16 +546,13 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			safeTask = relayR2TakeoverSanitizeTask(originTask)
 		}
 		if safeTask != nil && safeTask.Status == model.TaskStatusFailure {
-			respBody, err = buildLegacyFailedVideoTaskResponse(safeTask)
+			respBody, err = buildLegacyCompatibleVideoTaskResponse(safeTask, true, true)
 			if err != nil {
 				taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
 			}
 			return
 		}
-		respBody, err = common.Marshal(dto.TaskResponse[any]{
-			Code: "success",
-			Data: TaskModel2Dto(safeTask),
-		})
+		respBody, err = buildLegacyCompatibleVideoTaskResponse(safeTask, true, true)
 		if err != nil {
 			taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
 		}
@@ -559,6 +560,14 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 	}
 
 	if len(respBody) != 0 {
+		return
+	}
+
+	if legacyVideoQuery {
+		respBody, err = buildLegacyCompatibleVideoTaskResponse(originTask, false, false)
+		if err != nil {
+			taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -580,10 +589,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		taskResp = service.TaskErrorWrapperLocal(errors.New(fmt.Sprintf("not_implemented:%s", originTask.Platform)), "not_implemented", http.StatusNotImplemented)
 		return
 	}
-	respBody, err = json.Marshal(dto.TaskResponse[any]{
-		Code: "success",
-		Data: TaskModel2Dto(originTask),
-	})
+	respBody, err = buildLegacyCompatibleVideoTaskResponse(originTask, false, false)
 	if err != nil {
 		taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
 	}
@@ -1006,6 +1012,27 @@ func buildLegacyFailedVideoTaskResponse(task *model.Task) ([]byte, error) {
 			"task_id":  task.TaskID,
 			"url":      failReason,
 		},
+	})
+}
+
+func buildLegacyCompatibleVideoTaskResponse(task *model.Task, preferR2 bool, rawCompat bool) ([]byte, error) {
+	if body, ok, err := service.BuildCompatibleVideoTaskResponse(task, service.VideoTaskCompatOptions{PreferR2: preferR2}); err == nil && ok {
+		if rawCompat {
+			return body, nil
+		}
+		return common.Marshal(dto.TaskResponse[any]{
+			Code: "success",
+			Data: json.RawMessage(body),
+		})
+	} else if err != nil {
+		return nil, err
+	}
+	if task != nil && task.Status == model.TaskStatusFailure {
+		return buildLegacyFailedVideoTaskResponse(task)
+	}
+	return common.Marshal(dto.TaskResponse[any]{
+		Code: "success",
+		Data: TaskModel2Dto(task),
 	})
 }
 

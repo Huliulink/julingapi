@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,25 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/relay"
+	"github.com/gin-gonic/gin"
 )
+
+func GetGeminiVideoTaskStatus(c *gin.Context) {
+	path := strings.TrimSpace(c.Param("path"))
+	if path == "" || !strings.Contains(path, "/operations/") {
+		c.JSON(400, gin.H{
+			"error": gin.H{
+				"message": "invalid gemini operation path",
+				"type":    "invalid_request_error",
+			},
+		})
+		return
+	}
+
+	localTaskID := base64.RawURLEncoding.EncodeToString([]byte("models" + path))
+	c.Params = append(c.Params, gin.Param{Key: "task_id", Value: localTaskID})
+	GetVideoTaskStatus(c)
+}
 
 func getGeminiVideoURL(channel *model.Channel, task *model.Task, apiKey string) (string, error) {
 	if channel == nil || task == nil {

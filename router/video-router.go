@@ -28,8 +28,8 @@ func SetVideoRouter(router *gin.Engine) {
 	{
 		klingV1Router.POST("/videos/text2video", controller.RelayTask)
 		klingV1Router.POST("/videos/image2video", controller.RelayTask)
-		klingV1Router.GET("/videos/text2video/:task_id", controller.RelayTask)
-		klingV1Router.GET("/videos/image2video/:task_id", controller.RelayTask)
+		klingV1Router.GET("/videos/text2video/:task_id", controller.GetVideoTaskStatus)
+		klingV1Router.GET("/videos/image2video/:task_id", controller.GetVideoTaskStatus)
 	}
 
 	// Jimeng official API routes - direct mapping to official API format
@@ -38,5 +38,30 @@ func SetVideoRouter(router *gin.Engine) {
 	{
 		// Maps to: /?Action=CVSync2AsyncSubmitTask&Version=2022-08-31 and /?Action=CVSync2AsyncGetResult&Version=2022-08-31
 		jimengOfficialGroup.POST("/", controller.RelayTask)
+	}
+
+	aliTaskGroup := router.Group("/api/v1")
+	aliTaskGroup.Use(middleware.TokenAuth(), middleware.Distribute())
+	{
+		aliTaskGroup.GET("/tasks/:task_id", controller.GetVideoTaskStatus)
+	}
+
+	doubaoTaskGroup := router.Group("/api/v3")
+	doubaoTaskGroup.Use(middleware.TokenAuth(), middleware.Distribute())
+	{
+		doubaoTaskGroup.GET("/contents/generations/tasks/:task_id", controller.GetVideoTaskStatus)
+	}
+
+	viduTaskGroup := router.Group("/ent/v2")
+	viduTaskGroup.Use(middleware.TokenAuth(), middleware.Distribute())
+	{
+		viduTaskGroup.GET("/tasks/:task_id/creations", controller.GetVideoTaskStatus)
+	}
+
+	hailuoTaskGroup := router.Group("/v1")
+	hailuoTaskGroup.Use(middleware.TokenAuth(), middleware.Distribute())
+	{
+		hailuoTaskGroup.GET("/files/retrieve", controller.RetrieveVideoFile)
+		hailuoTaskGroup.GET("/query/video_generation", controller.GetVideoTaskStatus)
 	}
 }
