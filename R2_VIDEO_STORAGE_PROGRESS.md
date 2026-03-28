@@ -135,3 +135,7 @@
 - [x] Fixed misleading `completed_at` timestamps in video polling responses:
   - OpenAI-compatible video responses now only expose `completed_at` after terminal success/failure.
   - Non-terminal tasks no longer leak `UpdatedAt` as a fake completion timestamp during polling.
+- [x] Fixed Jimeng task-refresh regressions exposed by new logs:
+  - Task refresh/query paths now initialize polling adaptors with the resolved fetch base URL instead of leaking an empty `ChannelBaseUrl`.
+  - Added fetch-base resolution for mixed OpenAI-compatible video channels, so task platform and default base URL stay aligned during polling.
+  - Jimeng task parsing now accepts upstream payloads where `code` / `status` are returned as strings, avoiding parse failures like `cannot unmarshal string into ... code of type int`.

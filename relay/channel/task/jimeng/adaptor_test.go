@@ -91,6 +91,28 @@ func TestParseTaskResultRecognizesCommonStatuses(t *testing.T) {
 	}
 }
 
+func TestParseTaskResultAcceptsStringCode(t *testing.T) {
+	t.Parallel()
+
+	body, err := common.Marshal(map[string]any{
+		"code": "10000",
+		"data": map[string]any{
+			"status": "processing",
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal payload: %v", err)
+	}
+
+	taskInfo, err := (&TaskAdaptor{}).ParseTaskResult(body)
+	if err != nil {
+		t.Fatalf("ParseTaskResult error: %v", err)
+	}
+	if string(taskInfo.Status) != "IN_PROGRESS" {
+		t.Fatalf("status=%q want IN_PROGRESS", taskInfo.Status)
+	}
+}
+
 func TestBuildRequestBodyPersistsResolvedReqKey(t *testing.T) {
 	t.Parallel()
 

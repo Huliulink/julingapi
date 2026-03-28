@@ -86,6 +86,25 @@ func ResolveTaskFetchPlatform(channelType int, modelNames ...string) constant.Ta
 	return defaultPlatform
 }
 
+func ResolveTaskFetchBaseURL(channelType int, channelBaseURL string, platform constant.TaskPlatform) string {
+	if baseURL := strings.TrimSpace(channelBaseURL); baseURL != "" {
+		return baseURL
+	}
+
+	if resolvedType, err := strconv.Atoi(strings.TrimSpace(string(platform))); err == nil {
+		if resolvedType >= 0 && resolvedType < len(constant.ChannelBaseURLs) && resolvedType != channelType {
+			if baseURL := strings.TrimSpace(constant.ChannelBaseURLs[resolvedType]); baseURL != "" {
+				return baseURL
+			}
+		}
+	}
+
+	if channelType >= 0 && channelType < len(constant.ChannelBaseURLs) {
+		return strings.TrimSpace(constant.ChannelBaseURLs[channelType])
+	}
+	return ""
+}
+
 func GetAdaptor(apiType int) channel.Adaptor {
 	switch apiType {
 	case constant.APITypeAli:

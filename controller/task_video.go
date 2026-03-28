@@ -47,11 +47,6 @@ func updateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, cha
 		}
 		return fmt.Errorf("CacheGetChannel failed: %w", err)
 	}
-	info := &relaycommon.RelayInfo{}
-	info.ChannelMeta = &relaycommon.ChannelMeta{
-		ChannelBaseUrl: cacheGetChannel.GetBaseURL(),
-	}
-	info.ApiKey = cacheGetChannel.Key
 	for _, taskId := range taskIds {
 		if err := updateVideoSingleTask(ctx, platform, cacheGetChannel, taskId, taskM); err != nil {
 			logger.LogError(ctx, fmt.Sprintf("Failed to update video task %s: %s", taskId, err.Error()))
@@ -61,10 +56,6 @@ func updateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, cha
 }
 
 func updateVideoSingleTask(ctx context.Context, platform constant.TaskPlatform, channel *model.Channel, taskId string, taskM map[string]*model.Task) error {
-	baseURL := constant.ChannelBaseURLs[channel.Type]
-	if channel.GetBaseURL() != "" {
-		baseURL = channel.GetBaseURL()
-	}
 	proxy := channel.GetSetting().Proxy
 
 	task := taskM[taskId]
@@ -85,9 +76,10 @@ func updateVideoSingleTask(ctx context.Context, platform constant.TaskPlatform, 
 	if adaptor == nil {
 		return fmt.Errorf("video adaptor not found")
 	}
+	baseURL := relay.ResolveTaskFetchBaseURL(channel.Type, channel.GetBaseURL(), fetchPlatform)
 	info := &relaycommon.RelayInfo{}
 	info.ChannelMeta = &relaycommon.ChannelMeta{
-		ChannelBaseUrl: channel.GetBaseURL(),
+		ChannelBaseUrl: baseURL,
 	}
 	info.ApiKey = channel.Key
 	adaptor.Init(info)

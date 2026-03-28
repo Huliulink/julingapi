@@ -393,11 +393,6 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if err2 != nil {
 			return
 		}
-		baseURL := constant.ChannelBaseURLs[channelModel.Type]
-		if channelModel.GetBaseURL() != "" {
-			baseURL = channelModel.GetBaseURL()
-		}
-		proxy := channelModel.GetSetting().Proxy
 		fetchPlatform := ResolveTaskFetchPlatform(
 			channelModel.Type,
 			string(originTask.Platform),
@@ -408,6 +403,14 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if adaptor == nil {
 			return
 		}
+		baseURL := ResolveTaskFetchBaseURL(channelModel.Type, channelModel.GetBaseURL(), fetchPlatform)
+		info := &relaycommon.RelayInfo{}
+		info.ChannelMeta = &relaycommon.ChannelMeta{
+			ChannelBaseUrl: baseURL,
+		}
+		info.ApiKey = channelModel.Key
+		adaptor.Init(info)
+		proxy := channelModel.GetSetting().Proxy
 		requestKey := channelModel.Key
 		if strings.TrimSpace(originTask.PrivateData.Key) != "" {
 			requestKey = originTask.PrivateData.Key

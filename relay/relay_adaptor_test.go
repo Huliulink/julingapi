@@ -20,3 +20,17 @@ func TestResolveTaskFetchPlatformFromVideoModel(t *testing.T) {
 		t.Fatalf("sora fetch platform=%q", got)
 	}
 }
+
+func TestResolveTaskFetchBaseURL(t *testing.T) {
+	t.Parallel()
+
+	jimengPlatform := constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeJimeng))
+	if got := ResolveTaskFetchBaseURL(constant.ChannelTypeOpenAI, "", jimengPlatform); got != constant.ChannelBaseURLs[constant.ChannelTypeJimeng] {
+		t.Fatalf("resolved jimeng fetch base url=%q", got)
+	}
+
+	customBaseURL := "https://api.177911.com"
+	if got := ResolveTaskFetchBaseURL(constant.ChannelTypeOpenAI, customBaseURL, jimengPlatform); got != customBaseURL {
+		t.Fatalf("resolved custom fetch base url=%q", got)
+	}
+}

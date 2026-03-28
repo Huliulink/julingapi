@@ -141,10 +141,6 @@ func refreshVideoTaskStatusFromUpstream(_ context.Context, task *model.Task) (*m
 		return nil, fmt.Errorf("get channel failed: %w", err)
 	}
 
-	baseURL := constant.ChannelBaseURLs[channelModel.Type]
-	if channelModel.GetBaseURL() != "" {
-		baseURL = channelModel.GetBaseURL()
-	}
 	proxy := channelModel.GetSetting().Proxy
 	fetchPlatform := relay.ResolveTaskFetchPlatform(
 		channelModel.Type,
@@ -156,6 +152,13 @@ func refreshVideoTaskStatusFromUpstream(_ context.Context, task *model.Task) (*m
 	if adaptor == nil {
 		return nil, fmt.Errorf("video adaptor not found for channel type %d", channelModel.Type)
 	}
+	baseURL := relay.ResolveTaskFetchBaseURL(channelModel.Type, channelModel.GetBaseURL(), fetchPlatform)
+	info := &relaycommon.RelayInfo{}
+	info.ChannelMeta = &relaycommon.ChannelMeta{
+		ChannelBaseUrl: baseURL,
+	}
+	info.ApiKey = channelModel.Key
+	adaptor.Init(info)
 
 	requestKey := channelModel.Key
 	if strings.TrimSpace(task.PrivateData.Key) != "" {
