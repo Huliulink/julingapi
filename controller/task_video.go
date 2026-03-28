@@ -144,7 +144,20 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 
 	now := time.Now().Unix()
 	if taskResult.Status == "" {
-		taskResult = relaycommon.FailTaskInfo("upstream returned empty status")
+		if strings.TrimSpace(taskResult.Url) != "" {
+			taskResult.Status = string(model.TaskStatusSuccess)
+			taskResult.Progress = "100%"
+		} else if taskResult.Code == 0 {
+			// Upstream may not materialize a status immediately for async video tasks.
+			// Keep polling instead of failing the task early.
+			taskResult.Status = string(model.TaskStatusInProgress)
+			if strings.TrimSpace(taskResult.Progress) == "" {
+				taskResult.Progress = "30%"
+			}
+			logger.LogWarn(ctx, fmt.Sprintf("Task %s upstream returned empty status, fallback to IN_PROGRESS", taskId))
+		} else {
+			taskResult = relaycommon.FailTaskInfo("upstream returned empty status")
+		}
 	}
 
 	shouldRefund := false

@@ -550,6 +550,12 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	case "in_queue":
 		taskResult.Status = model.TaskStatusQueued
 		taskResult.Progress = "10%"
+	case "submitted", "pending":
+		taskResult.Status = model.TaskStatusSubmitted
+		taskResult.Progress = "5%"
+	case "processing", "running", "executing", "unknown":
+		taskResult.Status = model.TaskStatusInProgress
+		taskResult.Progress = "30%"
 	case "done":
 		if strings.TrimSpace(resTask.Data.VideoUrl) == "" {
 			// Jimeng may return done before final video_url is ready.
@@ -567,6 +573,19 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		}
 	}
 	taskResult.Url = resTask.Data.VideoUrl
+	if taskResult.Status == "" && resTask.Code == 10000 {
+		if strings.TrimSpace(taskResult.Url) != "" {
+			taskResult.Status = model.TaskStatusSuccess
+			taskResult.Progress = "100%"
+		} else {
+			// Some Jimeng relay variants return code=10000 first, then fill status later.
+			// Treat this as still processing instead of failing the task early.
+			taskResult.Status = model.TaskStatusInProgress
+			if strings.TrimSpace(taskResult.Progress) == "" {
+				taskResult.Progress = "30%"
+			}
+		}
+	}
 	if taskResult.Status == model.TaskStatusFailure && strings.TrimSpace(taskResult.Reason) == "" {
 		taskResult.Reason = buildJimengFailureReason(&resTask)
 	}
