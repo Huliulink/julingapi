@@ -113,3 +113,13 @@
   - Query route now explicitly uses `RelayModeVideoFetchByID`.
   - With R2 enabled, each query first refreshes task status from upstream instead of only reading stale local progress.
   - Refreshed upstream body is persisted back into `task.Data`, so OpenAI-compatible video query payload can advance beyond the original `progress: 20`.
+- [x] Fixed async video polling getting stuck at `progress: 20` for Jimeng-style tasks:
+  - Jimeng submit path now persists the actual upstream `req_key` into `UpstreamModelName`, so later polling reuses the real submit-time model instead of a lossy alias.
+  - Jimeng task-status parsing now accepts additional upstream states such as `queued`, `processing`, `running`, and status values embedded inside `resp_data`.
+  - This prevents successful upstream query bodies from being treated as "unknown status" and leaving the local task frozen at the initial progress snapshot.
+- [x] Extended non-Jimeng async video status compatibility for secondary-gateway polling:
+  - Kling / Vidu / Sora / xAI query parsers now tolerate more upstream status aliases instead of returning unknown-status parse failures.
+  - Unknown non-terminal states now degrade to in-progress snapshots instead of keeping the first submit-time `20` forever.
+- [x] Fixed misleading `completed_at` timestamps in video polling responses:
+  - OpenAI-compatible video responses now only expose `completed_at` after terminal success/failure.
+  - Non-terminal tasks no longer leak `UpdatedAt` as a fake completion timestamp during polling.

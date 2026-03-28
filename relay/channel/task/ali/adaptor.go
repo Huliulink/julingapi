@@ -485,7 +485,7 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(task *model.Task) ([]byte, error) {
 	openAIResp.Model = task.Properties.OriginModelName
 	openAIResp.SetProgressStr(task.Progress)
 	openAIResp.CreatedAt = task.CreatedAt
-	openAIResp.CompletedAt = task.UpdatedAt
+	openAIResp.CompletedAt = task.VideoCompletedAt()
 
 	// 设置视频URL（核心字段）
 	openAIResp.SetMetadata("url", aliResp.Output.VideoURL)

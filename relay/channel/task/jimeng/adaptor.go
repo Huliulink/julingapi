@@ -168,6 +168,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if err != nil {
 		return nil, errors.Wrap(err, "convert request payload failed")
 	}
+	info.UpstreamModelName = body.ReqKey
 	data, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -551,11 +552,14 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"
 	}
-	switch strings.ToLower(strings.TrimSpace(resTask.Data.Status)) {
-	case "in_queue":
+	switch normalizeJimengTaskStatus(&resTask) {
+	case "in_queue", "queued", "queue", "submitted", "pending", "created":
 		taskResult.Status = model.TaskStatusQueued
 		taskResult.Progress = "10%"
-	case "done":
+	case "processing", "running", "executing", "in_progress", "progressing":
+		taskResult.Status = model.TaskStatusInProgress
+		taskResult.Progress = "50%"
+	case "done", "success", "succeeded", "completed", "finish", "finished":
 		if strings.TrimSpace(resTask.Data.VideoUrl) == "" {
 			// Jimeng may return done before final video_url is ready.
 			taskResult.Status = model.TaskStatusInProgress
@@ -590,7 +594,7 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 	openAIVideo.SetProgressStr(originTask.Progress)
 	openAIVideo.SetMetadata("url", jimengResp.Data.VideoUrl)
 	openAIVideo.CreatedAt = originTask.CreatedAt
-	openAIVideo.CompletedAt = originTask.UpdatedAt
+	openAIVideo.CompletedAt = originTask.VideoCompletedAt()
 
 	if originTask.Status == model.TaskStatusFailure || jimengResp.Code != 10000 {
 		reason := buildJimengFailureReason(&jimengResp)
@@ -641,6 +645,46 @@ func buildJimengFailureReason(resTask *responseTask) string {
 		}
 	}
 	return limitJimengReason(reason)
+}
+
+func normalizeJimengTaskStatus(resTask *responseTask) string {
+	if resTask == nil {
+		return ""
+	}
+
+	for _, candidate := range []string{
+		strings.TrimSpace(resTask.Data.Status),
+		extractJimengRespDataStatus(strings.TrimSpace(resTask.Data.RespData)),
+	} {
+		if candidate == "" {
+			continue
+		}
+		return strings.ToLower(candidate)
+	}
+
+	if strings.TrimSpace(resTask.Data.VideoUrl) != "" {
+		return "done"
+	}
+	return ""
+}
+
+func extractJimengRespDataStatus(respData string) string {
+	if respData == "" {
+		return ""
+	}
+
+	var payload map[string]any
+	if err := common.UnmarshalJsonStr(respData, &payload); err != nil {
+		return ""
+	}
+	for _, key := range []string{"status", "Status", "state", "State", "task_status", "taskStatus"} {
+		if v, ok := payload[key]; ok {
+			if s := strings.TrimSpace(fmt.Sprintf("%v", v)); s != "" {
+				return s
+			}
+		}
+	}
+	return ""
 }
 
 func extractJimengRespDataReason(respData string) string {
