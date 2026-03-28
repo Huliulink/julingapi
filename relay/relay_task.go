@@ -268,7 +268,11 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 		}
 	}()
 
+	originalWriter := c.Writer
+	bufferedWriter := newBufferedResponseWriter(originalWriter)
+	c.Writer = bufferedWriter
 	taskID, taskData, taskErr := adaptor.DoResponse(c, resp, info)
+	c.Writer = originalWriter
 	if taskErr != nil {
 		return
 	}
@@ -282,6 +286,10 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 	err = task.Insert()
 	if err != nil {
 		taskErr = service.TaskErrorWrapper(err, "insert_task_failed", http.StatusInternalServerError)
+		return
+	}
+	if err = bufferedWriter.FlushTo(originalWriter); err != nil {
+		taskErr = service.TaskErrorWrapper(err, "write_task_response_failed", http.StatusInternalServerError)
 		return
 	}
 	return nil
