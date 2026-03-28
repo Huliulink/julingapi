@@ -397,12 +397,20 @@ func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
 			return nil, false
 		}
 		payload["video_url"] = r2URL
+		payload["url"] = r2URL
+		payload["output_url"] = r2URL
 		hasR2URL = true
 		changed = true
 	}
 
 	if !hasR2URL {
 		return nil, false
+	}
+	r2URL := taskPrimaryR2URL(task)
+	if r2URL != "" {
+		if rewritePayloadURLsToR2(payload, r2URL) {
+			changed = true
+		}
 	}
 	ensureVideoCompatibilityPayload(task, payload)
 	if !changed {
@@ -418,6 +426,50 @@ func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
 		return nil, false
 	}
 	return b, true
+}
+
+func rewritePayloadURLsToR2(payload map[string]interface{}, r2URL string) bool {
+	if payload == nil || strings.TrimSpace(r2URL) == "" {
+		return false
+	}
+
+	changed := false
+	for _, key := range []string{"video_url", "url", "output_url"} {
+		if current, ok := payload[key].(string); ok {
+			if strings.TrimSpace(current) != r2URL {
+				payload[key] = r2URL
+				changed = true
+			}
+		}
+	}
+
+	for _, key := range []string{"metadata", "content", "response"} {
+		child, ok := payload[key].(map[string]interface{})
+		if !ok || child == nil {
+			continue
+		}
+		if rewriteNestedPayloadURLsToR2(child, r2URL) {
+			changed = true
+		}
+	}
+	return changed
+}
+
+func rewriteNestedPayloadURLsToR2(payload map[string]interface{}, r2URL string) bool {
+	if payload == nil || strings.TrimSpace(r2URL) == "" {
+		return false
+	}
+
+	changed := false
+	for _, key := range []string{"video_url", "url", "output_url"} {
+		if current, ok := payload[key].(string); ok {
+			if strings.TrimSpace(current) != r2URL {
+				payload[key] = r2URL
+				changed = true
+			}
+		}
+	}
+	return changed
 }
 
 func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
