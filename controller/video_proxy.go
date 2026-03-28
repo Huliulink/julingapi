@@ -68,9 +68,6 @@ func GetVideoTaskStatus(c *gin.Context) {
 	if isR2TransferInProgress(task) {
 		nextTask, waitErr := waitForR2TransferState(waitCtx, task.TaskID)
 		if waitErr != nil {
-			if respondSoraUpstreamFallback(c, task, waitErr) {
-				return
-			}
 			respondR2TransferError(c, task, waitErr)
 			return
 		}
@@ -80,17 +77,11 @@ func GetVideoTaskStatus(c *gin.Context) {
 	if task.Status == model.TaskStatusSuccess && !taskHasR2Result(task) {
 		nextTask, transferErr := ensureTaskTransferredToR2(waitCtx, task.TaskID)
 		if transferErr != nil {
-			if respondSoraUpstreamFallback(c, task, transferErr) {
-				return
-			}
 			respondR2TransferError(c, task, transferErr)
 			return
 		}
 		task = nextTask
 		if !taskHasR2Result(task) {
-			if respondSoraUpstreamFallback(c, task, fmt.Errorf("r2 url not available after transfer")) {
-				return
-			}
 			respondR2TransferError(c, task, fmt.Errorf("r2 url not available after transfer"))
 			return
 		}
@@ -362,6 +353,18 @@ func taskPrimaryR2URL(task *model.Task) string {
 			return v
 		}
 	}
+	for _, nestedKey := range []string{"metadata", "content", "response"} {
+		nested, ok := taskData[nestedKey].(map[string]interface{})
+		if !ok || nested == nil {
+			continue
+		}
+		for _, k := range []string{"url", "video_url", "output_url"} {
+			v, ok := nested[k].(string)
+			if ok && v != "" && service.IsR2URL(v) {
+				return v
+			}
+		}
+	}
 	return ""
 }
 
@@ -377,7 +380,6 @@ func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
 
 	urlKeys := []string{"url", "video_url", "output_url", "image_url", "thumbnail_url"}
 	hasR2URL := false
-	changed := false
 	for _, k := range urlKeys {
 		v, ok := payload[k].(string)
 		if !ok || strings.TrimSpace(v) == "" {
@@ -388,7 +390,6 @@ func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
 			continue
 		}
 		delete(payload, k)
-		changed = true
 	}
 
 	if !hasR2URL {
@@ -400,7 +401,6 @@ func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
 		payload["url"] = r2URL
 		payload["output_url"] = r2URL
 		hasR2URL = true
-		changed = true
 	}
 
 	if !hasR2URL {
@@ -408,17 +408,12 @@ func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
 	}
 	r2URL := taskPrimaryR2URL(task)
 	if r2URL != "" {
-		if rewritePayloadURLsToR2(payload, r2URL) {
-			changed = true
-		}
+		rewritePayloadURLsToR2(payload, r2URL)
 	}
-	ensureVideoCompatibilityPayload(task, payload)
-	if !changed {
-		b, err := common.Marshal(payload)
-		if err != nil {
-			return nil, false
-		}
-		return b, true
+
+	normalizedBody, err := service.NormalizeCompatibleVideoPayload(payload, nil, task)
+	if err == nil {
+		return normalizedBody, true
 	}
 
 	b, err := common.Marshal(payload)
@@ -531,15 +526,9 @@ func ensureVideoCompatibilityPayload(task *model.Task, payload map[string]interf
 		return
 	}
 
-	if _, ok := payload["id"]; !ok || strings.TrimSpace(fmt.Sprintf("%v", payload["id"])) == "" {
-		payload["id"] = task.TaskID
-	}
-	if _, ok := payload["task_id"]; !ok || strings.TrimSpace(fmt.Sprintf("%v", payload["task_id"])) == "" {
-		payload["task_id"] = task.TaskID
-	}
-	if _, ok := payload["object"]; !ok || strings.TrimSpace(fmt.Sprintf("%v", payload["object"])) == "" {
-		payload["object"] = "video"
-	}
+	payload["id"] = task.TaskID
+	payload["task_id"] = task.TaskID
+	payload["object"] = "video"
 
 	// Downstream new-api task adaptors expect OpenAI-style status values on /v1/videos.
 	payload["status"] = task.Status.ToVideoStatus()
@@ -565,6 +554,18 @@ func ensureVideoCompatibilityPayload(task *model.Task, payload map[string]interf
 		}
 	}
 
+	if resultURL := taskPrimaryR2URL(task); resultURL != "" {
+		payload["video_url"] = resultURL
+		payload["url"] = resultURL
+		payload["output_url"] = resultURL
+		metadata, ok := payload["metadata"].(map[string]interface{})
+		if !ok || metadata == nil {
+			metadata = map[string]interface{}{}
+			payload["metadata"] = metadata
+		}
+		metadata["url"] = resultURL
+	}
+
 	if task.Status == model.TaskStatusFailure {
 		reason := service.ExtractTaskFailureReason(task.FailReason, task.Data)
 		if reason == "" {
@@ -586,9 +587,6 @@ func progressIntFromTask(task *model.Task) int {
 }
 
 func respondR2TransferError(c *gin.Context, task *model.Task, err error) {
-	if respondSoraUpstreamFallback(c, task, err) {
-		return
-	}
 	if task == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"message": err.Error(), "type": "server_error"},
@@ -796,12 +794,6 @@ func VideoProxy(c *gin.Context) {
 		if isR2TransferInProgress(task) {
 			nextTask, waitErr := waitForR2TransferState(waitCtx, task.TaskID)
 			if waitErr != nil {
-				if isSoraTask(task) {
-					if fallbackURL := extractSoraUpstreamFallbackURL(task); fallbackURL != "" {
-						c.Redirect(http.StatusFound, fallbackURL)
-						return
-					}
-				}
 				c.JSON(http.StatusBadGateway, gin.H{
 					"error": gin.H{
 						"message": fmt.Sprintf("R2 transfer pending: %s", waitErr.Error()),
@@ -816,12 +808,6 @@ func VideoProxy(c *gin.Context) {
 		if !service.IsR2URL(task.FailReason) {
 			nextTask, transferErr := ensureTaskTransferredToR2(waitCtx, task.TaskID)
 			if transferErr != nil {
-				if isSoraTask(task) {
-					if fallbackURL := extractSoraUpstreamFallbackURL(task); fallbackURL != "" {
-						c.Redirect(http.StatusFound, fallbackURL)
-						return
-					}
-				}
 				c.JSON(http.StatusBadGateway, gin.H{
 					"error": gin.H{
 						"message": fmt.Sprintf("R2 transfer failed: %s", transferErr.Error()),
@@ -837,12 +823,6 @@ func VideoProxy(c *gin.Context) {
 		if r2URL != "" {
 			c.Redirect(http.StatusFound, r2URL)
 			return
-		}
-		if isSoraTask(task) {
-			if fallbackURL := extractSoraUpstreamFallbackURL(task); fallbackURL != "" {
-				c.Redirect(http.StatusFound, fallbackURL)
-				return
-			}
 		}
 		c.JSON(http.StatusBadGateway, gin.H{
 			"error": gin.H{

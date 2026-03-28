@@ -529,10 +529,6 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if relayR2TakeoverInProgress(originTask) {
 			nextTask, waitErr := relayR2TakeoverWaitTask(waitCtx, originTask.TaskID)
 			if waitErr != nil {
-				if fallbackBody, ok, fallbackErr := relayR2TakeoverBuildSoraFallbackResponse(originTask); fallbackErr == nil && ok {
-					respBody = fallbackBody
-					return
-				}
 				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer pending: %w", waitErr), "r2_transfer_failed", http.StatusBadGateway)
 				return
 			}
@@ -542,19 +538,11 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if originTask.Status == model.TaskStatusSuccess && !relayR2TakeoverHasR2Result(originTask) {
 			nextTask, transferErr := relayR2TakeoverEnsureTask(waitCtx, originTask.TaskID)
 			if transferErr != nil {
-				if fallbackBody, ok, fallbackErr := relayR2TakeoverBuildSoraFallbackResponse(originTask); fallbackErr == nil && ok {
-					respBody = fallbackBody
-					return
-				}
 				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: %w", transferErr), "r2_transfer_failed", http.StatusBadGateway)
 				return
 			}
 			originTask = nextTask
 			if !relayR2TakeoverHasR2Result(originTask) {
-				if fallbackBody, ok, fallbackErr := relayR2TakeoverBuildSoraFallbackResponse(originTask); fallbackErr == nil && ok {
-					respBody = fallbackBody
-					return
-				}
 				taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("r2 transfer failed: r2 url not available after transfer"), "r2_transfer_failed", http.StatusBadGateway)
 				return
 			}
@@ -613,7 +601,11 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 				taskResp = service.TaskErrorWrapper(err, "convert_to_openai_video_failed", http.StatusInternalServerError)
 				return
 			}
-			respBody = openAIVideoData
+			if normalizedBody, ok, normErr := service.NormalizeCompatibleVideoTaskBody(openAIVideoData, nil, originTask); normErr == nil && ok {
+				respBody = normalizedBody
+			} else {
+				respBody = openAIVideoData
+			}
 			return
 		}
 		taskResp = service.TaskErrorWrapperLocal(errors.New(fmt.Sprintf("not_implemented:%s", originTask.Platform)), "not_implemented", http.StatusNotImplemented)
@@ -876,6 +868,18 @@ func relayR2TakeoverPrimaryR2URL(task *model.Task) string {
 		v, ok := taskData[key].(string)
 		if ok && v != "" && service.IsR2URL(v) {
 			return v
+		}
+	}
+	for _, nestedKey := range []string{"metadata", "content", "response"} {
+		nested, ok := taskData[nestedKey].(map[string]interface{})
+		if !ok || nested == nil {
+			continue
+		}
+		for _, key := range []string{"url", "video_url", "output_url"} {
+			v, ok := nested[key].(string)
+			if ok && v != "" && service.IsR2URL(v) {
+				return v
+			}
 		}
 	}
 	return ""

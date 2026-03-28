@@ -15,7 +15,7 @@ type TaskStatus string
 func (t TaskStatus) ToVideoStatus() string {
 	var status string
 	switch t {
-	case TaskStatusQueued, TaskStatusSubmitted:
+	case TaskStatusNotStart, TaskStatusQueued, TaskStatusSubmitted:
 		status = dto.VideoStatusQueued
 	case TaskStatusInProgress:
 		status = dto.VideoStatusInProgress
@@ -24,7 +24,7 @@ func (t TaskStatus) ToVideoStatus() string {
 	case TaskStatusFailure:
 		status = dto.VideoStatusFailed
 	default:
-		status = dto.VideoStatusUnknown // Default fallback
+		status = dto.VideoStatusInProgress
 	}
 	return status
 }
@@ -444,6 +444,7 @@ func TaskCountAllUserTask(userId int, queryParams SyncTaskQueryParams) int64 {
 func (t *Task) ToOpenAIVideo() *dto.OpenAIVideo {
 	openAIVideo := dto.NewOpenAIVideo()
 	openAIVideo.ID = t.TaskID
+	openAIVideo.TaskID = t.TaskID
 	openAIVideo.Status = t.Status.ToVideoStatus()
 	openAIVideo.Model = t.Properties.OriginModelName
 	openAIVideo.SetProgressStr(t.Progress)
