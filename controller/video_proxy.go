@@ -404,8 +404,13 @@ func buildR2TaskDataPayload(task *model.Task) ([]byte, bool) {
 	if !hasR2URL {
 		return nil, false
 	}
+	ensureVideoCompatibilityPayload(task, payload)
 	if !changed {
-		return task.Data, true
+		b, err := common.Marshal(payload)
+		if err != nil {
+			return nil, false
+		}
+		return b, true
 	}
 
 	b, err := common.Marshal(payload)
@@ -467,6 +472,65 @@ func buildVideoResponse(task *model.Task, onlyR2 bool) *dto.OpenAIVideo {
 	}
 
 	return video
+}
+
+func ensureVideoCompatibilityPayload(task *model.Task, payload map[string]interface{}) {
+	if task == nil || payload == nil {
+		return
+	}
+
+	if _, ok := payload["id"]; !ok || strings.TrimSpace(fmt.Sprintf("%v", payload["id"])) == "" {
+		payload["id"] = task.TaskID
+	}
+	if _, ok := payload["task_id"]; !ok || strings.TrimSpace(fmt.Sprintf("%v", payload["task_id"])) == "" {
+		payload["task_id"] = task.TaskID
+	}
+	if _, ok := payload["object"]; !ok || strings.TrimSpace(fmt.Sprintf("%v", payload["object"])) == "" {
+		payload["object"] = "video"
+	}
+
+	// Downstream new-api task adaptors expect OpenAI-style status values on /v1/videos.
+	payload["status"] = task.Status.ToVideoStatus()
+	payload["progress"] = progressIntFromTask(task)
+
+	if _, ok := payload["created_at"]; !ok && task.CreatedAt > 0 {
+		payload["created_at"] = task.CreatedAt
+	}
+	if _, ok := payload["completed_at"]; !ok {
+		if task.FinishTime > 0 {
+			payload["completed_at"] = task.FinishTime
+		} else if task.UpdatedAt > 0 {
+			payload["completed_at"] = task.UpdatedAt
+		}
+	}
+	if _, ok := payload["model"]; !ok || strings.TrimSpace(fmt.Sprintf("%v", payload["model"])) == "" {
+		modelName := strings.TrimSpace(task.Properties.OriginModelName)
+		if modelName == "" {
+			modelName = strings.TrimSpace(task.Properties.UpstreamModelName)
+		}
+		if modelName != "" {
+			payload["model"] = modelName
+		}
+	}
+
+	if task.Status == model.TaskStatusFailure {
+		reason := service.ExtractTaskFailureReason(task.FailReason, task.Data)
+		if reason == "" {
+			reason = "task failed"
+		}
+		payload["error"] = map[string]any{
+			"message": reason,
+			"code":    "task_failed",
+		}
+	}
+}
+
+func progressIntFromTask(task *model.Task) int {
+	if task == nil {
+		return 0
+	}
+	video := task.ToOpenAIVideo()
+	return video.Progress
 }
 
 func respondR2TransferError(c *gin.Context, task *model.Task, err error) {
@@ -610,6 +674,7 @@ func buildSoraUpstreamFallbackPayload(task *model.Task) ([]byte, bool) {
 			delete(payload, "metadata")
 		}
 	}
+	ensureVideoCompatibilityPayload(task, payload)
 	b, err := common.Marshal(payload)
 	if err != nil {
 		return nil, false
