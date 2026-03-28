@@ -120,6 +120,10 @@
 - [x] Extended non-Jimeng async video status compatibility for secondary-gateway polling:
   - Kling / Vidu / Sora / xAI query parsers now tolerate more upstream status aliases instead of returning unknown-status parse failures.
   - Unknown non-terminal states now degrade to in-progress snapshots instead of keeping the first submit-time `20` forever.
+- [x] Fixed a broader async-video submit/query mismatch for newly created tasks:
+  - Async task submit requests now apply channel `model_mapping`, just like chat/image requests already do.
+  - The mapped upstream model is persisted into task metadata and reused during later polling, instead of reusing only the user-facing alias.
+  - This addresses cases where new video tasks keep polling the wrong upstream model identity and remain stuck at the initial progress snapshot.
 - [x] Fixed misleading `completed_at` timestamps in video polling responses:
   - OpenAI-compatible video responses now only expose `completed_at` after terminal success/failure.
   - Non-terminal tasks no longer leak `UpdatedAt` as a fake completion timestamp during polling.
