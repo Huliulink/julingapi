@@ -96,3 +96,20 @@
   - This keeps query redirect and auto-delete cleanup behavior consistent.
 - [x] `/v1/videos/:task_id` now prefers returning sanitized original task JSON payload with R2 links (when available), keeping response shape closer to upstream while hiding upstream URLs.
 - [x] Sora R2 main-video transfer now prefers authenticated `/v1/videos/{id}/content` before falling back to upstream media URLs, reducing raw playback-link download failures without affecting other R2 platforms.
+
+## Session Update (2026-03-28)
+
+- [x] Restore route-specific async video compatibility when this gateway is used as an upstream by another gateway:
+  - `/jimeng/` submit now returns Jimeng-native submit payload again.
+  - `/kling/v1/videos/...` submit now returns Kling-native submit payload again.
+- [x] Reworked async video fetch responses to be route-aware instead of always returning a single unified task shape:
+  - `/v1/videos/:task_id` keeps OpenAI/Sora-compatible output.
+  - `/jimeng/` query returns Jimeng-native task payload.
+  - `/kling/v1/videos/...` query returns Kling-native task payload.
+  - `/v1/video/generations/:task_id` returns the generic compatible task payload.
+- [x] R2 URL takeover is now applied inside each compatible response shape, so secondary gateways still parse successfully while receiving the final R2 link when enabled.
+- [x] Added focused relay compatibility tests for Jimeng, Kling, legacy task query, and request-kind detection.
+- [x] Fixed `/v1/videos/:task_id` live polling regression:
+  - Query route now explicitly uses `RelayModeVideoFetchByID`.
+  - With R2 enabled, each query first refreshes task status from upstream instead of only reading stale local progress.
+  - Refreshed upstream body is persisted back into `task.Data`, so OpenAI-compatible video query payload can advance beyond the original `progress: 20`.

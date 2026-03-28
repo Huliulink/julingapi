@@ -374,6 +374,8 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		taskId = c.GetString("task_id")
 	}
 	userId := c.GetInt("id")
+	requestKind := detectVideoFetchRequestKind(c.Request.RequestURI)
+	var latestFetchedBody []byte
 
 	originTask, exist, err := model.GetByTaskId(userId, taskId)
 	if err != nil {
@@ -433,6 +435,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if err2 != nil {
 			return
 		}
+		latestFetchedBody = body
 		ti, err2 := adaptor.ParseTaskResult(body)
 		if err2 == nil && ti != nil {
 			if ti.Status != "" {
@@ -451,49 +454,10 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 				originTask.FailReason = ti.Reason
 			}
 			_ = originTask.Update()
-			var raw map[string]any
-			_ = json.Unmarshal(body, &raw)
-			format := "mp4"
-			if respObj, ok := raw["response"].(map[string]any); ok {
-				if vids, ok := respObj["videos"].([]any); ok && len(vids) > 0 {
-					if v0, ok := vids[0].(map[string]any); ok {
-						if mt, ok := v0["mimeType"].(string); ok && mt != "" {
-							if strings.Contains(mt, "mp4") {
-								format = "mp4"
-							} else {
-								format = mt
-							}
-						}
-					}
-				}
-			}
-			status := "processing"
-			switch originTask.Status {
-			case model.TaskStatusSuccess:
-				status = "succeeded"
-			case model.TaskStatusFailure:
-				status = "failed"
-			case model.TaskStatusQueued, model.TaskStatusSubmitted:
-				status = "queued"
-			}
-			if !strings.HasPrefix(c.Request.RequestURI, "/v1/videos/") {
-				out := map[string]any{
-					"error":    nil,
-					"format":   format,
-					"metadata": nil,
-					"status":   status,
-					"task_id":  originTask.TaskID,
-					"url":      originTask.FailReason,
-				}
-				respBody, _ = json.Marshal(dto.TaskResponse[any]{
-					Code: "success",
-					Data: out,
-				})
-			}
 		}
 	}()
 
-	legacyVideoQuery := !strings.HasPrefix(c.Request.RequestURI, "/v1/videos/")
+	legacyVideoQuery := requestKind != videoFetchRequestKindOpenAI
 	if legacyVideoQuery && relayR2TakeoverEnabledForTask(originTask) {
 		waitCtx, cancel := context.WithTimeout(c.Request.Context(), relayR2TakeoverWaitTimeout)
 		defer cancel()
@@ -541,17 +505,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if relayR2TakeoverHasR2Result(originTask) {
 			safeTask = relayR2TakeoverSanitizeTask(originTask)
 		}
-		if safeTask != nil && safeTask.Status == model.TaskStatusFailure {
-			respBody, err = buildLegacyFailedVideoTaskResponse(safeTask)
-			if err != nil {
-				taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
-			}
-			return
-		}
-		respBody, err = common.Marshal(dto.TaskResponse[any]{
-			Code: "success",
-			Data: TaskModel2Dto(safeTask),
-		})
+		respBody, err = buildVideoFetchResponseByKind(requestKind, safeTask, latestFetchedBody)
 		if err != nil {
 			taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
 		}
@@ -562,7 +516,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		return
 	}
 
-	if strings.HasPrefix(c.Request.RequestURI, "/v1/videos/") {
+	if requestKind == videoFetchRequestKindOpenAI {
 		adaptor := GetTaskAdaptor(originTask.Platform)
 		if adaptor == nil {
 			taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("invalid channel id: %d", originTask.ChannelId), "invalid_channel_id", http.StatusBadRequest)
@@ -580,10 +534,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		taskResp = service.TaskErrorWrapperLocal(errors.New(fmt.Sprintf("not_implemented:%s", originTask.Platform)), "not_implemented", http.StatusNotImplemented)
 		return
 	}
-	respBody, err = json.Marshal(dto.TaskResponse[any]{
-		Code: "success",
-		Data: TaskModel2Dto(originTask),
-	})
+	respBody, err = buildVideoFetchResponseByKind(requestKind, originTask, latestFetchedBody)
 	if err != nil {
 		taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
 	}
@@ -1007,6 +958,320 @@ func buildLegacyFailedVideoTaskResponse(task *model.Task) ([]byte, error) {
 			"url":      failReason,
 		},
 	})
+}
+
+const (
+	videoFetchRequestKindOpenAI = "openai"
+	videoFetchRequestKindLegacy = "legacy"
+	videoFetchRequestKindJimeng = "jimeng"
+	videoFetchRequestKindKling  = "kling"
+)
+
+func detectVideoFetchRequestKind(requestURI string) string {
+	switch {
+	case strings.HasPrefix(requestURI, "/v1/videos/"):
+		return videoFetchRequestKindOpenAI
+	case strings.HasPrefix(requestURI, "/jimeng/"):
+		return videoFetchRequestKindJimeng
+	case strings.HasPrefix(requestURI, "/kling/v1/videos/"):
+		return videoFetchRequestKindKling
+	default:
+		return videoFetchRequestKindLegacy
+	}
+}
+
+func buildVideoFetchResponseByKind(requestKind string, task *model.Task, rawBody []byte) ([]byte, error) {
+	switch requestKind {
+	case videoFetchRequestKindJimeng:
+		return buildJimengCompatibleVideoTaskResponse(task, rawBody)
+	case videoFetchRequestKindKling:
+		return buildKlingCompatibleVideoTaskResponse(task, rawBody)
+	default:
+		return buildLegacyCompatibleVideoTaskResponse(task, rawBody)
+	}
+}
+
+func buildLegacyCompatibleVideoTaskResponse(task *model.Task, rawBody []byte) ([]byte, error) {
+	if task == nil {
+		return common.Marshal(dto.TaskResponse[any]{
+			Code: "success",
+			Data: map[string]any{
+				"error":    nil,
+				"format":   detectVideoFormat(rawBody),
+				"metadata": nil,
+				"status":   "processing",
+				"task_id":  "",
+				"url":      "",
+			},
+		})
+	}
+	if task != nil && task.Status == model.TaskStatusFailure {
+		return buildLegacyFailedVideoTaskResponse(task)
+	}
+
+	payload := map[string]any{
+		"error":    nil,
+		"format":   detectVideoFormat(rawBody),
+		"metadata": nil,
+		"status":   mapTaskStatusToSimple(task.Status),
+		"task_id":  task.TaskID,
+		"url":      relayCompatiblePrimaryMediaURL(task),
+	}
+	return common.Marshal(dto.TaskResponse[any]{
+		Code: "success",
+		Data: payload,
+	})
+}
+
+func buildJimengCompatibleVideoTaskResponse(task *model.Task, rawBody []byte) ([]byte, error) {
+	payload := relayParseTaskPayload(rawBody, task)
+	if payload == nil {
+		payload = map[string]any{}
+	}
+	data := relayEnsureMap(payload, "data")
+
+	if _, ok := payload["code"]; !ok {
+		payload["code"] = 10000
+	}
+	if _, ok := payload["message"]; !ok {
+		payload["message"] = "success"
+	}
+	if _, ok := payload["request_id"]; !ok {
+		payload["request_id"] = ""
+	}
+	if _, ok := payload["status"]; !ok {
+		payload["status"] = 200
+	}
+	if _, ok := payload["time_elapsed"]; !ok {
+		payload["time_elapsed"] = ""
+	}
+	if _, ok := data["binary_data_base64"]; !ok {
+		data["binary_data_base64"] = []any{}
+	}
+	if _, ok := data["image_urls"]; !ok {
+		data["image_urls"] = []any{}
+	}
+	if _, ok := data["resp_data"]; !ok {
+		data["resp_data"] = ""
+	}
+
+	switch relayTaskStatus(task) {
+	case model.TaskStatusSuccess:
+		data["status"] = "done"
+		if url := relayCompatiblePrimaryMediaURL(task); url != "" {
+			data["video_url"] = url
+		}
+		payload["code"] = 10000
+		payload["message"] = "success"
+	case model.TaskStatusFailure:
+		reason := relayCompatibleFailureReason(task)
+		data["status"] = "failed"
+		data["video_url"] = ""
+		payload["message"] = reason
+		if strings.TrimSpace(relayString(data["resp_data"])) == "" {
+			data["resp_data"] = reason
+		}
+	default:
+		data["status"] = "in_queue"
+	}
+
+	return common.Marshal(payload)
+}
+
+func buildKlingCompatibleVideoTaskResponse(task *model.Task, rawBody []byte) ([]byte, error) {
+	payload := relayParseTaskPayload(rawBody, task)
+	if payload == nil {
+		payload = map[string]any{}
+	}
+	data := relayEnsureMap(payload, "data")
+	taskResult := relayEnsureMap(data, "task_result")
+	videos := relayEnsureObjectSlice(taskResult, "videos")
+
+	if _, ok := payload["code"]; !ok {
+		payload["code"] = 0
+	}
+	if _, ok := payload["message"]; !ok {
+		payload["message"] = "success"
+	}
+	if _, ok := payload["task_id"]; !ok && task != nil {
+		payload["task_id"] = task.TaskID
+	}
+	if _, ok := payload["request_id"]; !ok {
+		payload["request_id"] = ""
+	}
+	if task != nil {
+		data["task_id"] = task.TaskID
+	}
+
+	switch relayTaskStatus(task) {
+	case model.TaskStatusSuccess:
+		data["task_status"] = "succeed"
+		data["task_status_msg"] = ""
+		if url := relayCompatiblePrimaryMediaURL(task); url != "" {
+			video := relayEnsureFirstObject(videos)
+			video["url"] = url
+			taskResult["videos"] = videos
+		}
+		payload["code"] = 0
+		payload["message"] = "success"
+	case model.TaskStatusFailure:
+		reason := relayCompatibleFailureReason(task)
+		data["task_status"] = "failed"
+		data["task_status_msg"] = reason
+		payload["message"] = reason
+	default:
+		status := relayTaskStatus(task)
+		if status == model.TaskStatusQueued || status == model.TaskStatusSubmitted {
+			data["task_status"] = "submitted"
+		} else {
+			data["task_status"] = "processing"
+		}
+	}
+
+	return common.Marshal(payload)
+}
+
+func relayParseTaskPayload(rawBody []byte, task *model.Task) map[string]any {
+	bodies := [][]byte{rawBody}
+	if task != nil {
+		bodies = append(bodies, task.Data)
+	}
+	for _, body := range bodies {
+		if len(body) == 0 {
+			continue
+		}
+		var payload map[string]any
+		if err := common.Unmarshal(body, &payload); err == nil && payload != nil {
+			return payload
+		}
+	}
+	return nil
+}
+
+func relayCompatiblePrimaryMediaURL(task *model.Task) string {
+	if task == nil {
+		return ""
+	}
+	if service.IsR2URL(task.FailReason) {
+		return strings.TrimSpace(task.FailReason)
+	}
+	for _, body := range [][]byte{task.Data} {
+		if len(body) == 0 {
+			continue
+		}
+		var payload map[string]any
+		if err := common.Unmarshal(body, &payload); err != nil || payload == nil {
+			continue
+		}
+		for _, key := range []string{"url", "video_url", "output_url"} {
+			if url := relayNestedString(payload, key); url != "" {
+				return url
+			}
+		}
+		if data, ok := payload["data"].(map[string]any); ok {
+			if url := relayNestedString(data, "video_url"); url != "" {
+				return url
+			}
+			if taskResult, ok := data["task_result"].(map[string]any); ok {
+				if videos, ok := taskResult["videos"].([]any); ok && len(videos) > 0 {
+					if video, ok := videos[0].(map[string]any); ok {
+						if url := relayNestedString(video, "url"); url != "" {
+							return url
+						}
+					}
+				}
+			}
+		}
+		if metadata, ok := payload["metadata"].(map[string]any); ok {
+			for _, key := range []string{"url", "video_url", "output_url"} {
+				if url := relayNestedString(metadata, key); url != "" {
+					return url
+				}
+			}
+		}
+		if response, ok := payload["response"].(map[string]any); ok {
+			for _, key := range []string{"url", "video_url", "output_url"} {
+				if url := relayNestedString(response, key); url != "" {
+					return url
+				}
+			}
+		}
+	}
+	return strings.TrimSpace(task.FailReason)
+}
+
+func relayCompatibleFailureReason(task *model.Task) string {
+	if task == nil {
+		return "task failed"
+	}
+	reason := service.ExtractTaskFailureReason(task.FailReason, task.Data)
+	if strings.TrimSpace(reason) == "" {
+		return "task failed"
+	}
+	return reason
+}
+
+func relayTaskStatus(task *model.Task) model.TaskStatus {
+	if task == nil {
+		return model.TaskStatusUnknown
+	}
+	return task.Status
+}
+
+func relayEnsureMap(payload map[string]any, key string) map[string]any {
+	if payload == nil {
+		return map[string]any{}
+	}
+	if existing, ok := payload[key].(map[string]any); ok && existing != nil {
+		return existing
+	}
+	nested := map[string]any{}
+	payload[key] = nested
+	return nested
+}
+
+func relayEnsureObjectSlice(payload map[string]any, key string) []any {
+	if payload == nil {
+		return []any{}
+	}
+	if existing, ok := payload[key].([]any); ok {
+		return existing
+	}
+	items := []any{}
+	payload[key] = items
+	return items
+}
+
+func relayEnsureFirstObject(items []any) map[string]any {
+	if len(items) == 0 {
+		items = append(items, map[string]any{})
+	}
+	if existing, ok := items[0].(map[string]any); ok && existing != nil {
+		return existing
+	}
+	first := map[string]any{}
+	items[0] = first
+	return first
+}
+
+func relayNestedString(payload map[string]any, key string) string {
+	if payload == nil {
+		return ""
+	}
+	if value, ok := payload[key].(string); ok {
+		return strings.TrimSpace(value)
+	}
+	return ""
+}
+
+func relayString(value any) string {
+	if value == nil {
+		return ""
+	}
+	if s, ok := value.(string); ok {
+		return s
+	}
+	return strings.TrimSpace(fmt.Sprintf("%v", value))
 }
 
 func TaskModel2Dto(task *model.Task) *dto.TaskDto {

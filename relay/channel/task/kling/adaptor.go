@@ -189,6 +189,10 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 		taskErr = service.TaskErrorWrapperLocal(fmt.Errorf("%s", kResp.Message), "task_failed", http.StatusBadRequest)
 		return
 	}
+	if strings.HasPrefix(c.Request.RequestURI, "/kling/v1/videos/") {
+		c.Data(http.StatusOK, "application/json", responseBody)
+		return kResp.Data.TaskId, responseBody, nil
+	}
 	ov := dto.NewOpenAIVideo()
 	ov.ID = kResp.Data.TaskId
 	ov.TaskID = kResp.Data.TaskId

@@ -201,6 +201,11 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 		return
 	}
 
+	if strings.HasPrefix(c.Request.RequestURI, "/jimeng/") {
+		c.Data(http.StatusOK, "application/json", responseBody)
+		return jResp.Data.TaskID, responseBody, nil
+	}
+
 	ov := dto.NewOpenAIVideo()
 	ov.ID = jResp.Data.TaskID
 	ov.TaskID = jResp.Data.TaskID
