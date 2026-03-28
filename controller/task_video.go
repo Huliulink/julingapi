@@ -129,6 +129,11 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		taskResult.Progress = t.Progress
 		taskResult.Reason = t.FailReason
 		task.Data = t.Data
+	} else if compatibleTaskResult, normalizedBody, compatible, compatibleErr := service.ParseCompatibleVideoTaskResult(responseBody); compatibleErr != nil {
+		return fmt.Errorf("parse compatible video task result failed for task %s: %w", taskId, compatibleErr)
+	} else if compatible {
+		taskResult = compatibleTaskResult
+		task.Data = normalizedBody
 	} else if taskResult, err = adaptor.ParseTaskResult(responseBody); err != nil {
 		return fmt.Errorf("parseTaskResult failed for task %s: %w", taskId, err)
 	} else {
@@ -485,6 +490,10 @@ func scoreTaskResponseBody(adaptor channel.TaskAdaptor, body []byte) int {
 	var responseItems dto.TaskResponse[model.Task]
 	if err := common.Unmarshal(body, &responseItems); err == nil && responseItems.IsSuccess() {
 		return scoreTaskStatus(string(responseItems.Data.Status))
+	}
+
+	if taskInfo, _, compatible, err := service.ParseCompatibleVideoTaskResult(body); err == nil && compatible && taskInfo != nil {
+		return scoreTaskStatus(taskInfo.Status)
 	}
 
 	if taskInfo, err := adaptor.ParseTaskResult(body); err == nil && taskInfo != nil {

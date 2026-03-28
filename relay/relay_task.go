@@ -441,7 +441,18 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if err2 != nil {
 			return
 		}
-		ti, err2 := adaptor.ParseTaskResult(body)
+		var compatibleBody []byte
+		ti, compatibleErr := adaptor.ParseTaskResult(body)
+		if compatibleTi, normalizedBody, compatible, err := service.ParseCompatibleVideoTaskResult(body); err == nil && compatible {
+			ti = compatibleTi
+			compatibleBody = normalizedBody
+			originTask.Data = normalizedBody
+		} else if compatibleErr != nil {
+			err2 = compatibleErr
+		}
+		if compatibleErr != nil && (ti == nil || strings.TrimSpace(ti.Status) == "") {
+			ti, err2 = nil, compatibleErr
+		}
 		if err2 == nil && ti != nil {
 			if ti.Status != "" {
 				originTask.Status = model.TaskStatus(ti.Status)
@@ -459,6 +470,10 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 				originTask.FailReason = ti.Reason
 			}
 			_ = originTask.Update()
+			if strings.HasPrefix(c.Request.RequestURI, "/v1/videos/") && len(compatibleBody) != 0 {
+				respBody = compatibleBody
+				return
+			}
 			var raw map[string]any
 			_ = json.Unmarshal(body, &raw)
 			format := "mp4"
@@ -571,6 +586,10 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 	}
 
 	if strings.HasPrefix(c.Request.RequestURI, "/v1/videos/") {
+		if compatibleTaskInfo, compatibleBody, compatible, err := service.ParseCompatibleVideoTaskResult(originTask.Data); err == nil && compatible && compatibleTaskInfo != nil {
+			respBody = compatibleBody
+			return
+		}
 		adaptor := GetTaskAdaptor(originTask.Platform)
 		if adaptor == nil {
 			taskResp = service.TaskErrorWrapperLocal(fmt.Errorf("invalid channel id: %d", originTask.ChannelId), "invalid_channel_id", http.StatusBadRequest)
