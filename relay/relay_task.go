@@ -1274,6 +1274,46 @@ func relayString(value any) string {
 	return strings.TrimSpace(fmt.Sprintf("%v", value))
 }
 
+func detectVideoFormat(rawBody []byte) string {
+	if len(rawBody) == 0 {
+		return "mp4"
+	}
+	var raw map[string]any
+	if err := common.Unmarshal(rawBody, &raw); err != nil {
+		return "mp4"
+	}
+	respObj, ok := raw["response"].(map[string]any)
+	if !ok {
+		return "mp4"
+	}
+	vids, ok := respObj["videos"].([]any)
+	if !ok || len(vids) == 0 {
+		return "mp4"
+	}
+	v0, ok := vids[0].(map[string]any)
+	if !ok {
+		return "mp4"
+	}
+	mt, ok := v0["mimeType"].(string)
+	if !ok || mt == "" || strings.Contains(mt, "mp4") {
+		return "mp4"
+	}
+	return mt
+}
+
+func mapTaskStatusToSimple(status model.TaskStatus) string {
+	switch status {
+	case model.TaskStatusSuccess:
+		return "succeeded"
+	case model.TaskStatusFailure:
+		return "failed"
+	case model.TaskStatusQueued, model.TaskStatusSubmitted:
+		return "queued"
+	default:
+		return "processing"
+	}
+}
+
 func TaskModel2Dto(task *model.Task) *dto.TaskDto {
 	return &dto.TaskDto{
 		TaskID:     task.TaskID,
