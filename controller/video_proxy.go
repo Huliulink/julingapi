@@ -71,6 +71,15 @@ func GetVideoTaskStatus(c *gin.Context) {
 		task = nextTask
 	}
 
+	if isSoraTask(task) {
+		if len(task.Data) > 0 {
+			c.Data(http.StatusOK, "application/json", service.NormalizeSoraTaskPayloadBytes(task.Data))
+			return
+		}
+		c.JSON(http.StatusOK, buildVideoResponse(task, false))
+		return
+	}
+
 	waitCtx, cancel := context.WithTimeout(c.Request.Context(), r2TransferWaitTimeout)
 	defer cancel()
 
@@ -137,7 +146,13 @@ func refreshVideoTaskStatusFromUpstream(_ context.Context, task *model.Task) (*m
 		baseURL = channelModel.GetBaseURL()
 	}
 	proxy := channelModel.GetSetting().Proxy
-	adaptor := relay.GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channelModel.Type)))
+	fetchPlatform := relay.ResolveTaskFetchPlatform(
+		channelModel.Type,
+		string(task.Platform),
+		task.Properties.UpstreamModelName,
+		task.Properties.OriginModelName,
+	)
+	adaptor := relay.GetTaskAdaptor(fetchPlatform)
 	if adaptor == nil {
 		return nil, fmt.Errorf("video adaptor not found for channel type %d", channelModel.Type)
 	}
@@ -192,6 +207,9 @@ func refreshVideoTaskStatusFromUpstream(_ context.Context, task *model.Task) (*m
 		return nil, fmt.Errorf("parse task result failed: %w", err)
 	} else {
 		task.Data = redactVideoResponseBody(responseBody)
+		if channelModel.Type == constant.ChannelTypeSora {
+			task.Data = service.NormalizeSoraTaskPayloadBytes(task.Data)
+		}
 	}
 
 	if taskResult != nil {
@@ -203,6 +221,9 @@ func refreshVideoTaskStatusFromUpstream(_ context.Context, task *model.Task) (*m
 		}
 		if taskResult.Url != "" && !strings.HasPrefix(taskResult.Url, "data:") {
 			task.FailReason = taskResult.Url
+			if channelModel.Type == constant.ChannelTypeSora {
+				task.FailReason = service.NormalizeSoraURL(task.FailReason)
+			}
 		}
 		if taskResult.Reason != "" && (task.Status == model.TaskStatusFailure || strings.TrimSpace(task.FailReason) == "") {
 			task.FailReason = taskResult.Reason
@@ -677,10 +698,7 @@ func taskDataLooksLikeSora(task *model.Task) bool {
 }
 
 func normalizeSoraUpstreamURL(rawURL string) string {
-	rawURL = strings.TrimSpace(rawURL)
-	rawURL = strings.Replace(rawURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-	rawURL = strings.Replace(rawURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-	return rawURL
+	return service.NormalizeSoraURL(rawURL)
 }
 
 func buildSoraUpstreamFallbackPayload(task *model.Task) ([]byte, bool) {
@@ -773,7 +791,7 @@ func VideoProxy(c *gin.Context) {
 	}
 
 	// When query interception is enabled, /content must not expose upstream URL.
-	if storage_setting.IsVideoR2Enabled() {
+	if storage_setting.IsVideoR2Enabled() && !isSoraTask(task) {
 		waitCtx, cancel := context.WithTimeout(c.Request.Context(), r2TransferWaitTimeout)
 		defer cancel()
 

@@ -124,6 +124,14 @@
   - Async task submit requests now apply channel `model_mapping`, just like chat/image requests already do.
   - The mapped upstream model is persisted into task metadata and reused during later polling, instead of reusing only the user-facing alias.
   - This addresses cases where new video tasks keep polling the wrong upstream model identity and remain stuck at the initial progress snapshot.
+- [x] Fixed fetch-adaptor selection for mixed video models behind `/v1/videos`:
+  - Async task fetch/update paths no longer rely only on `channel_type` when selecting the polling adaptor.
+  - For OpenAI/Sora-style video channels, polling now re-resolves the logical task platform from the saved task model (e.g. Jimeng/Kling/Vidu/Sora).
+  - This addresses the symptom where different video models all stayed at the same `queued / 20%` snapshot because they were being polled by the wrong adaptor.
+- [x] Applied dedicated Sora policy:
+  - Sora async tasks no longer participate in R2 takeover, even when global video R2 is enabled.
+  - Sora query responses now keep returning normalized upstream media URLs (`https://videos.openai.com/...`) instead of R2 URLs.
+  - Sora content/query paths now normalize known proxy-prefixed upstream URLs before returning them to downstream gateways.
 - [x] Fixed misleading `completed_at` timestamps in video polling responses:
   - OpenAI-compatible video responses now only expose `completed_at` after terminal success/failure.
   - Non-terminal tasks no longer leak `UpdatedAt` as a fake completion timestamp during polling.

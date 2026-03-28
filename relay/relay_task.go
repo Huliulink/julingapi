@@ -275,6 +275,7 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 	info.ConsumeQuota = true
 	// insert task
 	task := model.InitTask(platform, info)
+	task.Platform = ResolveTaskFetchPlatform(info.ChannelType, info.UpstreamModelName, info.OriginModelName)
 	task.TaskID = taskID
 	task.Quota = quota
 	task.Data = taskData
@@ -397,7 +398,13 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			baseURL = channelModel.GetBaseURL()
 		}
 		proxy := channelModel.GetSetting().Proxy
-		adaptor := GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channelModel.Type)))
+		fetchPlatform := ResolveTaskFetchPlatform(
+			channelModel.Type,
+			string(originTask.Platform),
+			originTask.Properties.UpstreamModelName,
+			originTask.Properties.OriginModelName,
+		)
+		adaptor := GetTaskAdaptor(fetchPlatform)
 		if adaptor == nil {
 			return
 		}
@@ -435,7 +442,11 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if err2 != nil {
 			return
 		}
+		if relayR2TakeoverIsSoraTask(originTask) {
+			body = service.NormalizeSoraTaskPayloadBytes(body)
+		}
 		latestFetchedBody = body
+		originTask.Data = body
 		ti, err2 := adaptor.ParseTaskResult(body)
 		if err2 == nil && ti != nil {
 			if ti.Status != "" {
@@ -448,6 +459,9 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 				if strings.HasPrefix(ti.Url, "data:") {
 				} else {
 					originTask.FailReason = ti.Url
+					if relayR2TakeoverIsSoraTask(originTask) {
+						originTask.FailReason = service.NormalizeSoraURL(originTask.FailReason)
+					}
 				}
 			}
 			if ti.Reason != "" && (originTask.Status == model.TaskStatusFailure || originTask.FailReason == "") {
@@ -794,7 +808,9 @@ func relayR2TakeoverPrimaryR2URL(task *model.Task) string {
 }
 
 func relayR2TakeoverEnabledForTask(task *model.Task) bool {
-	_ = task
+	if relayR2TakeoverIsSoraTask(task) {
+		return false
+	}
 	return storage_setting.IsVideoR2Enabled()
 }
 
@@ -896,10 +912,7 @@ func relayR2TakeoverSoraFallbackURL(task *model.Task) string {
 }
 
 func relayNormalizeSoraUpstreamURL(rawURL string) string {
-	rawURL = strings.TrimSpace(rawURL)
-	rawURL = strings.Replace(rawURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-	rawURL = strings.Replace(rawURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
-	return rawURL
+	return service.NormalizeSoraURL(rawURL)
 }
 
 func relayR2TakeoverBuildSoraFallbackResponse(task *model.Task) ([]byte, bool, error) {
