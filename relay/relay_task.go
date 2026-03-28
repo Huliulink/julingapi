@@ -446,7 +446,12 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if compatibleTi, normalizedBody, compatible, err := service.ParseCompatibleVideoTaskResult(body); err == nil && compatible {
 			ti = compatibleTi
 			compatibleBody = normalizedBody
-			originTask.Data = normalizedBody
+			if taskBody, ok, normErr := service.NormalizeCompatibleVideoTaskBody(body, compatibleTi, originTask); normErr == nil && ok {
+				compatibleBody = taskBody
+				originTask.Data = taskBody
+			} else {
+				originTask.Data = normalizedBody
+			}
 		} else if compatibleErr != nil {
 			err2 = compatibleErr
 		}
@@ -586,8 +591,15 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 	}
 
 	if strings.HasPrefix(c.Request.RequestURI, "/v1/videos/") {
-		if compatibleTaskInfo, compatibleBody, compatible, err := service.ParseCompatibleVideoTaskResult(originTask.Data); err == nil && compatible && compatibleTaskInfo != nil {
-			respBody = compatibleBody
+		if compatibleTaskInfo, _, compatible, err := service.ParseCompatibleVideoTaskResult(originTask.Data); err == nil && compatible && compatibleTaskInfo != nil {
+			if taskBody, ok, normErr := service.NormalizeCompatibleVideoTaskBody(originTask.Data, compatibleTaskInfo, originTask); normErr == nil && ok {
+				respBody = taskBody
+			} else {
+				respBody, err = common.Marshal(originTask.ToOpenAIVideo())
+				if err != nil {
+					taskResp = service.TaskErrorWrapper(err, "marshal_response_failed", http.StatusInternalServerError)
+				}
+			}
 			return
 		}
 		adaptor := GetTaskAdaptor(originTask.Platform)

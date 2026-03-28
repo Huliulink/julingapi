@@ -90,6 +90,18 @@ func ParseCompatibleVideoTaskResult(respBody []byte) (*relaycommon.TaskInfo, []b
 	return taskInfo, normalizedBody, true, nil
 }
 
+func NormalizeCompatibleVideoTaskBody(respBody []byte, taskInfo *relaycommon.TaskInfo, task *model.Task) ([]byte, bool, error) {
+	payload, ok, err := compatibleVideoPayload(respBody)
+	if err != nil || !ok {
+		return nil, ok, err
+	}
+	normalizedBody, err := NormalizeCompatibleVideoPayload(payload, taskInfo, task)
+	if err != nil {
+		return nil, false, err
+	}
+	return normalizedBody, true, nil
+}
+
 func NormalizeCompatibleVideoPayload(rawPayload map[string]any, taskInfo *relaycommon.TaskInfo, task *model.Task) ([]byte, error) {
 	if rawPayload == nil {
 		return nil, fmt.Errorf("video payload is nil")
@@ -100,15 +112,15 @@ func NormalizeCompatibleVideoPayload(rawPayload map[string]any, taskInfo *relayc
 		return nil, fmt.Errorf("video payload is empty")
 	}
 
-	if id := firstPayloadString(payload, "id", "task_id"); id != "" {
-		payload["id"] = id
-		payload["task_id"] = id
+	if task != nil && strings.TrimSpace(task.TaskID) != "" {
+		payload["id"] = task.TaskID
+		payload["task_id"] = task.TaskID
 	} else if taskInfo != nil && strings.TrimSpace(taskInfo.TaskID) != "" {
 		payload["id"] = taskInfo.TaskID
 		payload["task_id"] = taskInfo.TaskID
-	} else if task != nil && strings.TrimSpace(task.TaskID) != "" {
-		payload["id"] = task.TaskID
-		payload["task_id"] = task.TaskID
+	} else if id := firstPayloadString(payload, "id", "task_id"); id != "" {
+		payload["id"] = id
+		payload["task_id"] = id
 	}
 
 	if strings.TrimSpace(firstPayloadString(payload, "object")) == "" {
@@ -147,20 +159,25 @@ func NormalizeCompatibleVideoPayload(rawPayload map[string]any, taskInfo *relayc
 		}
 	}
 
-	urlValue := extractCompatibleVideoURL(payload)
-	if urlValue == "" && taskInfo != nil {
-		urlValue = strings.TrimSpace(taskInfo.Url)
-	}
-	if urlValue == "" && task != nil {
-		urlValue = strings.TrimSpace(task.FailReason)
-	}
+	urlValue := preferredCompatibleVideoURL(payload, taskInfo, task)
 	if urlValue != "" {
-		if strings.TrimSpace(firstPayloadString(payload, "video_url")) == "" {
-			payload["video_url"] = urlValue
+		payload["video_url"] = urlValue
+		if _, ok := payload["url"]; ok || IsR2URL(urlValue) {
+			payload["url"] = urlValue
+		}
+		if _, ok := payload["output_url"]; ok || IsR2URL(urlValue) {
+			payload["output_url"] = urlValue
 		}
 		metadata := ensurePayloadMap(payload, "metadata")
-		if strings.TrimSpace(firstPayloadString(metadata, "url")) == "" {
-			metadata["url"] = urlValue
+		metadata["url"] = urlValue
+		if IsR2URL(urlValue) {
+			rewriteCompatibleVideoURLs(metadata, urlValue)
+			if content, ok := payload["content"].(map[string]any); ok {
+				rewriteCompatibleVideoURLs(content, urlValue)
+			}
+			if response, ok := payload["response"].(map[string]any); ok {
+				rewriteCompatibleVideoURLs(response, urlValue)
+			}
 		}
 	}
 
@@ -235,6 +252,65 @@ func extractCompatibleVideoURL(payload map[string]any) string {
 		}
 	}
 	return ""
+}
+
+func preferredCompatibleVideoURL(payload map[string]any, taskInfo *relaycommon.TaskInfo, task *model.Task) string {
+	if task != nil {
+		if r2URL := extractTaskPrimaryR2URL(task); r2URL != "" {
+			return r2URL
+		}
+	}
+	if taskInfo != nil && strings.TrimSpace(taskInfo.Url) != "" {
+		return strings.TrimSpace(taskInfo.Url)
+	}
+	if urlValue := extractCompatibleVideoURL(payload); urlValue != "" {
+		return urlValue
+	}
+	if task != nil && strings.TrimSpace(task.FailReason) != "" {
+		return strings.TrimSpace(task.FailReason)
+	}
+	return ""
+}
+
+func extractTaskPrimaryR2URL(task *model.Task) string {
+	if task == nil {
+		return ""
+	}
+	if IsR2URL(task.FailReason) {
+		return strings.TrimSpace(task.FailReason)
+	}
+	if len(task.Data) == 0 {
+		return ""
+	}
+
+	var payload map[string]any
+	if err := common.Unmarshal(task.Data, &payload); err != nil {
+		return ""
+	}
+	for _, key := range []string{"video_url", "url", "output_url", "image_url", "thumbnail_url"} {
+		if urlValue := strings.TrimSpace(firstPayloadString(payload, key)); urlValue != "" && IsR2URL(urlValue) {
+			return urlValue
+		}
+	}
+	if metadata, ok := payload["metadata"].(map[string]any); ok {
+		for _, key := range []string{"video_url", "url", "output_url"} {
+			if urlValue := strings.TrimSpace(firstPayloadString(metadata, key)); urlValue != "" && IsR2URL(urlValue) {
+				return urlValue
+			}
+		}
+	}
+	return ""
+}
+
+func rewriteCompatibleVideoURLs(payload map[string]any, urlValue string) {
+	if payload == nil || strings.TrimSpace(urlValue) == "" {
+		return
+	}
+	for _, key := range []string{"video_url", "url", "output_url"} {
+		if _, ok := payload[key]; ok {
+			payload[key] = urlValue
+		}
+	}
 }
 
 func extractCompatibleVideoReason(payload map[string]any) string {

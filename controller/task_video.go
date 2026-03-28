@@ -133,7 +133,13 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		return fmt.Errorf("parse compatible video task result failed for task %s: %w", taskId, compatibleErr)
 	} else if compatible {
 		taskResult = compatibleTaskResult
-		task.Data = normalizedBody
+		if taskBody, ok, err := service.NormalizeCompatibleVideoTaskBody(responseBody, compatibleTaskResult, task); err != nil {
+			return fmt.Errorf("normalize compatible video task result failed for task %s: %w", taskId, err)
+		} else if ok {
+			task.Data = taskBody
+		} else {
+			task.Data = normalizedBody
+		}
 	} else if taskResult, err = adaptor.ParseTaskResult(responseBody); err != nil {
 		return fmt.Errorf("parseTaskResult failed for task %s: %w", taskId, err)
 	} else {
