@@ -47,15 +47,29 @@ func updateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, cha
 		}
 		return fmt.Errorf("CacheGetChannel failed: %w", err)
 	}
+	adaptor := relay.GetTaskAdaptor(platform)
+	if adaptor == nil {
+		return fmt.Errorf("video adaptor not found")
+	}
+	info := &relaycommon.RelayInfo{}
+	info.ChannelMeta = &relaycommon.ChannelMeta{
+		ChannelBaseUrl: cacheGetChannel.GetBaseURL(),
+	}
+	info.ApiKey = cacheGetChannel.Key
+	adaptor.Init(info)
 	for _, taskId := range taskIds {
-		if err := updateVideoSingleTask(ctx, platform, cacheGetChannel, taskId, taskM); err != nil {
+		if err := updateVideoSingleTask(ctx, adaptor, cacheGetChannel, taskId, taskM); err != nil {
 			logger.LogError(ctx, fmt.Sprintf("Failed to update video task %s: %s", taskId, err.Error()))
 		}
 	}
 	return nil
 }
 
-func updateVideoSingleTask(ctx context.Context, platform constant.TaskPlatform, channel *model.Channel, taskId string, taskM map[string]*model.Task) error {
+func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, channel *model.Channel, taskId string, taskM map[string]*model.Task) error {
+	baseURL := constant.ChannelBaseURLs[channel.Type]
+	if channel.GetBaseURL() != "" {
+		baseURL = channel.GetBaseURL()
+	}
 	proxy := channel.GetSetting().Proxy
 
 	task := taskM[taskId]
@@ -63,26 +77,6 @@ func updateVideoSingleTask(ctx context.Context, platform constant.TaskPlatform, 
 		logger.LogError(ctx, fmt.Sprintf("Task %s not found in taskM", taskId))
 		return fmt.Errorf("task %s not found", taskId)
 	}
-	fetchPlatform := relay.ResolveTaskFetchPlatform(
-		channel.Type,
-		string(task.Platform),
-		task.Properties.UpstreamModelName,
-		task.Properties.OriginModelName,
-	)
-	adaptor := relay.GetTaskAdaptor(fetchPlatform)
-	if adaptor == nil {
-		adaptor = relay.GetTaskAdaptor(platform)
-	}
-	if adaptor == nil {
-		return fmt.Errorf("video adaptor not found")
-	}
-	baseURL := relay.ResolveTaskFetchBaseURL(channel.Type, channel.GetBaseURL(), fetchPlatform)
-	info := &relaycommon.RelayInfo{}
-	info.ChannelMeta = &relaycommon.ChannelMeta{
-		ChannelBaseUrl: baseURL,
-	}
-	info.ApiKey = channel.Key
-	adaptor.Init(info)
 	key := channel.Key
 
 	privateData := task.PrivateData
@@ -139,9 +133,6 @@ func updateVideoSingleTask(ctx context.Context, platform constant.TaskPlatform, 
 		return fmt.Errorf("parseTaskResult failed for task %s: %w", taskId, err)
 	} else {
 		task.Data = redactVideoResponseBody(responseBody)
-		if channel.Type == constant.ChannelTypeSora {
-			task.Data = service.NormalizeSoraTaskPayloadBytes(task.Data)
-		}
 	}
 
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask taskResult: %+v", taskResult))
@@ -173,12 +164,9 @@ func updateVideoSingleTask(ctx context.Context, platform constant.TaskPlatform, 
 		}
 		if !strings.HasPrefix(taskResult.Url, "data:") {
 			task.FailReason = taskResult.Url
-			if channel.Type == constant.ChannelTypeSora {
-				task.FailReason = service.NormalizeSoraURL(task.FailReason)
-			}
 		}
 
-		if storage_setting.IsVideoR2Enabled() && channel.Type != constant.ChannelTypeSora {
+		if storage_setting.IsVideoR2Enabled() {
 			savedFailReason := task.FailReason
 			task.Status = model.TaskStatusInProgress
 			task.Progress = "95%"

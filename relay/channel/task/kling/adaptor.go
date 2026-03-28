@@ -189,10 +189,6 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 		taskErr = service.TaskErrorWrapperLocal(fmt.Errorf("%s", kResp.Message), "task_failed", http.StatusBadRequest)
 		return
 	}
-	if strings.HasPrefix(c.Request.RequestURI, "/kling/v1/videos/") {
-		c.Data(http.StatusOK, "application/json", responseBody)
-		return kResp.Data.TaskId, responseBody, nil
-	}
 	ov := dto.NewOpenAIVideo()
 	ov.ID = kResp.Data.TaskId
 	ov.TaskID = kResp.Data.TaskId
@@ -352,27 +348,24 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	taskInfo.TaskID = resPayload.Data.TaskId
 	taskInfo.Reason = resPayload.Data.TaskStatusMsg
 	//任务状态，枚举值：submitted（已提交）、processing（处理中）、succeed（成功）、failed（失败）
-	status := strings.ToLower(strings.TrimSpace(resPayload.Data.TaskStatus))
+	status := resPayload.Data.TaskStatus
 	switch status {
-	case "submitted", "created", "queued", "queueing", "pending":
+	case "submitted":
 		taskInfo.Status = model.TaskStatusSubmitted
-		taskInfo.Progress = "10%"
-	case "processing", "running", "in_progress", "progressing", "executing":
+	case "processing":
 		taskInfo.Status = model.TaskStatusInProgress
-		taskInfo.Progress = "50%"
-	case "succeed", "succeeded", "success", "completed", "finish", "finished":
+	case "succeed":
 		taskInfo.Status = model.TaskStatusInProgress
 		taskInfo.Progress = "95%"
-	case "failed", "fail", "error", "cancelled", "canceled", "aborted":
+	case "failed":
 		taskInfo.Status = model.TaskStatusFailure
 	default:
-		taskInfo.Status = model.TaskStatusInProgress
-		taskInfo.Progress = "30%"
+		return nil, fmt.Errorf("unknown task status: %s", status)
 	}
 	if videos := resPayload.Data.TaskResult.Videos; len(videos) > 0 {
 		video := videos[0]
 		taskInfo.Url = video.Url
-		if (status == "succeed" || status == "succeeded" || status == "success" || status == "completed" || status == "finish" || status == "finished") && strings.TrimSpace(video.Url) != "" {
+		if status == "succeed" && strings.TrimSpace(video.Url) != "" {
 			taskInfo.Status = model.TaskStatusSuccess
 			taskInfo.Progress = "100%"
 		}
@@ -395,7 +388,7 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 	openAIVideo.Status = originTask.Status.ToVideoStatus()
 	openAIVideo.SetProgressStr(originTask.Progress)
 	openAIVideo.CreatedAt = klingResp.Data.CreatedAt
-	openAIVideo.CompletedAt = originTask.VideoCompletedAt()
+	openAIVideo.CompletedAt = klingResp.Data.UpdatedAt
 
 	if len(klingResp.Data.TaskResult.Videos) > 0 {
 		video := klingResp.Data.TaskResult.Videos[0]

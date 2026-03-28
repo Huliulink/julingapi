@@ -59,57 +59,6 @@ func storeTaskRequest(c *gin.Context, info *RelayInfo, action string, requestObj
 	info.Action = action
 	c.Set("task_request", requestObj)
 }
-
-func applyTaskModelMapping(c *gin.Context, info *RelayInfo, req *TaskSubmitReq) error {
-	if req == nil {
-		return nil
-	}
-
-	originModel := strings.TrimSpace(req.Model)
-	if originModel == "" {
-		return nil
-	}
-	if info.OriginModelName == "" {
-		info.OriginModelName = originModel
-	}
-
-	modelMapping := c.GetString("model_mapping")
-	if modelMapping == "" || modelMapping == "{}" {
-		if info.UpstreamModelName == "" {
-			info.UpstreamModelName = originModel
-		}
-		return nil
-	}
-
-	modelMap := make(map[string]string)
-	if err := common.UnmarshalJsonStr(modelMapping, &modelMap); err != nil {
-		return fmt.Errorf("unmarshal_model_mapping_failed")
-	}
-
-	currentModel := originModel
-	visitedModels := map[string]bool{
-		currentModel: true,
-	}
-	for {
-		mappedModel, exists := modelMap[currentModel]
-		mappedModel = strings.TrimSpace(mappedModel)
-		if !exists || mappedModel == "" {
-			break
-		}
-		if visitedModels[mappedModel] {
-			if mappedModel != currentModel {
-				return fmt.Errorf("model_mapping_contains_cycle")
-			}
-			break
-		}
-		visitedModels[mappedModel] = true
-		currentModel = mappedModel
-	}
-
-	req.Model = currentModel
-	info.UpstreamModelName = currentModel
-	return nil
-}
 func GetTaskRequest(c *gin.Context) (TaskSubmitReq, error) {
 	v, exists := c.Get("task_request")
 	if !exists {
@@ -272,10 +221,6 @@ func ValidateBasicTaskRequest(c *gin.Context, info *RelayInfo, action string) *d
 	if len(req.Images) == 0 && strings.TrimSpace(req.Image) != "" {
 		// 兼容单图上传
 		req.Images = []string{req.Image}
-	}
-
-	if err := applyTaskModelMapping(c, info, &req); err != nil {
-		return createTaskError(err, "invalid_model_mapping", http.StatusBadRequest, true)
 	}
 
 	storeTaskRequest(c, info, action, req)

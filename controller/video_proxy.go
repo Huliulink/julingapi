@@ -15,9 +15,6 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/relay"
-	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/storage_setting"
 
@@ -46,7 +43,6 @@ func GetVideoTaskStatus(c *gin.Context) {
 		})
 		return
 	}
-	c.Set("relay_mode", relayconstant.RelayModeVideoFetchByID)
 
 	if !storage_setting.IsVideoR2Enabled() {
 		RelayTask(c)
@@ -63,20 +59,6 @@ func GetVideoTaskStatus(c *gin.Context) {
 	}
 	if !exists || task == nil {
 		RelayTask(c)
-		return
-	}
-	if nextTask, refreshErr := refreshVideoTaskStatusFromUpstream(c.Request.Context(), task); refreshErr != nil {
-		logger.LogWarn(c.Request.Context(), fmt.Sprintf("GetVideoTaskStatus refresh failed for %s: %s", taskID, refreshErr.Error()))
-	} else if nextTask != nil {
-		task = nextTask
-	}
-
-	if isSoraTask(task) {
-		if len(task.Data) > 0 {
-			c.Data(http.StatusOK, "application/json", service.NormalizeSoraTaskPayloadBytes(task.Data))
-			return
-		}
-		c.JSON(http.StatusOK, buildVideoResponse(task, false))
 		return
 	}
 
@@ -130,113 +112,6 @@ func GetVideoTaskStatus(c *gin.Context) {
 		video.SetMetadata("message", "video transfer in progress")
 	}
 	c.JSON(http.StatusOK, video)
-}
-
-func refreshVideoTaskStatusFromUpstream(_ context.Context, task *model.Task) (*model.Task, error) {
-	if task == nil {
-		return nil, fmt.Errorf("task is nil")
-	}
-	channelModel, err := model.CacheGetChannel(task.ChannelId)
-	if err != nil {
-		return nil, fmt.Errorf("get channel failed: %w", err)
-	}
-
-	proxy := channelModel.GetSetting().Proxy
-	fetchPlatform := relay.ResolveTaskFetchPlatform(
-		channelModel.Type,
-		string(task.Platform),
-		task.Properties.UpstreamModelName,
-		task.Properties.OriginModelName,
-	)
-	adaptor := relay.GetTaskAdaptor(fetchPlatform)
-	if adaptor == nil {
-		return nil, fmt.Errorf("video adaptor not found for channel type %d", channelModel.Type)
-	}
-	baseURL := relay.ResolveTaskFetchBaseURL(channelModel.Type, channelModel.GetBaseURL(), fetchPlatform)
-	info := &relaycommon.RelayInfo{}
-	info.ChannelMeta = &relaycommon.ChannelMeta{
-		ChannelBaseUrl: baseURL,
-	}
-	info.ApiKey = channelModel.Key
-	adaptor.Init(info)
-
-	requestKey := channelModel.Key
-	if strings.TrimSpace(task.PrivateData.Key) != "" {
-		requestKey = task.PrivateData.Key
-	} else if channelModel.ChannelInfo.IsMultiKey {
-		nextKey, _, keyErr := channelModel.GetNextEnabledKey()
-		if keyErr == nil && strings.TrimSpace(nextKey) != "" {
-			requestKey = nextKey
-		}
-	}
-
-	queryModel := strings.TrimSpace(task.Properties.UpstreamModelName)
-	if queryModel == "" {
-		queryModel = strings.TrimSpace(task.Properties.OriginModelName)
-	}
-	if queryModel == "" && len(task.Data) > 0 {
-		var taskData map[string]any
-		if err := common.Unmarshal(task.Data, &taskData); err == nil {
-			if m, ok := taskData["model"].(string); ok {
-				queryModel = strings.TrimSpace(m)
-			}
-		}
-	}
-
-	payload := map[string]any{
-		"task_id": task.TaskID,
-		"action":  task.Action,
-		"model":   queryModel,
-	}
-	responseBody, usedKey, err := fetchTaskResponseBody(adaptor, channelModel, task, baseURL, requestKey, payload, proxy)
-	if err != nil {
-		return nil, fmt.Errorf("fetch task failed: %w", err)
-	}
-	if usedKey != "" && strings.TrimSpace(task.PrivateData.Key) == "" && channelModel.ChannelInfo.IsMultiKey {
-		task.PrivateData.Key = usedKey
-	}
-
-	taskResult := &relaycommon.TaskInfo{}
-	var responseItems dto.TaskResponse[model.Task]
-	if err = common.Unmarshal(responseBody, &responseItems); err == nil && responseItems.IsSuccess() {
-		t := responseItems.Data
-		taskResult.TaskID = t.TaskID
-		taskResult.Status = string(t.Status)
-		taskResult.Url = t.FailReason
-		taskResult.Progress = t.Progress
-		taskResult.Reason = t.FailReason
-		task.Data = t.Data
-	} else if taskResult, err = adaptor.ParseTaskResult(responseBody); err != nil {
-		return nil, fmt.Errorf("parse task result failed: %w", err)
-	} else {
-		task.Data = redactVideoResponseBody(responseBody)
-		if channelModel.Type == constant.ChannelTypeSora {
-			task.Data = service.NormalizeSoraTaskPayloadBytes(task.Data)
-		}
-	}
-
-	if taskResult != nil {
-		if taskResult.Status != "" {
-			task.Status = model.TaskStatus(taskResult.Status)
-		}
-		if taskResult.Progress != "" {
-			task.Progress = taskResult.Progress
-		}
-		if taskResult.Url != "" && !strings.HasPrefix(taskResult.Url, "data:") {
-			task.FailReason = taskResult.Url
-			if channelModel.Type == constant.ChannelTypeSora {
-				task.FailReason = service.NormalizeSoraURL(task.FailReason)
-			}
-		}
-		if taskResult.Reason != "" && (task.Status == model.TaskStatusFailure || strings.TrimSpace(task.FailReason) == "") {
-			task.FailReason = taskResult.Reason
-		}
-	}
-
-	if err := task.Update(); err != nil {
-		return nil, fmt.Errorf("save refreshed task failed: %w", err)
-	}
-	return task, nil
 }
 
 func ensureTaskTransferredToR2(ctx context.Context, taskID string) (*model.Task, error) {
@@ -701,7 +576,10 @@ func taskDataLooksLikeSora(task *model.Task) bool {
 }
 
 func normalizeSoraUpstreamURL(rawURL string) string {
-	return service.NormalizeSoraURL(rawURL)
+	rawURL = strings.TrimSpace(rawURL)
+	rawURL = strings.Replace(rawURL, "https://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
+	rawURL = strings.Replace(rawURL, "http://videos.fluxai.us.ci/videos.openai.com/", "https://videos.openai.com/", 1)
+	return rawURL
 }
 
 func buildSoraUpstreamFallbackPayload(task *model.Task) ([]byte, bool) {
@@ -794,7 +672,7 @@ func VideoProxy(c *gin.Context) {
 	}
 
 	// When query interception is enabled, /content must not expose upstream URL.
-	if storage_setting.IsVideoR2Enabled() && !isSoraTask(task) {
+	if storage_setting.IsVideoR2Enabled() {
 		waitCtx, cancel := context.WithTimeout(c.Request.Context(), r2TransferWaitTimeout)
 		defer cancel()
 

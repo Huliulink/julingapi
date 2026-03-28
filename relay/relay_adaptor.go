@@ -2,7 +2,6 @@ package relay
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/relay/channel"
@@ -51,59 +50,6 @@ import (
 	"github.com/QuantumNous/new-api/relay/channel/zhipu_4v"
 	"github.com/gin-gonic/gin"
 )
-
-func ResolveTaskFetchPlatform(channelType int, modelNames ...string) constant.TaskPlatform {
-	defaultPlatform := constant.TaskPlatform(strconv.Itoa(channelType))
-	if channelType != constant.ChannelTypeOpenAI && channelType != constant.ChannelTypeSora {
-		return defaultPlatform
-	}
-
-	for _, raw := range modelNames {
-		modelName := strings.ToLower(strings.TrimSpace(raw))
-		if modelName == "" {
-			continue
-		}
-		switch {
-		case strings.Contains(modelName, "jimeng"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeJimeng))
-		case strings.Contains(modelName, "kling"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeKling))
-		case strings.Contains(modelName, "vidu"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeVidu))
-		case strings.Contains(modelName, "hailuo") || strings.Contains(modelName, "minimax"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeMiniMax))
-		case strings.Contains(modelName, "seedance") || strings.Contains(modelName, "doubao"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeDoubaoVideo))
-		case strings.Contains(modelName, "veo"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeGemini))
-		case strings.Contains(modelName, "grok"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeXai))
-		case strings.Contains(modelName, "sora"):
-			return constant.TaskPlatform(strconv.Itoa(constant.ChannelTypeSora))
-		}
-	}
-
-	return defaultPlatform
-}
-
-func ResolveTaskFetchBaseURL(channelType int, channelBaseURL string, platform constant.TaskPlatform) string {
-	if baseURL := strings.TrimSpace(channelBaseURL); baseURL != "" {
-		return baseURL
-	}
-
-	if resolvedType, err := strconv.Atoi(strings.TrimSpace(string(platform))); err == nil {
-		if resolvedType >= 0 && resolvedType < len(constant.ChannelBaseURLs) && resolvedType != channelType {
-			if baseURL := strings.TrimSpace(constant.ChannelBaseURLs[resolvedType]); baseURL != "" {
-				return baseURL
-			}
-		}
-	}
-
-	if channelType >= 0 && channelType < len(constant.ChannelBaseURLs) {
-		return strings.TrimSpace(constant.ChannelBaseURLs[channelType])
-	}
-	return ""
-}
 
 func GetAdaptor(apiType int) channel.Adaptor {
 	switch apiType {

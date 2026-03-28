@@ -268,15 +268,13 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		return nil, errors.Wrap(err, "failed to unmarshal response body")
 	}
 
-	state := strings.ToLower(strings.TrimSpace(taskResp.State))
+	state := taskResp.State
 	switch state {
-	case "created", "queueing", "queued", "pending", "submitted":
+	case "created", "queueing":
 		taskInfo.Status = model.TaskStatusSubmitted
-		taskInfo.Progress = "10%"
-	case "processing", "running", "in_progress", "progressing", "executing":
+	case "processing":
 		taskInfo.Status = model.TaskStatusInProgress
-		taskInfo.Progress = "50%"
-	case "success", "succeeded", "completed", "finish", "finished":
+	case "success":
 		videoURL := ""
 		if len(taskResp.Creations) > 0 {
 			videoURL = taskResp.Creations[0].URL
@@ -288,14 +286,13 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskInfo.Status = model.TaskStatusSuccess
 			taskInfo.Url = videoURL
 		}
-	case "failed", "fail", "error", "cancelled", "canceled", "aborted":
+	case "failed":
 		taskInfo.Status = model.TaskStatusFailure
 		if taskResp.ErrCode != "" {
 			taskInfo.Reason = taskResp.ErrCode
 		}
 	default:
-		taskInfo.Status = model.TaskStatusInProgress
-		taskInfo.Progress = "30%"
+		return nil, fmt.Errorf("unknown task state: %s", state)
 	}
 
 	return taskInfo, nil
@@ -312,7 +309,7 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 	openAIVideo.Status = originTask.Status.ToVideoStatus()
 	openAIVideo.SetProgressStr(originTask.Progress)
 	openAIVideo.CreatedAt = originTask.CreatedAt
-	openAIVideo.CompletedAt = originTask.VideoCompletedAt()
+	openAIVideo.CompletedAt = originTask.UpdatedAt
 
 	if len(viduResp.Creations) > 0 && viduResp.Creations[0].URL != "" {
 		openAIVideo.SetMetadata("url", viduResp.Creations[0].URL)

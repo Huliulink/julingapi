@@ -6,11 +6,11 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"sort"
 	"strings"
 	"time"
@@ -44,16 +44,16 @@ type requestPayload struct {
 }
 
 type responsePayload struct {
-	Code      flexibleInt `json:"code"`
-	Message   string      `json:"message"`
-	RequestId string      `json:"request_id"`
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	RequestId string `json:"request_id"`
 	Data      struct {
 		TaskID string `json:"task_id"`
 	} `json:"data"`
 }
 
 type responseTask struct {
-	Code flexibleInt `json:"code"`
+	Code int `json:"code"`
 	Data struct {
 		BinaryDataBase64 []interface{} `json:"binary_data_base64"`
 		ImageUrls        interface{}   `json:"image_urls"`
@@ -63,35 +63,8 @@ type responseTask struct {
 	} `json:"data"`
 	Message     string `json:"message"`
 	RequestId   string `json:"request_id"`
-	Status      any    `json:"status"`
+	Status      int    `json:"status"`
 	TimeElapsed string `json:"time_elapsed"`
-}
-
-type flexibleInt int
-
-func (v *flexibleInt) UnmarshalJSON(data []byte) error {
-	raw := strings.TrimSpace(string(data))
-	if raw == "" || raw == "null" {
-		*v = 0
-		return nil
-	}
-	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
-		unquoted, err := strconv.Unquote(raw)
-		if err != nil {
-			return err
-		}
-		raw = strings.TrimSpace(unquoted)
-	}
-	if raw == "" {
-		*v = 0
-		return nil
-	}
-	parsed, err := strconv.Atoi(raw)
-	if err != nil {
-		return err
-	}
-	*v = flexibleInt(parsed)
-	return nil
 }
 
 const (
@@ -129,20 +102,10 @@ func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycom
 
 // BuildRequestURL constructs the upstream URL.
 func (a *TaskAdaptor) BuildRequestURL(info *relaycommon.RelayInfo) (string, error) {
-	baseURL := strings.TrimRight(strings.TrimSpace(a.baseURL), "/")
-	if baseURL == "" {
-		baseURL = strings.TrimRight(strings.TrimSpace(info.ChannelBaseUrl), "/")
-	}
-	if baseURL == "" && info.ChannelType >= 0 && info.ChannelType < len(constant.ChannelBaseURLs) {
-		baseURL = strings.TrimRight(strings.TrimSpace(constant.ChannelBaseURLs[info.ChannelType]), "/")
-	}
-	if baseURL == "" {
-		return "", fmt.Errorf("jimeng base url is empty")
-	}
 	if isNewAPIRelay(info.ApiKey) {
-		return fmt.Sprintf("%s/jimeng/?Action=CVSync2AsyncSubmitTask&Version=2022-08-31", baseURL), nil
+		return fmt.Sprintf("%s/jimeng/?Action=CVSync2AsyncSubmitTask&Version=2022-08-31", a.baseURL), nil
 	}
-	return fmt.Sprintf("%s/?Action=CVSync2AsyncSubmitTask&Version=2022-08-31", baseURL), nil
+	return fmt.Sprintf("%s/?Action=CVSync2AsyncSubmitTask&Version=2022-08-31", a.baseURL), nil
 }
 
 // BuildRequestHeader sets required headers.
@@ -205,8 +168,7 @@ func (a *TaskAdaptor) BuildRequestBody(c *gin.Context, info *relaycommon.RelayIn
 	if err != nil {
 		return nil, errors.Wrap(err, "convert request payload failed")
 	}
-	info.UpstreamModelName = body.ReqKey
-	data, err := common.Marshal(body)
+	data, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
@@ -229,19 +191,14 @@ func (a *TaskAdaptor) DoResponse(c *gin.Context, resp *http.Response, info *rela
 
 	// Parse Jimeng response
 	var jResp responsePayload
-	if err := common.Unmarshal(responseBody, &jResp); err != nil {
+	if err := json.Unmarshal(responseBody, &jResp); err != nil {
 		taskErr = service.TaskErrorWrapper(errors.Wrapf(err, "body: %s", responseBody), "unmarshal_response_body_failed", http.StatusInternalServerError)
 		return
 	}
 
-	if int(jResp.Code) != 10000 {
-		taskErr = service.TaskErrorWrapper(fmt.Errorf("%s", jResp.Message), fmt.Sprintf("%d", int(jResp.Code)), http.StatusInternalServerError)
+	if jResp.Code != 10000 {
+		taskErr = service.TaskErrorWrapper(fmt.Errorf("%s", jResp.Message), fmt.Sprintf("%d", jResp.Code), http.StatusInternalServerError)
 		return
-	}
-
-	if strings.HasPrefix(c.Request.RequestURI, "/jimeng/") {
-		c.Data(http.StatusOK, "application/json", responseBody)
-		return jResp.Data.TaskID, responseBody, nil
 	}
 
 	ov := dto.NewOpenAIVideo()
@@ -262,17 +219,9 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 	action, _ := body["action"].(string)
 	modelName, _ := body["model"].(string)
 
-	effectiveBaseURL := strings.TrimRight(strings.TrimSpace(baseUrl), "/")
-	if effectiveBaseURL == "" {
-		effectiveBaseURL = strings.TrimRight(strings.TrimSpace(a.baseURL), "/")
-	}
-	if effectiveBaseURL == "" {
-		return nil, fmt.Errorf("jimeng base url is empty")
-	}
-
-	uri := fmt.Sprintf("%s/?Action=CVSync2AsyncGetResult&Version=2022-08-31", effectiveBaseURL)
+	uri := fmt.Sprintf("%s/?Action=CVSync2AsyncGetResult&Version=2022-08-31", baseUrl)
 	if isNewAPIRelay(key) {
-		uri = fmt.Sprintf("%s/jimeng/?Action=CVSync2AsyncGetResult&Version=2022-08-31", effectiveBaseURL)
+		uri = fmt.Sprintf("%s/jimeng/?Action=CVSync2AsyncGetResult&Version=2022-08-31", a.baseURL)
 	}
 	client, err := service.GetHttpClientWithProxy(proxy)
 	if err != nil {
@@ -289,7 +238,7 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 			"req_key": reqKey,
 			"task_id": taskID,
 		}
-		payloadBytes, err := common.Marshal(payload)
+		payloadBytes, err := json.Marshal(payload)
 		if err != nil {
 			return nil, errors.Wrap(err, "marshal fetch task payload failed")
 		}
@@ -329,14 +278,14 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 
 		var probe responseTask
-		if err := common.Unmarshal(respBody, &probe); err != nil {
+		if err := json.Unmarshal(respBody, &probe); err != nil {
 			// Unrecognized body, return as-is so upper layer can handle raw response.
 			return resp, nil
 		}
-		common.SysLog(fmt.Sprintf("[jimeng] fetch task_id=%s model=%s action=%s req_key=%s code=%d status=%s", taskID, modelName, action, reqKey, int(probe.Code), probe.Data.Status))
+		common.SysLog(fmt.Sprintf("[jimeng] fetch task_id=%s model=%s action=%s req_key=%s code=%d status=%s", taskID, modelName, action, reqKey, probe.Code, probe.Data.Status))
 
 		lastResp = resp
-		if int(probe.Code) == 10000 {
+		if probe.Code == 10000 {
 			return resp, nil
 		}
 
@@ -490,11 +439,11 @@ func (a *TaskAdaptor) convertToRequestPayload(req *relaycommon.TaskSubmitReq) (*
 		}
 	}
 	metadata := req.Metadata
-	medaBytes, err := common.Marshal(metadata)
+	medaBytes, err := json.Marshal(metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "metadata marshal metadata failed")
 	}
-	err = common.Unmarshal(medaBytes, &r)
+	err = json.Unmarshal(medaBytes, &r)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshal metadata failed")
 	}
@@ -589,22 +538,19 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		return nil, errors.Wrap(err, "unmarshal task result failed")
 	}
 	taskResult := relaycommon.TaskInfo{}
-	if int(resTask.Code) == 10000 {
+	if resTask.Code == 10000 {
 		taskResult.Code = 0
 	} else {
-		taskResult.Code = int(resTask.Code) // todo uni code
+		taskResult.Code = resTask.Code // todo uni code
 		taskResult.Reason = buildJimengFailureReason(&resTask)
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = "100%"
 	}
-	switch normalizeJimengTaskStatus(&resTask) {
-	case "in_queue", "queued", "queue", "submitted", "pending", "created":
+	switch strings.ToLower(strings.TrimSpace(resTask.Data.Status)) {
+	case "in_queue":
 		taskResult.Status = model.TaskStatusQueued
 		taskResult.Progress = "10%"
-	case "processing", "running", "executing", "in_progress", "progressing":
-		taskResult.Status = model.TaskStatusInProgress
-		taskResult.Progress = "50%"
-	case "done", "success", "succeeded", "completed", "finish", "finished":
+	case "done":
 		if strings.TrimSpace(resTask.Data.VideoUrl) == "" {
 			// Jimeng may return done before final video_url is ready.
 			taskResult.Status = model.TaskStatusInProgress
@@ -629,7 +575,7 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 
 func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, error) {
 	var jimengResp responseTask
-	if err := common.Unmarshal(originTask.Data, &jimengResp); err != nil {
+	if err := json.Unmarshal(originTask.Data, &jimengResp); err != nil {
 		return nil, errors.Wrap(err, "unmarshal jimeng task data failed")
 	}
 
@@ -639,9 +585,9 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 	openAIVideo.SetProgressStr(originTask.Progress)
 	openAIVideo.SetMetadata("url", jimengResp.Data.VideoUrl)
 	openAIVideo.CreatedAt = originTask.CreatedAt
-	openAIVideo.CompletedAt = originTask.VideoCompletedAt()
+	openAIVideo.CompletedAt = originTask.UpdatedAt
 
-	if originTask.Status == model.TaskStatusFailure || int(jimengResp.Code) != 10000 {
+	if originTask.Status == model.TaskStatusFailure || jimengResp.Code != 10000 {
 		reason := buildJimengFailureReason(&jimengResp)
 		if reason == "" {
 			reason = service.ExtractTaskFailureReason(originTask.FailReason, originTask.Data)
@@ -651,7 +597,7 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 		}
 		openAIVideo.Error = &dto.OpenAIVideoError{
 			Message: reason,
-			Code:    fmt.Sprintf("%d", int(jimengResp.Code)),
+			Code:    fmt.Sprintf("%d", jimengResp.Code),
 		}
 		openAIVideo.SetMetadata("message", reason)
 	}
@@ -678,8 +624,8 @@ func buildJimengFailureReason(resTask *responseTask) string {
 	if reason == "" && status != "" && status != "done" && status != "in_queue" {
 		reason = "jimeng status: " + status
 	}
-	if reason == "" && int(resTask.Code) != 10000 {
-		reason = fmt.Sprintf("jimeng error code: %d", int(resTask.Code))
+	if reason == "" && resTask.Code != 10000 {
+		reason = fmt.Sprintf("jimeng error code: %d", resTask.Code)
 	}
 
 	if requestID := strings.TrimSpace(resTask.RequestId); requestID != "" {
@@ -690,46 +636,6 @@ func buildJimengFailureReason(resTask *responseTask) string {
 		}
 	}
 	return limitJimengReason(reason)
-}
-
-func normalizeJimengTaskStatus(resTask *responseTask) string {
-	if resTask == nil {
-		return ""
-	}
-
-	for _, candidate := range []string{
-		strings.TrimSpace(resTask.Data.Status),
-		extractJimengRespDataStatus(strings.TrimSpace(resTask.Data.RespData)),
-	} {
-		if candidate == "" {
-			continue
-		}
-		return strings.ToLower(candidate)
-	}
-
-	if strings.TrimSpace(resTask.Data.VideoUrl) != "" {
-		return "done"
-	}
-	return ""
-}
-
-func extractJimengRespDataStatus(respData string) string {
-	if respData == "" {
-		return ""
-	}
-
-	var payload map[string]any
-	if err := common.UnmarshalJsonStr(respData, &payload); err != nil {
-		return ""
-	}
-	for _, key := range []string{"status", "Status", "state", "State", "task_status", "taskStatus"} {
-		if v, ok := payload[key]; ok {
-			if s := strings.TrimSpace(fmt.Sprintf("%v", v)); s != "" {
-				return s
-			}
-		}
-	}
-	return ""
 }
 
 func extractJimengRespDataReason(respData string) string {

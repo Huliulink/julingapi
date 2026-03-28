@@ -147,12 +147,12 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		Code: 0,
 	}
 
-	switch strings.ToLower(strings.TrimSpace(resTask.Status)) {
-	case "queued", "pending", "submitted", "created":
+	switch resTask.Status {
+	case "queued", "pending":
 		taskResult.Status = model.TaskStatusQueued
-	case "processing", "in_progress", "running", "progressing":
+	case "processing", "in_progress":
 		taskResult.Status = model.TaskStatusInProgress
-	case "completed", "succeeded", "success", "finished":
+	case "completed":
 		videoURL := pickXAIVideoURL(&resTask)
 		if videoURL == "" {
 			// xAI may report completed before the final video URL is materialized.
@@ -162,16 +162,13 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 			taskResult.Status = model.TaskStatusSuccess
 			taskResult.Url = videoURL
 		}
-	case "failed", "cancelled", "canceled", "aborted", "error":
+	case "failed", "cancelled":
 		taskResult.Status = model.TaskStatusFailure
 		if resTask.Error != nil {
 			taskResult.Reason = resTask.Error.Message
 		} else {
 			taskResult.Reason = "task failed"
 		}
-	default:
-		taskResult.Status = model.TaskStatusInProgress
-		taskResult.Progress = "30%"
 	}
 	if resTask.Progress > 0 && resTask.Progress < 100 {
 		taskResult.Progress = fmt.Sprintf("%d%%", resTask.Progress)
@@ -187,7 +184,7 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(task *model.Task) ([]byte, error) {
 	video.Status = task.Status.ToVideoStatus()
 	video.SetProgressStr(task.Progress)
 	video.CreatedAt = task.CreatedAt
-	video.CompletedAt = task.VideoCompletedAt()
+	video.CompletedAt = task.UpdatedAt
 	video.Model = task.Properties.OriginModelName
 
 	var xaiResp responseTask
