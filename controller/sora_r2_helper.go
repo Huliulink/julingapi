@@ -8,9 +8,26 @@ import (
 	"github.com/QuantumNous/new-api/service"
 )
 
+func buildSoraProtectedContentURL(task *model.Task, channel *model.Channel) string {
+	if task == nil || channel == nil {
+		return ""
+	}
+	taskID := strings.TrimSpace(task.TaskID)
+	if taskID == "" {
+		return ""
+	}
+	baseURL := strings.TrimRight(strings.TrimSpace(channel.GetBaseURL()), "/")
+	if baseURL == "" {
+		return ""
+	}
+	return baseURL + "/v1/videos/" + taskID + "/content"
+}
+
 func soraProtectedTransferDetails(task *model.Task, channel *model.Channel) (string, string) {
 	protectedURL := ""
-	if task != nil && strings.Contains(task.FailReason, "/v1/videos/") {
+	if upstreamProtectedURL := buildSoraProtectedContentURL(task, channel); upstreamProtectedURL != "" {
+		protectedURL = upstreamProtectedURL
+	} else if task != nil && strings.Contains(task.FailReason, "/v1/videos/") {
 		protectedURL = strings.TrimSpace(task.FailReason)
 	}
 
