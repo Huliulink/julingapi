@@ -90,6 +90,35 @@ func ParseCompatibleVideoTaskResult(respBody []byte) (*relaycommon.TaskInfo, []b
 	return taskInfo, normalizedBody, true, nil
 }
 
+func PreferredUpstreamVideoTaskID(task *model.Task) string {
+	if task == nil {
+		return ""
+	}
+	if upstreamTaskID := strings.TrimSpace(task.PrivateData.UpstreamTaskID); upstreamTaskID != "" {
+		return upstreamTaskID
+	}
+	return strings.TrimSpace(task.TaskID)
+}
+
+func ExtractUpstreamVideoTaskID(respBody []byte, localTaskID string) string {
+	payload, ok, err := compatibleVideoPayload(respBody)
+	if err == nil && ok {
+		return chooseUpstreamVideoTaskID(payload, localTaskID)
+	}
+
+	var raw map[string]any
+	if err := common.Unmarshal(respBody, &raw); err != nil {
+		return ""
+	}
+	if upstreamTaskID := chooseUpstreamVideoTaskID(raw, localTaskID); upstreamTaskID != "" {
+		return upstreamTaskID
+	}
+	if data, ok := raw["data"].(map[string]any); ok {
+		return chooseUpstreamVideoTaskID(data, localTaskID)
+	}
+	return ""
+}
+
 func NormalizeCompatibleVideoTaskBody(respBody []byte, taskInfo *relaycommon.TaskInfo, task *model.Task) ([]byte, bool, error) {
 	payload, ok, err := compatibleVideoPayload(respBody)
 	if err != nil || !ok {
@@ -236,6 +265,33 @@ func compatibleVideoPayload(respBody []byte) (map[string]any, bool, error) {
 		return data, true, nil
 	}
 	return nil, false, nil
+}
+
+func chooseUpstreamVideoTaskID(payload map[string]any, localTaskID string) string {
+	localTaskID = strings.TrimSpace(localTaskID)
+	if payload == nil {
+		return ""
+	}
+	for _, key := range []string{"task_id", "id"} {
+		if upstreamTaskID := strings.TrimSpace(firstPayloadString(payload, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+			return upstreamTaskID
+		}
+	}
+	if metadata, ok := payload["metadata"].(map[string]any); ok {
+		for _, key := range []string{"task_id", "id"} {
+			if upstreamTaskID := strings.TrimSpace(firstPayloadString(metadata, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+				return upstreamTaskID
+			}
+		}
+	}
+	if response, ok := payload["response"].(map[string]any); ok {
+		for _, key := range []string{"task_id", "id"} {
+			if upstreamTaskID := strings.TrimSpace(firstPayloadString(response, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+				return upstreamTaskID
+			}
+		}
+	}
+	return ""
 }
 
 func looksLikeCompatibleVideoPayload(payload map[string]any) bool {

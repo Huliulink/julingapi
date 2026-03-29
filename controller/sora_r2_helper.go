@@ -12,7 +12,7 @@ func buildSoraProtectedContentURL(task *model.Task, channel *model.Channel) stri
 	if task == nil || channel == nil {
 		return ""
 	}
-	taskID := strings.TrimSpace(task.TaskID)
+	taskID := service.PreferredUpstreamVideoTaskID(task)
 	if taskID == "" {
 		return ""
 	}

@@ -96,7 +96,8 @@ func (m Properties) Value() (driver.Value, error) {
 }
 
 type TaskPrivateData struct {
-	Key string `json:"key,omitempty"`
+	Key            string `json:"key,omitempty"`
+	UpstreamTaskID string `json:"upstream_task_id,omitempty"`
 }
 
 func (p *TaskPrivateData) Scan(val interface{}) error {

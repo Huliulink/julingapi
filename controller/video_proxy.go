@@ -623,6 +623,9 @@ func isSoraTask(task *model.Task) bool {
 	if err == nil && channel != nil && channel.Type == constant.ChannelTypeSora {
 		return true
 	}
+	if strings.Contains(strings.TrimSpace(task.FailReason), "/v1/videos/") {
+		return true
+	}
 	return taskDataLooksLikeSora(task)
 }
 

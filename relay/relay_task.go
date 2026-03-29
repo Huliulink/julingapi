@@ -283,6 +283,9 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 	task.Quota = quota
 	task.Data = taskData
 	task.Action = info.Action
+	if upstreamTaskID := service.ExtractUpstreamVideoTaskID(taskData, taskID); upstreamTaskID != "" {
+		task.PrivateData.UpstreamTaskID = upstreamTaskID
+	}
 	err = task.Insert()
 	if err != nil {
 		taskErr = service.TaskErrorWrapper(err, "insert_task_failed", http.StatusInternalServerError)
@@ -429,7 +432,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			}
 		}
 		resp, err2 := adaptor.FetchTask(baseURL, requestKey, map[string]any{
-			"task_id": originTask.TaskID,
+			"task_id": service.PreferredUpstreamVideoTaskID(originTask),
 			"action":  originTask.Action,
 			"model":   queryModel,
 		}, proxy)
@@ -445,6 +448,11 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		ti, compatibleErr := adaptor.ParseTaskResult(body)
 		if compatibleTi, normalizedBody, compatible, err := service.ParseCompatibleVideoTaskResult(body); err == nil && compatible {
 			ti = compatibleTi
+			if compatibleTi != nil {
+				if upstreamTaskID := strings.TrimSpace(compatibleTi.TaskID); upstreamTaskID != "" && upstreamTaskID != originTask.TaskID {
+					originTask.PrivateData.UpstreamTaskID = upstreamTaskID
+				}
+			}
 			compatibleBody = normalizedBody
 			if taskBody, ok, normErr := service.NormalizeCompatibleVideoTaskBody(body, compatibleTi, originTask); normErr == nil && ok {
 				compatibleBody = taskBody
@@ -935,6 +943,9 @@ func relayR2TakeoverIsSoraTask(task *model.Task) bool {
 	}
 	if strings.Contains(strings.ToLower(strings.TrimSpace(task.Properties.OriginModelName)), "sora") ||
 		strings.Contains(strings.ToLower(strings.TrimSpace(task.Properties.UpstreamModelName)), "sora") {
+		return true
+	}
+	if strings.Contains(strings.TrimSpace(task.FailReason), "/v1/videos/") {
 		return true
 	}
 	if len(task.Data) == 0 {

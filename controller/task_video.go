@@ -103,8 +103,9 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	}
 
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask query task_id=%s action=%s model=%s", taskId, task.Action, queryModel))
+	upstreamTaskID := service.PreferredUpstreamVideoTaskID(task)
 	payload := map[string]any{
-		"task_id": taskId,
+		"task_id": upstreamTaskID,
 		"action":  task.Action,
 		"model":   queryModel,
 	}
@@ -133,6 +134,11 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		return fmt.Errorf("parse compatible video task result failed for task %s: %w", taskId, compatibleErr)
 	} else if compatible {
 		taskResult = compatibleTaskResult
+		if compatibleTaskResult != nil {
+			if upstreamTaskID := strings.TrimSpace(compatibleTaskResult.TaskID); upstreamTaskID != "" && upstreamTaskID != task.TaskID {
+				task.PrivateData.UpstreamTaskID = upstreamTaskID
+			}
+		}
 		if taskBody, ok, err := service.NormalizeCompatibleVideoTaskBody(responseBody, compatibleTaskResult, task); err != nil {
 			return fmt.Errorf("normalize compatible video task result failed for task %s: %w", taskId, err)
 		} else if ok {
@@ -204,7 +210,9 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			task.FailReason = savedFailReason
 
 			prefix := storage_setting.GetVideoR2Prefix()
-			isSoraTask := channel.Type == constant.ChannelTypeSora
+			isSoraTask := channel.Type == constant.ChannelTypeSora ||
+				strings.Contains(task.FailReason, "/v1/videos/") ||
+				strings.Contains(string(task.Data), "/v1/videos/")
 			var taskData map[string]interface{}
 			if err := json.Unmarshal(task.Data, &taskData); err == nil {
 				type fieldRule struct {

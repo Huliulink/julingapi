@@ -15,10 +15,13 @@ func TestSoraProtectedTransferDetailsUsesUpstreamContentURL(t *testing.T) {
 	task := &model.Task{
 		TaskID:     "task_demo_123",
 		FailReason: "https://main.example.com/v1/videos/task_demo_123/content",
+		PrivateData: model.TaskPrivateData{
+			UpstreamTaskID: "task_upstream_789",
+		},
 	}
 
 	protectedURL, authKey := soraProtectedTransferDetails(task, channel)
-	if protectedURL != "https://upstream.example.com/v1/videos/task_demo_123/content" {
+	if protectedURL != "https://upstream.example.com/v1/videos/task_upstream_789/content" {
 		t.Fatalf("unexpected protected url: %s", protectedURL)
 	}
 	if authKey != "upstream-key" {

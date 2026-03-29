@@ -121,3 +121,17 @@ func TestNormalizeCompatibleVideoTaskBodyUsesLocalTaskIDAndR2URL(t *testing.T) {
 		t.Fatalf("normalized payload leaked non-standard status: %s", output)
 	}
 }
+
+func TestExtractUpstreamVideoTaskIDPrefersDifferentTaskID(t *testing.T) {
+	body := []byte(`{
+		"id": "task_local_123",
+		"task_id": "task_upstream_456",
+		"object": "video",
+		"status": "queued"
+	}`)
+
+	upstreamTaskID := ExtractUpstreamVideoTaskID(body, "task_local_123")
+	if upstreamTaskID != "task_upstream_456" {
+		t.Fatalf("unexpected upstream task id: %s", upstreamTaskID)
+	}
+}
