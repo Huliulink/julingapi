@@ -928,8 +928,15 @@ func VideoProxy(c *gin.Context) {
 		}
 		req.Header.Set("x-goog-api-key", apiKey)
 	case constant.ChannelTypeOpenAI, constant.ChannelTypeSora:
-		videoURL = fmt.Sprintf("%s/v1/videos/%s/content", baseURL, task.TaskID)
-		req.Header.Set("Authorization", "Bearer "+channel.Key)
+		videoURL = buildSoraProtectedContentURL(task, channel)
+		if videoURL == "" {
+			videoURL = fmt.Sprintf("%s/v1/videos/%s/content", baseURL, task.TaskID)
+		}
+		authKey := strings.TrimSpace(task.PrivateData.Key)
+		if authKey == "" {
+			authKey = strings.TrimSpace(channel.Key)
+		}
+		req.Header.Set("Authorization", "Bearer "+authKey)
 	default:
 		videoURL = task.FailReason
 	}

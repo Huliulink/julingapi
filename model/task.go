@@ -137,7 +137,9 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 		// Persist submit-time key for all multi-key task channels.
 		if relayInfo.ChannelMeta.ChannelIsMultiKey {
 			privateData.Key = relayInfo.ChannelMeta.ApiKey
-		} else if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeGemini {
+		} else if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeGemini ||
+			relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeOpenAI ||
+			relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeSora {
 			privateData.Key = relayInfo.ChannelMeta.ApiKey
 		}
 		if relayInfo.UpstreamModelName != "" {
