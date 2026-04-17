@@ -133,7 +133,10 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		}
 	}
 	var responseItems dto.TaskResponse[model.Task]
-	if taskResult.Status == "" && (err = common.Unmarshal(responseBody, &responseItems)) == nil && responseItems.IsSuccess() {
+	if taskResult.Status == "" {
+		err = common.Unmarshal(responseBody, &responseItems)
+	}
+	if taskResult.Status == "" && err == nil && responseItems.IsSuccess() {
 		logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask parsed as new api response format: %+v", responseItems))
 		t := responseItems.Data
 		taskResult.TaskID = t.TaskID
