@@ -5,7 +5,7 @@
 
 ---
 
-## Phase 1: R2 Infrastructure
+## Phase 1: R2 Infrastructure 
 
 - [x] `setting/storage_setting/config.go` — R2 config struct + register to ConfigManager ✓
 - [x] `common/r2_storage.go` — R2 S3 client (init, upload, delete, getPublicURL) ✓
