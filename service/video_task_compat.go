@@ -291,6 +291,13 @@ func chooseUpstreamVideoTaskID(payload map[string]any, localTaskID string) strin
 			}
 		}
 	}
+	if data, ok := payload["data"].(map[string]any); ok {
+		for _, key := range []string{"task_id", "id"} {
+			if upstreamTaskID := strings.TrimSpace(firstPayloadString(data, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+				return upstreamTaskID
+			}
+		}
+	}
 	return ""
 }
 
@@ -315,21 +322,26 @@ func extractCompatibleVideoURL(payload map[string]any) string {
 	if payload == nil {
 		return ""
 	}
-	if urlValue := firstPayloadString(payload, "video_url", "url", "output_url"); urlValue != "" {
+	if urlValue := firstPayloadString(payload, "video_url", "url", "output_url", "result_url"); urlValue != "" {
 		return urlValue
 	}
 	if metadata, ok := payload["metadata"].(map[string]any); ok {
-		if urlValue := firstPayloadString(metadata, "video_url", "url", "output_url"); urlValue != "" {
+		if urlValue := firstPayloadString(metadata, "video_url", "url", "output_url", "result_url"); urlValue != "" {
 			return urlValue
 		}
 	}
 	if content, ok := payload["content"].(map[string]any); ok {
-		if urlValue := firstPayloadString(content, "video_url", "url", "output_url"); urlValue != "" {
+		if urlValue := firstPayloadString(content, "video_url", "url", "output_url", "result_url"); urlValue != "" {
 			return urlValue
 		}
 	}
 	if response, ok := payload["response"].(map[string]any); ok {
-		if urlValue := firstPayloadString(response, "video_url", "url", "output_url"); urlValue != "" {
+		if urlValue := firstPayloadString(response, "video_url", "url", "output_url", "result_url"); urlValue != "" {
+			return urlValue
+		}
+	}
+	if data, ok := payload["data"].(map[string]any); ok {
+		if urlValue := firstPayloadString(data, "video_url", "url", "output_url", "result_url"); urlValue != "" {
 			return urlValue
 		}
 	}

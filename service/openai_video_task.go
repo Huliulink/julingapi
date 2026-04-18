@@ -181,7 +181,17 @@ func BuildSyntheticOpenAIVideoPendingPayload(task *model.Task) ([]byte, string, 
 	status := "queued"
 	taskStatus := string(model.TaskStatusQueued)
 	progress := 20
-	if task.StartTime > 0 {
+	now := time.Now().Unix()
+	elapsed := int64(0)
+	baseTime := task.SubmitTime
+	if baseTime <= 0 {
+		baseTime = task.CreatedAt
+	}
+	if baseTime > 0 {
+		elapsed = now - baseTime
+	}
+
+	if task.StartTime > 0 || task.Status == model.TaskStatusInProgress || elapsed >= 60 {
 		status = "processing"
 		taskStatus = string(model.TaskStatusInProgress)
 		progress = 30
@@ -189,7 +199,13 @@ func BuildSyntheticOpenAIVideoPendingPayload(task *model.Task) ([]byte, string, 
 
 	if parsedProgress, ok := parseOpenAIVideoProgressString(task.Progress); ok {
 		if parsedProgress > 0 && parsedProgress < 100 {
-			progress = parsedProgress
+			if parsedProgress > progress {
+				progress = parsedProgress
+			}
+			if progress >= 30 {
+				status = "processing"
+				taskStatus = string(model.TaskStatusInProgress)
+			}
 		}
 	}
 

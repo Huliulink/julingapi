@@ -135,3 +135,43 @@ func TestExtractUpstreamVideoTaskIDPrefersDifferentTaskID(t *testing.T) {
 		t.Fatalf("unexpected upstream task id: %s", upstreamTaskID)
 	}
 }
+
+func TestParseCompatibleVideoTaskResultSupportsWrappedSuccessPayload(t *testing.T) {
+	body := []byte(`{
+		"id": 134641,
+		"task_id": "task_TbLgRfTMYH36xjSBtZk5jwjhbW2X73GS",
+		"status": "SUCCESS",
+		"result_url": "https://videos-us3.ss2.life/video.mp4",
+		"data": {
+			"id": "task_ZSFDk043JYXDdULtAgYfOhJonI24RaCF",
+			"object": "video",
+			"status": "completed",
+			"video_url": "https://videos-us3.ss2.life/video.mp4"
+		}
+	}`)
+
+	taskInfo, _, compatible, err := ParseCompatibleVideoTaskResult(body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !compatible {
+		t.Fatalf("expected compatible payload")
+	}
+	if taskInfo == nil {
+		t.Fatalf("expected task info")
+	}
+	if taskInfo.Status != string(model.TaskStatusSuccess) {
+		t.Fatalf("unexpected status: %s", taskInfo.Status)
+	}
+	if taskInfo.TaskID != "task_TbLgRfTMYH36xjSBtZk5jwjhbW2X73GS" {
+		t.Fatalf("unexpected task id: %s", taskInfo.TaskID)
+	}
+	if taskInfo.Url != "https://videos-us3.ss2.life/video.mp4" {
+		t.Fatalf("unexpected video url: %s", taskInfo.Url)
+	}
+
+	upstreamTaskID := ExtractUpstreamVideoTaskID(body, "task_local_123")
+	if upstreamTaskID != "task_TbLgRfTMYH36xjSBtZk5jwjhbW2X73GS" {
+		t.Fatalf("unexpected upstream task id: %s", upstreamTaskID)
+	}
+}
