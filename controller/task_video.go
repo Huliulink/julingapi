@@ -113,6 +113,23 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	if err != nil {
 		return fmt.Errorf("fetchTask failed for task %s: %w", taskId, err)
 	}
+	if upstreamTaskID != "" && upstreamTaskID != task.TaskID && shouldRetryVideoTaskWithLocalID(adaptor, responseBody) {
+		fallbackPayload := map[string]any{
+			"task_id": task.TaskID,
+			"action":  task.Action,
+			"model":   queryModel,
+		}
+		fallbackBody, fallbackKey, fallbackErr := fetchTaskResponseBody(adaptor, channel, task, baseURL, key, fallbackPayload, proxy)
+		if fallbackErr == nil && len(fallbackBody) > 0 {
+			logger.LogWarn(ctx, fmt.Sprintf("Task %s upstream query by upstream_task_id=%s returned task_not_exist, fallback to local task id succeeded", taskId, upstreamTaskID))
+			responseBody = fallbackBody
+			if fallbackKey != "" {
+				usedKey = fallbackKey
+			}
+		} else if fallbackErr != nil {
+			logger.LogWarn(ctx, fmt.Sprintf("Task %s fallback query by local task id failed: %s", taskId, fallbackErr.Error()))
+		}
+	}
 	if usedKey != "" && strings.TrimSpace(task.PrivateData.Key) == "" && channel.ChannelInfo.IsMultiKey {
 		task.PrivateData.Key = usedKey
 	}
@@ -452,6 +469,21 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	}
 
 	return nil
+}
+
+func shouldRetryVideoTaskWithLocalID(adaptor channel.TaskAdaptor, responseBody []byte) bool {
+	if adaptor == nil || len(responseBody) == 0 {
+		return false
+	}
+	taskInfo, _, compatible, err := service.ParseCompatibleVideoTaskResult(responseBody)
+	if err == nil && compatible && taskInfo != nil {
+		return service.IsTaskNotExistCompatibleVideoFailure(taskInfo.Reason)
+	}
+	parsedTaskInfo, err := adaptor.ParseTaskResult(responseBody)
+	if err == nil && parsedTaskInfo != nil {
+		return service.IsTaskNotExistCompatibleVideoFailure(parsedTaskInfo.Reason)
+	}
+	return false
 }
 
 func fetchTaskResponseBody(adaptor channel.TaskAdaptor, channel *model.Channel, task *model.Task, baseURL, primaryKey string, payload map[string]any, proxy string) ([]byte, string, error) {

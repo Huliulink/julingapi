@@ -500,6 +500,27 @@ func IsTerminalCompatibleVideoFailure(reason string) bool {
 	return isCompatibleVideoTerminalFailureReason(reason)
 }
 
+func IsTaskNotExistCompatibleVideoFailure(reason string) bool {
+	reason = strings.ToLower(strings.TrimSpace(reason))
+	if reason == "" {
+		return false
+	}
+	taskNotExistReasons := []string{
+		"task_not_exist",
+		"task not exist",
+		"not_found",
+		"not found",
+		"resource not found",
+		"video not found",
+	}
+	for _, candidate := range taskNotExistReasons {
+		if strings.Contains(reason, candidate) {
+			return true
+		}
+	}
+	return false
+}
+
 func extractCompatibleVideoProgress(payload map[string]any) (int, bool) {
 	if payload == nil {
 		return 0, false
