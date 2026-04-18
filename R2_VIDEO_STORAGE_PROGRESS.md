@@ -70,6 +70,7 @@
   - persist `properties.upstream_model_name` / `properties.origin_model_name`
   - persist `private_data.upstream_task_id` when upstream task ID differs from local task ID
 - [x] Fix compatible video polling classification so `task_not_exist` / not-found style upstream responses are treated as terminal failure instead of silently falling back to `IN_PROGRESS` 30%.
+- [x] Broadened minimal upstream error parsing for OpenAI/Sora poll responses like `{\"code\":\"task_not_exist\",\"message\":\"task_not_exist\"}` so they are recognized as terminal failure even without `status`/`object` fields.
 - [x] `/v1/videos/{task_id}/content` protected fetch now prefers `task.PrivateData.Key` before channel default key, so submit/poll/content use the same task-scoped credential on multi-key OpenAI-compatible channels.
 - [ ] Verification is still pending in this environment because the `go` executable is unavailable, so compile/test confirmation must be run where Go is installed.
 

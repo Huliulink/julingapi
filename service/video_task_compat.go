@@ -274,10 +274,10 @@ func compatibleVideoPayload(respBody []byte) (map[string]any, bool, error) {
 	if err := common.Unmarshal(respBody, &payload); err != nil {
 		return nil, false, err
 	}
-	if looksLikeCompatibleVideoPayload(payload) {
+	if looksLikeCompatibleVideoPayload(payload) || looksLikeCompatibleVideoTerminalFailurePayload(payload) {
 		return payload, true, nil
 	}
-	if data, ok := payload["data"].(map[string]any); ok && looksLikeCompatibleVideoPayload(data) {
+	if data, ok := payload["data"].(map[string]any); ok && (looksLikeCompatibleVideoPayload(data) || looksLikeCompatibleVideoTerminalFailurePayload(data)) {
 		return data, true, nil
 	}
 	return nil, false, nil
@@ -325,6 +325,19 @@ func looksLikeCompatibleVideoPayload(payload map[string]any) bool {
 		return true
 	}
 	return extractCompatibleVideoURL(payload) != ""
+}
+
+func looksLikeCompatibleVideoTerminalFailurePayload(payload map[string]any) bool {
+	if payload == nil {
+		return false
+	}
+	if isCompatibleVideoTerminalFailureReason(firstPayloadString(payload, "message", "code", "reason")) {
+		return true
+	}
+	if errMap, ok := payload["error"].(map[string]any); ok {
+		return isCompatibleVideoTerminalFailureReason(firstPayloadString(errMap, "message", "code", "reason"))
+	}
+	return false
 }
 
 func extractCompatibleVideoURL(payload map[string]any) string {

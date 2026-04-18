@@ -186,6 +186,13 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		Code: 0,
 	}
 
+	if terminalReason := extractTerminalFailureReason(respBody); terminalReason != "" {
+		taskResult.Status = model.TaskStatusFailure
+		taskResult.Reason = terminalReason
+		taskResult.Progress = "100%"
+		return &taskResult, nil
+	}
+
 	switch resTask.Status {
 	case "queued", "pending":
 		taskResult.Status = model.TaskStatusQueued
@@ -208,6 +215,26 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	}
 
 	return &taskResult, nil
+}
+
+func extractTerminalFailureReason(respBody []byte) string {
+	var payload map[string]any
+	if err := common.Unmarshal(respBody, &payload); err != nil || payload == nil {
+		return ""
+	}
+	for _, key := range []string{"message", "code"} {
+		if reason, ok := payload[key].(string); ok && service.IsTerminalCompatibleVideoFailure(reason) {
+			return strings.TrimSpace(reason)
+		}
+	}
+	if errMap, ok := payload["error"].(map[string]any); ok {
+		for _, key := range []string{"message", "code"} {
+			if reason, ok := errMap[key].(string); ok && service.IsTerminalCompatibleVideoFailure(reason) {
+				return strings.TrimSpace(reason)
+			}
+		}
+	}
+	return ""
 }
 
 func (a *TaskAdaptor) ConvertToOpenAIVideo(task *model.Task) ([]byte, error) {
