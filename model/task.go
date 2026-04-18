@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/constant"
@@ -310,15 +311,31 @@ func TaskUpdateProgress(id int64, progress string) error {
 }
 
 func (Task *Task) Insert() error {
-	var err error
-	err = DB.Create(Task).Error
+	err := DB.Create(Task).Error
+	if err != nil && isMissingTaskPrivateDataColumnError(err) {
+		return DB.Omit("private_data").Create(Task).Error
+	}
 	return err
 }
 
 func (Task *Task) Update() error {
-	var err error
-	err = DB.Save(Task).Error
+	err := DB.Save(Task).Error
+	if err != nil && isMissingTaskPrivateDataColumnError(err) {
+		return DB.Omit("private_data").Save(Task).Error
+	}
 	return err
+}
+
+func isMissingTaskPrivateDataColumnError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "private_data") &&
+		(strings.Contains(msg, "unknown column") ||
+			strings.Contains(msg, "no such column") ||
+			strings.Contains(msg, "does not exist") ||
+			strings.Contains(msg, "has no column named"))
 }
 
 func TaskBulkUpdate(TaskIds []string, params map[string]any) error {

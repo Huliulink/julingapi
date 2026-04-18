@@ -97,6 +97,11 @@ func PreferredUpstreamVideoTaskID(task *model.Task) string {
 	if upstreamTaskID := strings.TrimSpace(task.PrivateData.UpstreamTaskID); upstreamTaskID != "" {
 		return upstreamTaskID
 	}
+	if len(task.Data) > 0 {
+		if upstreamTaskID := ExtractUpstreamVideoTaskID(task.Data, task.TaskID); upstreamTaskID != "" {
+			return upstreamTaskID
+		}
+	}
 	return strings.TrimSpace(task.TaskID)
 }
 

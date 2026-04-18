@@ -175,3 +175,20 @@ func TestParseCompatibleVideoTaskResultSupportsWrappedSuccessPayload(t *testing.
 		t.Fatalf("unexpected upstream task id: %s", upstreamTaskID)
 	}
 }
+
+func TestPreferredUpstreamVideoTaskIDFallsBackToTaskData(t *testing.T) {
+	task := &model.Task{
+		TaskID: "task_local_123",
+		Data: []byte(`{
+			"id": "task_local_123",
+			"task_id": "task_upstream_456",
+			"object": "video",
+			"status": "queued"
+		}`),
+	}
+
+	upstreamTaskID := PreferredUpstreamVideoTaskID(task)
+	if upstreamTaskID != "task_upstream_456" {
+		t.Fatalf("unexpected upstream task id: %s", upstreamTaskID)
+	}
+}
