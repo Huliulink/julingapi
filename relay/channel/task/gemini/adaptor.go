@@ -106,7 +106,10 @@ func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycom
 
 // BuildRequestURL constructs the upstream URL.
 func (a *TaskAdaptor) BuildRequestURL(info *relaycommon.RelayInfo) (string, error) {
-	modelName := info.OriginModelName
+	modelName := resolveGeminiTaskSubmitModelName(info)
+	if strings.TrimSpace(modelName) == "" {
+		return "", fmt.Errorf("model name is empty")
+	}
 	version := model_setting.GetGeminiVersionSetting(modelName)
 
 	return fmt.Sprintf(
@@ -206,14 +209,10 @@ func (a *TaskAdaptor) FetchTask(baseUrl, key string, body map[string]any, proxy 
 		return nil, fmt.Errorf("invalid task_id")
 	}
 
-	upstreamName, err := decodeLocalTaskID(taskID)
+	url, err := resolveGeminiTaskFetchURL(baseUrl, taskID, body)
 	if err != nil {
-		return nil, fmt.Errorf("decode task_id failed: %w", err)
+		return nil, err
 	}
-
-	// For Gemini API, we use GET request to the operations endpoint
-	version := model_setting.GetGeminiVersionSetting("default")
-	url := fmt.Sprintf("%s/%s/%s", baseUrl, version, upstreamName)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -323,6 +322,40 @@ func extractModelFromOperationName(name string) string {
 		if p := strings.Index(s, "/operations/"); p > 0 {
 			return s[:p]
 		}
+	}
+	return ""
+}
+
+func resolveGeminiTaskSubmitModelName(info *relaycommon.RelayInfo) string {
+	if info == nil {
+		return ""
+	}
+	if modelName := strings.TrimSpace(info.UpstreamModelName); modelName != "" {
+		return modelName
+	}
+	return strings.TrimSpace(info.OriginModelName)
+}
+
+func resolveGeminiTaskFetchURL(baseURL, taskID string, body map[string]any) (string, error) {
+	upstreamName, err := decodeLocalTaskID(taskID)
+	if err != nil {
+		return "", fmt.Errorf("decode task_id failed: %w", err)
+	}
+
+	modelName := resolveGeminiTaskFetchModelName(body, upstreamName)
+	version := model_setting.GetGeminiVersionSetting(modelName)
+	return fmt.Sprintf("%s/%s/%s", baseURL, version, upstreamName), nil
+}
+
+func resolveGeminiTaskFetchModelName(body map[string]any, upstreamName string) string {
+	if modelName := strings.TrimSpace(extractModelFromOperationName(upstreamName)); modelName != "" {
+		return modelName
+	}
+	if body == nil {
+		return ""
+	}
+	if modelName, ok := body["model"].(string); ok {
+		return strings.TrimSpace(modelName)
 	}
 	return ""
 }
