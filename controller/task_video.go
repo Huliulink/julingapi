@@ -19,6 +19,7 @@ import (
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/setting/storage_setting"
+	"github.com/QuantumNous/new-api/types"
 )
 
 const transientMissingVideoTaskGracePeriod = 3 * time.Minute
@@ -114,6 +115,10 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	responseBody, usedKey, err := fetchTaskResponseBody(adaptor, channel, task, baseURL, key, payload, proxy)
 	if err != nil {
 		return fmt.Errorf("fetchTask failed for task %s: %w", taskId, err)
+	}
+	queryKey := key
+	if strings.TrimSpace(usedKey) != "" {
+		queryKey = usedKey
 	}
 	if usedKey != "" && strings.TrimSpace(task.PrivateData.Key) == "" && channel.ChannelInfo.IsMultiKey {
 		task.PrivateData.Key = usedKey
@@ -439,6 +444,16 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			} else {
 				logger.LogWarn(ctx, fmt.Sprintf("Task %s already in failure status, skip refund", task.TaskID))
 			}
+		}
+		if preStatus != model.TaskStatusFailure && service.IsMissingVideoTaskErrorReason(task.FailReason) {
+			service.DisableChannel(*types.NewChannelError(
+				channel.Id,
+				channel.Type,
+				channel.Name,
+				channel.ChannelInfo.IsMultiKey,
+				queryKey,
+				channel.GetAutoBan(),
+			), "async task query returned task_not_exist")
 		}
 	default:
 		return fmt.Errorf("unknown task status %s for task %s", taskResult.Status, taskId)
