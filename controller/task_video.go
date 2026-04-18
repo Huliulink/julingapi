@@ -159,6 +159,9 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		if strings.TrimSpace(taskResult.Url) != "" {
 			taskResult.Status = string(model.TaskStatusSuccess)
 			taskResult.Progress = "100%"
+		} else if strings.TrimSpace(taskResult.Reason) != "" {
+			taskResult.Status = string(model.TaskStatusFailure)
+			taskResult.Progress = "100%"
 		} else if taskResult.Code == 0 {
 			// Upstream may not materialize a status immediately for async video tasks.
 			// Keep polling instead of failing the task early.

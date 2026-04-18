@@ -65,6 +65,41 @@ func TestParseCompatibleVideoTaskResultUnknownWithoutURL(t *testing.T) {
 	}
 }
 
+func TestParseCompatibleVideoTaskResultTaskNotExistEnvelope(t *testing.T) {
+	body := []byte(`{
+		"code": "task_not_exist",
+		"data": null,
+		"message": "task_not_exist"
+	}`)
+
+	taskInfo, normalized, compatible, err := ParseCompatibleVideoTaskResult(body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !compatible {
+		t.Fatalf("expected compatible error payload")
+	}
+	if taskInfo == nil {
+		t.Fatalf("expected task info")
+	}
+	if taskInfo.Status != string(model.TaskStatusFailure) {
+		t.Fatalf("unexpected status: %s", taskInfo.Status)
+	}
+	if taskInfo.Reason != "task_not_exist" {
+		t.Fatalf("unexpected reason: %s", taskInfo.Reason)
+	}
+	output := string(normalized)
+	for _, expected := range []string{
+		`"status":"failed"`,
+		`"progress":100`,
+		`"message":"task_not_exist"`,
+	} {
+		if !strings.Contains(output, expected) {
+			t.Fatalf("normalized payload missing %s: %s", expected, output)
+		}
+	}
+}
+
 func TestNormalizeCompatibleVideoTaskBodyUsesLocalTaskIDAndR2URL(t *testing.T) {
 	body := []byte(`{
 		"id": "task_upstream_123",
