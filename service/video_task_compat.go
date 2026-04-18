@@ -26,6 +26,10 @@ func ParseCompatibleVideoTaskResult(respBody []byte) (*relaycommon.TaskInfo, []b
 
 	progressValue, progressOK := extractCompatibleVideoProgress(payload)
 	rawStatus := strings.ToLower(strings.TrimSpace(firstPayloadString(payload, "status")))
+	terminalFailure := isCompatibleVideoTerminalFailureReason(taskInfo.Reason)
+	if !terminalFailure {
+		terminalFailure = isCompatibleVideoTerminalFailureReason(firstPayloadString(payload, "code"))
+	}
 	switch rawStatus {
 	case "submitted":
 		taskInfo.Status = model.TaskStatusSubmitted
@@ -48,14 +52,26 @@ func ParseCompatibleVideoTaskResult(respBody []byte) (*relaycommon.TaskInfo, []b
 			taskInfo.Reason = "task failed"
 		}
 	case "unknown", "":
-		if strings.TrimSpace(taskInfo.Url) != "" {
+		if terminalFailure {
+			taskInfo.Status = model.TaskStatusFailure
+			taskInfo.Progress = "100%"
+			if strings.TrimSpace(taskInfo.Reason) == "" {
+				taskInfo.Reason = "task failed"
+			}
+		} else if strings.TrimSpace(taskInfo.Url) != "" {
 			taskInfo.Status = model.TaskStatusSuccess
 			taskInfo.Progress = "100%"
 		} else {
 			taskInfo.Status = model.TaskStatusInProgress
 		}
 	default:
-		if strings.TrimSpace(taskInfo.Url) != "" {
+		if terminalFailure {
+			taskInfo.Status = model.TaskStatusFailure
+			taskInfo.Progress = "100%"
+			if strings.TrimSpace(taskInfo.Reason) == "" {
+				taskInfo.Reason = "task failed"
+			}
+		} else if strings.TrimSpace(taskInfo.Url) != "" {
 			taskInfo.Status = model.TaskStatusSuccess
 			taskInfo.Progress = "100%"
 		} else {
@@ -435,15 +451,40 @@ func extractCompatibleVideoReason(payload map[string]any) string {
 			return msg
 		}
 	}
-	if msg := firstPayloadString(payload, "message", "reason"); msg != "" {
+	if msg := firstPayloadString(payload, "message", "reason", "code"); msg != "" {
 		return msg
 	}
 	if metadata, ok := payload["metadata"].(map[string]any); ok {
-		if msg := firstPayloadString(metadata, "message", "reason"); msg != "" {
+		if msg := firstPayloadString(metadata, "message", "reason", "code"); msg != "" {
 			return msg
 		}
 	}
 	return ""
+}
+
+func isCompatibleVideoTerminalFailureReason(reason string) bool {
+	reason = strings.ToLower(strings.TrimSpace(reason))
+	if reason == "" {
+		return false
+	}
+	terminalReasons := []string{
+		"task_not_exist",
+		"task not exist",
+		"not_found",
+		"not found",
+		"resource not found",
+		"video not found",
+	}
+	for _, candidate := range terminalReasons {
+		if strings.Contains(reason, candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+func IsTerminalCompatibleVideoFailure(reason string) bool {
+	return isCompatibleVideoTerminalFailureReason(reason)
 }
 
 func extractCompatibleVideoProgress(payload map[string]any) (int, bool) {

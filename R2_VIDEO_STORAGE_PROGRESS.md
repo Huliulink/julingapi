@@ -61,7 +61,18 @@
 - Phase 7 can be done incrementally with Phase 6
 - Grok is the primary focus platform
 
-## Session Update (2026-03-03)
+## Session Update (2026-04-18)
+
+- [x] Fix OpenAI-compatible async video submit path to preserve mapped upstream model for `/v1/videos` task creation.
+- [x] `relay/relay_task.go` now reuses `relay/helper/model_mapped.go:ModelMappedHelper` for async task submits and rewrites cached JSON request body so Sora/OpenAI task adaptors send the mapped model upstream.
+- [x] Harden async task persistence at insert time:
+  - persist `private_data.key` from submit-time API key for multi-key channels
+  - persist `properties.upstream_model_name` / `properties.origin_model_name`
+  - persist `private_data.upstream_task_id` when upstream task ID differs from local task ID
+- [x] Fix compatible video polling classification so `task_not_exist` / not-found style upstream responses are treated as terminal failure instead of silently falling back to `IN_PROGRESS` 30%.
+- [x] `/v1/videos/{task_id}/content` protected fetch now prefers `task.PrivateData.Key` before channel default key, so submit/poll/content use the same task-scoped credential on multi-key OpenAI-compatible channels.
+- [ ] Verification is still pending in this environment because the `go` executable is unavailable, so compile/test confirmation must be run where Go is installed.
+
 
 - [x] Refactor `controller/video_proxy.go` query takeover flow from async-return-95% to sync-wait transfer flow.
 - [x] Add singleflight deduplication for query-triggered R2 transfer, keyed by `task_id`.

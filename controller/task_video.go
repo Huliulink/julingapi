@@ -159,6 +159,10 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		if strings.TrimSpace(taskResult.Url) != "" {
 			taskResult.Status = string(model.TaskStatusSuccess)
 			taskResult.Progress = "100%"
+		} else if service.IsTerminalCompatibleVideoFailure(taskResult.Reason) {
+			taskResult.Status = string(model.TaskStatusFailure)
+			taskResult.Progress = "100%"
+			logger.LogWarn(ctx, fmt.Sprintf("Task %s upstream returned terminal failure without status: %s", taskId, taskResult.Reason))
 		} else if taskResult.Code == 0 {
 			// Upstream may not materialize a status immediately for async video tasks.
 			// Keep polling instead of failing the task early.

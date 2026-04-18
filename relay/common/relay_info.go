@@ -629,6 +629,18 @@ func (t *TaskSubmitReq) GetPrompt() string {
 	return t.Prompt
 }
 
+func (t *TaskSubmitReq) GetTokenCountMeta() *types.TokenCountMeta {
+	return &types.TokenCountMeta{TokenType: types.TokenTypeTokenizer}
+}
+
+func (t *TaskSubmitReq) IsStream(c *gin.Context) bool {
+	return false
+}
+
+func (t *TaskSubmitReq) SetModelName(modelName string) {
+	t.Model = modelName
+}
+
 func (t *TaskSubmitReq) HasImage() bool {
 	return len(t.Images) > 0
 }

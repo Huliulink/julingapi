@@ -19,6 +19,7 @@ import (
 	"github.com/QuantumNous/new-api/relay/channel"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
+	relayhelper "github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/setting/storage_setting"
@@ -138,6 +139,23 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 	taskErr = adaptor.ValidateRequestAndSetAction(c, info)
 	if taskErr != nil {
 		return
+	}
+	var taskRequest relaycommon.TaskSubmitReq
+	if err := common.UnmarshalBodyReusable(c, &taskRequest); err == nil && strings.TrimSpace(taskRequest.Model) != "" {
+		if err = relayhelper.ModelMappedHelper(c, info, &taskRequest); err != nil {
+			return service.TaskErrorWrapper(err, "map_model_failed", http.StatusBadRequest)
+		}
+		if info.ChannelMeta != nil && strings.TrimSpace(info.UpstreamModelName) != "" {
+			info.ChannelMeta.UpstreamModelName = info.UpstreamModelName
+		}
+		if strings.HasPrefix(c.GetHeader("Content-Type"), "application/json") {
+			requestBodyBytes, marshalErr := common.Marshal(taskRequest)
+			if marshalErr != nil {
+				return service.TaskErrorWrapper(marshalErr, "marshal_request_body_failed", http.StatusInternalServerError)
+			}
+			c.Set(common.KeyBodyStorage, nil)
+			c.Set(common.KeyRequestBody, requestBodyBytes)
+		}
 	}
 
 	modelName := info.OriginModelName
@@ -283,6 +301,15 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 	task.Quota = quota
 	task.Data = taskData
 	task.Action = info.Action
+	if strings.TrimSpace(task.PrivateData.Key) == "" && strings.TrimSpace(info.ApiKey) != "" {
+		task.PrivateData.Key = info.ApiKey
+	}
+	if strings.TrimSpace(task.Properties.UpstreamModelName) == "" && strings.TrimSpace(info.UpstreamModelName) != "" {
+		task.Properties.UpstreamModelName = info.UpstreamModelName
+	}
+	if strings.TrimSpace(task.Properties.OriginModelName) == "" && strings.TrimSpace(info.OriginModelName) != "" {
+		task.Properties.OriginModelName = info.OriginModelName
+	}
 	if upstreamTaskID := service.ExtractUpstreamVideoTaskID(taskData, taskID); upstreamTaskID != "" {
 		task.PrivateData.UpstreamTaskID = upstreamTaskID
 	}
