@@ -13,7 +13,10 @@ import (
 	"github.com/QuantumNous/new-api/setting/system_setting"
 )
 
-const openAIVideoProbeTimeout = 20 * time.Second
+const (
+	openAIVideoProbeTimeout       = 20 * time.Second
+	openAIVideoTaskNotFoundGrace  = 20 * time.Minute
+)
 
 func IsOpenAIVideoTaskChannel(channelType int) bool {
 	return channelType == constant.ChannelTypeOpenAI || channelType == constant.ChannelTypeSora
@@ -167,6 +170,25 @@ func BuildSyntheticOpenAIVideoTaskPayload(task *model.Task, status, videoURL, re
 	}
 
 	return common.Marshal(payload)
+}
+
+func ShouldFailOpenAIVideoTaskNotFound(task *model.Task, now int64) bool {
+	if task == nil {
+		return false
+	}
+	if now <= 0 {
+		now = time.Now().Unix()
+	}
+
+	baseTime := task.SubmitTime
+	if baseTime <= 0 {
+		baseTime = task.CreatedAt
+	}
+	if baseTime <= 0 {
+		return false
+	}
+
+	return now-baseTime >= int64(openAIVideoTaskNotFoundGrace/time.Second)
 }
 
 func firstOpenAIVideoString(payload map[string]any, keys ...string) string {

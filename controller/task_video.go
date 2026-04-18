@@ -621,6 +621,10 @@ func resolveOpenAIVideoTaskNotFound(ctx context.Context, channel *model.Channel,
 		}, payload, true, nil
 	}
 
+	if !service.ShouldFailOpenAIVideoTaskNotFound(task, now) {
+		return nil, nil, false, nil
+	}
+
 	if reason == "" {
 		reason = "task_not_exist"
 	}
