@@ -148,13 +148,14 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 		if info.ChannelMeta != nil && strings.TrimSpace(info.UpstreamModelName) != "" {
 			info.ChannelMeta.UpstreamModelName = info.UpstreamModelName
 		}
-		if strings.HasPrefix(c.GetHeader("Content-Type"), "application/json") {
-			requestBodyBytes, marshalErr := common.Marshal(taskRequest)
-			if marshalErr != nil {
-				return service.TaskErrorWrapper(marshalErr, "marshal_request_body_failed", http.StatusInternalServerError)
+		if strings.HasPrefix(c.GetHeader("Content-Type"), "application/json") && strings.TrimSpace(taskRequest.Model) != "" {
+			requestBodyBytes, rewriteErr := rewriteJSONRequestModel(c, taskRequest.Model)
+			if rewriteErr != nil {
+				return service.TaskErrorWrapper(rewriteErr, "marshal_request_body_failed", http.StatusInternalServerError)
 			}
 			c.Set(common.KeyBodyStorage, nil)
 			c.Set(common.KeyRequestBody, requestBodyBytes)
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBodyBytes))
 		}
 	}
 
@@ -323,6 +324,22 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 		return
 	}
 	return nil
+}
+
+func rewriteJSONRequestModel(c *gin.Context, modelName string) ([]byte, error) {
+	requestBodyBytes, err := common.GetRequestBody(c)
+	if err != nil {
+		return nil, err
+	}
+	var payload map[string]any
+	if err := common.Unmarshal(requestBodyBytes, &payload); err != nil {
+		return nil, err
+	}
+	if payload == nil {
+		return nil, fmt.Errorf("request body is empty")
+	}
+	payload["model"] = modelName
+	return common.Marshal(payload)
 }
 
 var fetchRespBuilders = map[int]func(c *gin.Context) (respBody []byte, taskResp *dto.TaskError){
