@@ -872,7 +872,6 @@ func VideoProxy(c *gin.Context) {
 	if baseURL == "" {
 		baseURL = "https://api.openai.com"
 	}
-	baseURL = service.PreferredUpstreamVideoBaseURL(task, baseURL)
 
 	var videoURL string
 	proxy := channel.GetSetting().Proxy
@@ -929,15 +928,8 @@ func VideoProxy(c *gin.Context) {
 		}
 		req.Header.Set("x-goog-api-key", apiKey)
 	case constant.ChannelTypeOpenAI, constant.ChannelTypeSora:
-		videoURL = buildSoraProtectedContentURL(task, channel)
-		if videoURL == "" {
-			videoURL = fmt.Sprintf("%s/v1/videos/%s/content", baseURL, service.PreferredUpstreamVideoTaskID(task))
-		}
-		authKey := strings.TrimSpace(task.PrivateData.Key)
-		if authKey == "" {
-			authKey = strings.TrimSpace(channel.Key)
-		}
-		req.Header.Set("Authorization", "Bearer "+authKey)
+		videoURL = fmt.Sprintf("%s/v1/videos/%s/content", baseURL, task.TaskID)
+		req.Header.Set("Authorization", "Bearer "+channel.Key)
 	default:
 		videoURL = task.FailReason
 	}

@@ -66,23 +66,17 @@ func updateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, cha
 }
 
 func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, channel *model.Channel, taskId string, taskM map[string]*model.Task) error {
+	baseURL := constant.ChannelBaseURLs[channel.Type]
+	if channel.GetBaseURL() != "" {
+		baseURL = channel.GetBaseURL()
+	}
+	proxy := channel.GetSetting().Proxy
+
 	task := taskM[taskId]
 	if task == nil {
 		logger.LogError(ctx, fmt.Sprintf("Task %s not found in taskM", taskId))
 		return fmt.Errorf("task %s not found", taskId)
 	}
-
-	baseURL := constant.ChannelBaseURLs[channel.Type]
-	if channel.GetBaseURL() != "" {
-		baseURL = channel.GetBaseURL()
-	}
-	if service.IsOpenAIVideoTaskChannel(channel.Type) {
-		baseURL = service.PreferredUpstreamVideoBaseURL(task, baseURL)
-		if task.PrivateData.UpstreamBaseURL == "" {
-			task.PrivateData.UpstreamBaseURL = baseURL
-		}
-	}
-	proxy := channel.GetSetting().Proxy
 	key := channel.Key
 
 	privateData := task.PrivateData
@@ -122,27 +116,12 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	if usedKey != "" && strings.TrimSpace(task.PrivateData.Key) == "" && channel.ChannelInfo.IsMultiKey {
 		task.PrivateData.Key = usedKey
 	}
-	requestKey := key
-	if strings.TrimSpace(usedKey) != "" {
-		requestKey = usedKey
-	}
 
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask response: %s", string(responseBody)))
 
 	taskResult := &relaycommon.TaskInfo{}
-	if service.IsOpenAIVideoTaskChannel(channel.Type) {
-		if fallbackResult, fallbackBody, handled, fallbackErr := resolveOpenAIVideoTaskNotFound(ctx, channel, task, requestKey, responseBody); fallbackErr != nil {
-			return fmt.Errorf("resolve openai video task fallback failed for task %s: %w", taskId, fallbackErr)
-		} else if handled {
-			taskResult = fallbackResult
-			task.Data = fallbackBody
-		}
-	}
 	var responseItems dto.TaskResponse[model.Task]
-	if taskResult.Status == "" {
-		err = common.Unmarshal(responseBody, &responseItems)
-	}
-	if taskResult.Status == "" && err == nil && responseItems.IsSuccess() {
+	if err = common.Unmarshal(responseBody, &responseItems); err == nil && responseItems.IsSuccess() {
 		logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask parsed as new api response format: %+v", responseItems))
 		t := responseItems.Data
 		taskResult.TaskID = t.TaskID
@@ -151,34 +130,26 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		taskResult.Progress = t.Progress
 		taskResult.Reason = t.FailReason
 		task.Data = t.Data
-		if service.IsOpenAIVideoTaskChannel(channel.Type) && task.PrivateData.UpstreamBaseURL == "" {
-			task.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(task, baseURL)
+	} else if compatibleTaskResult, normalizedBody, compatible, compatibleErr := service.ParseCompatibleVideoTaskResult(responseBody); compatibleErr != nil {
+		return fmt.Errorf("parse compatible video task result failed for task %s: %w", taskId, compatibleErr)
+	} else if compatible {
+		taskResult = compatibleTaskResult
+		if compatibleTaskResult != nil {
+			if upstreamTaskID := strings.TrimSpace(compatibleTaskResult.TaskID); upstreamTaskID != "" && upstreamTaskID != task.TaskID {
+				task.PrivateData.UpstreamTaskID = upstreamTaskID
+			}
 		}
-	} else if taskResult.Status == "" {
-		if compatibleTaskResult, normalizedBody, compatible, compatibleErr := service.ParseCompatibleVideoTaskResult(responseBody); compatibleErr != nil {
-			return fmt.Errorf("parse compatible video task result failed for task %s: %w", taskId, compatibleErr)
-		} else if compatible {
-			taskResult = compatibleTaskResult
-			if compatibleTaskResult != nil {
-				if upstreamTaskID := strings.TrimSpace(compatibleTaskResult.TaskID); upstreamTaskID != "" && upstreamTaskID != task.TaskID {
-					task.PrivateData.UpstreamTaskID = upstreamTaskID
-				}
-				if service.IsOpenAIVideoTaskChannel(channel.Type) && task.PrivateData.UpstreamBaseURL == "" {
-					task.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(task, baseURL)
-				}
-			}
-			if taskBody, ok, err := service.NormalizeCompatibleVideoTaskBody(responseBody, compatibleTaskResult, task); err != nil {
-				return fmt.Errorf("normalize compatible video task result failed for task %s: %w", taskId, err)
-			} else if ok {
-				task.Data = taskBody
-			} else {
-				task.Data = normalizedBody
-			}
-		} else if taskResult, err = adaptor.ParseTaskResult(responseBody); err != nil {
-			return fmt.Errorf("parseTaskResult failed for task %s: %w", taskId, err)
+		if taskBody, ok, err := service.NormalizeCompatibleVideoTaskBody(responseBody, compatibleTaskResult, task); err != nil {
+			return fmt.Errorf("normalize compatible video task result failed for task %s: %w", taskId, err)
+		} else if ok {
+			task.Data = taskBody
 		} else {
-			task.Data = redactVideoResponseBody(responseBody)
+			task.Data = normalizedBody
 		}
+	} else if taskResult, err = adaptor.ParseTaskResult(responseBody); err != nil {
+		return fmt.Errorf("parseTaskResult failed for task %s: %w", taskId, err)
+	} else {
+		task.Data = redactVideoResponseBody(responseBody)
 	}
 
 	logger.LogDebug(ctx, fmt.Sprintf("UpdateVideoSingleTask taskResult: %+v", taskResult))
@@ -605,55 +576,4 @@ func truncateBase64(s string) string {
 		return s
 	}
 	return s[:maxKeep] + "..."
-}
-
-func resolveOpenAIVideoTaskNotFound(ctx context.Context, channel *model.Channel, task *model.Task, requestKey string, responseBody []byte) (*relaycommon.TaskInfo, []byte, bool, error) {
-	reason, notFound := service.ParseOpenAIVideoTaskNotFound(responseBody)
-	if !notFound {
-		return nil, nil, false, nil
-	}
-
-	protectedURL := buildSoraProtectedContentURL(task, channel)
-	available, err := service.ProbeOpenAIVideoContentAvailable(ctx, protectedURL, requestKey, channel.GetSetting().Proxy)
-	if err != nil {
-		return nil, nil, false, err
-	}
-
-	now := time.Now().Unix()
-	if available {
-		localContentURL := service.LocalOpenAIVideoContentURL(task.TaskID)
-		payload, err := service.BuildSyntheticOpenAIVideoTaskPayload(task, "completed", localContentURL, "", now)
-		if err != nil {
-			return nil, nil, false, err
-		}
-		return &relaycommon.TaskInfo{
-			Status:   string(model.TaskStatusSuccess),
-			Progress: "100%",
-			Url:      localContentURL,
-		}, payload, true, nil
-	}
-
-	if !service.ShouldFailOpenAIVideoTaskNotFound(task, now) {
-		payload, status, progress, err := service.BuildSyntheticOpenAIVideoPendingPayload(task)
-		if err != nil {
-			return nil, nil, false, err
-		}
-		return &relaycommon.TaskInfo{
-			Status:   status,
-			Progress: progress,
-		}, payload, true, nil
-	}
-
-	if reason == "" {
-		reason = "task_not_exist"
-	}
-	payload, err := service.BuildSyntheticOpenAIVideoTaskPayload(task, "failed", "", reason, now)
-	if err != nil {
-		return nil, nil, false, err
-	}
-	return &relaycommon.TaskInfo{
-		Status:   string(model.TaskStatusFailure),
-		Progress: "100%",
-		Reason:   reason,
-	}, payload, true, nil
 }

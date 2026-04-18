@@ -3,7 +3,6 @@ package model
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/constant"
@@ -97,9 +96,8 @@ func (m Properties) Value() (driver.Value, error) {
 }
 
 type TaskPrivateData struct {
-	Key             string `json:"key,omitempty"`
-	UpstreamTaskID  string `json:"upstream_task_id,omitempty"`
-	UpstreamBaseURL string `json:"upstream_base_url,omitempty"`
+	Key            string `json:"key,omitempty"`
+	UpstreamTaskID string `json:"upstream_task_id,omitempty"`
 }
 
 func (p *TaskPrivateData) Scan(val interface{}) error {
@@ -139,9 +137,7 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 		// Persist submit-time key for all multi-key task channels.
 		if relayInfo.ChannelMeta.ChannelIsMultiKey {
 			privateData.Key = relayInfo.ChannelMeta.ApiKey
-		} else if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeGemini ||
-			relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeOpenAI ||
-			relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeSora {
+		} else if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeGemini {
 			privateData.Key = relayInfo.ChannelMeta.ApiKey
 		}
 		if relayInfo.UpstreamModelName != "" {
@@ -149,10 +145,6 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 		}
 		if relayInfo.OriginModelName != "" {
 			properties.OriginModelName = relayInfo.OriginModelName
-		}
-		if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeOpenAI ||
-			relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeSora {
-			privateData.UpstreamBaseURL = relayInfo.ChannelMeta.ChannelBaseUrl
 		}
 	}
 
@@ -316,31 +308,15 @@ func TaskUpdateProgress(id int64, progress string) error {
 }
 
 func (Task *Task) Insert() error {
-	err := DB.Create(Task).Error
-	if err != nil && isMissingTaskPrivateDataColumnError(err) {
-		return DB.Omit("private_data").Create(Task).Error
-	}
+	var err error
+	err = DB.Create(Task).Error
 	return err
 }
 
 func (Task *Task) Update() error {
-	err := DB.Save(Task).Error
-	if err != nil && isMissingTaskPrivateDataColumnError(err) {
-		return DB.Omit("private_data").Save(Task).Error
-	}
+	var err error
+	err = DB.Save(Task).Error
 	return err
-}
-
-func isMissingTaskPrivateDataColumnError(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "private_data") &&
-		(strings.Contains(msg, "unknown column") ||
-			strings.Contains(msg, "no such column") ||
-			strings.Contains(msg, "does not exist") ||
-			strings.Contains(msg, "has no column named"))
 }
 
 func TaskBulkUpdate(TaskIds []string, params map[string]any) error {

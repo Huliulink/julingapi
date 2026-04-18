@@ -283,18 +283,8 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 	task.Quota = quota
 	task.Data = taskData
 	task.Action = info.Action
-	if service.IsOpenAIVideoTaskChannel(info.ChannelType) {
-		if upstreamBaseURL := service.PreferredUpstreamVideoBaseURL(task, info.ChannelBaseUrl); upstreamBaseURL != "" {
-			task.PrivateData.UpstreamBaseURL = upstreamBaseURL
-		}
-	}
 	if upstreamTaskID := service.ExtractUpstreamVideoTaskID(taskData, taskID); upstreamTaskID != "" {
 		task.PrivateData.UpstreamTaskID = upstreamTaskID
-	}
-	if service.IsOpenAIVideoTaskChannel(info.ChannelType) {
-		if normalizedBody, ok, err := service.NormalizeCompatibleVideoTaskBody(taskData, nil, task); err == nil && ok {
-			task.Data = normalizedBody
-		}
 	}
 	err = task.Insert()
 	if err != nil {
@@ -415,9 +405,6 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if channelModel.GetBaseURL() != "" {
 			baseURL = channelModel.GetBaseURL()
 		}
-		if service.IsOpenAIVideoTaskChannel(channelModel.Type) {
-			baseURL = service.PreferredUpstreamVideoBaseURL(originTask, baseURL)
-		}
 		proxy := channelModel.GetSetting().Proxy
 		adaptor := GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channelModel.Type)))
 		if adaptor == nil {
@@ -458,45 +445,26 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			return
 		}
 		var compatibleBody []byte
-		var ti *relaycommon.TaskInfo
-		if service.IsOpenAIVideoTaskChannel(channelModel.Type) {
-			if fallbackResult, fallbackBody, handled, fallbackErr := resolveRelayOpenAIVideoTaskNotFound(c.Request.Context(), channelModel, originTask, requestKey, body); fallbackErr != nil {
-				err2 = fallbackErr
-			} else if handled {
-				ti = fallbackResult
-				compatibleBody = fallbackBody
-				originTask.Data = fallbackBody
-			}
-		}
-		if err2 == nil && ti == nil {
-			var compatibleErr error
-			ti, compatibleErr = adaptor.ParseTaskResult(body)
-			if compatibleTi, normalizedBody, compatible, err := service.ParseCompatibleVideoTaskResult(body); err == nil && compatible {
-				ti = compatibleTi
-				if compatibleTi != nil {
-					if upstreamTaskID := strings.TrimSpace(compatibleTi.TaskID); upstreamTaskID != "" && upstreamTaskID != originTask.TaskID {
-						originTask.PrivateData.UpstreamTaskID = upstreamTaskID
-					}
-					if service.IsOpenAIVideoTaskChannel(channelModel.Type) && originTask.PrivateData.UpstreamBaseURL == "" {
-						originTask.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(originTask, baseURL)
-					}
+		ti, compatibleErr := adaptor.ParseTaskResult(body)
+		if compatibleTi, normalizedBody, compatible, err := service.ParseCompatibleVideoTaskResult(body); err == nil && compatible {
+			ti = compatibleTi
+			if compatibleTi != nil {
+				if upstreamTaskID := strings.TrimSpace(compatibleTi.TaskID); upstreamTaskID != "" && upstreamTaskID != originTask.TaskID {
+					originTask.PrivateData.UpstreamTaskID = upstreamTaskID
 				}
-				compatibleBody = normalizedBody
-				if taskBody, ok, normErr := service.NormalizeCompatibleVideoTaskBody(body, compatibleTi, originTask); normErr == nil && ok {
-					compatibleBody = taskBody
-					originTask.Data = taskBody
-				} else {
-					originTask.Data = normalizedBody
-				}
-			} else if compatibleErr != nil {
-				err2 = compatibleErr
 			}
-			if compatibleErr != nil && (ti == nil || strings.TrimSpace(ti.Status) == "") {
-				ti, err2 = nil, compatibleErr
+			compatibleBody = normalizedBody
+			if taskBody, ok, normErr := service.NormalizeCompatibleVideoTaskBody(body, compatibleTi, originTask); normErr == nil && ok {
+				compatibleBody = taskBody
+				originTask.Data = taskBody
+			} else {
+				originTask.Data = normalizedBody
 			}
+		} else if compatibleErr != nil {
+			err2 = compatibleErr
 		}
-		if err2 == nil && ti != nil && service.IsOpenAIVideoTaskChannel(channelModel.Type) && originTask.PrivateData.UpstreamBaseURL == "" {
-			originTask.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(originTask, baseURL)
+		if compatibleErr != nil && (ti == nil || strings.TrimSpace(ti.Status) == "") {
+			ti, err2 = nil, compatibleErr
 		}
 		if err2 == nil && ti != nil {
 			if ti.Status != "" {
@@ -667,57 +635,6 @@ const (
 )
 
 var relayR2TakeoverGroup singleflight.Group
-
-func resolveRelayOpenAIVideoTaskNotFound(ctx context.Context, channel *model.Channel, task *model.Task, requestKey string, responseBody []byte) (*relaycommon.TaskInfo, []byte, bool, error) {
-	reason, notFound := service.ParseOpenAIVideoTaskNotFound(responseBody)
-	if !notFound {
-		return nil, nil, false, nil
-	}
-
-	protectedURL := relayBuildSoraProtectedContentURL(task, channel)
-	available, err := service.ProbeOpenAIVideoContentAvailable(ctx, protectedURL, requestKey, channel.GetSetting().Proxy)
-	if err != nil {
-		return nil, nil, false, err
-	}
-
-	now := time.Now().Unix()
-	if available {
-		localContentURL := service.LocalOpenAIVideoContentURL(task.TaskID)
-		payload, err := service.BuildSyntheticOpenAIVideoTaskPayload(task, "completed", localContentURL, "", now)
-		if err != nil {
-			return nil, nil, false, err
-		}
-		return &relaycommon.TaskInfo{
-			Status:   string(model.TaskStatusSuccess),
-			Progress: "100%",
-			Url:      localContentURL,
-		}, payload, true, nil
-	}
-
-	if !service.ShouldFailOpenAIVideoTaskNotFound(task, now) {
-		payload, status, progress, err := service.BuildSyntheticOpenAIVideoPendingPayload(task)
-		if err != nil {
-			return nil, nil, false, err
-		}
-		return &relaycommon.TaskInfo{
-			Status:   status,
-			Progress: progress,
-		}, payload, true, nil
-	}
-
-	if reason == "" {
-		reason = "task_not_exist"
-	}
-	payload, err := service.BuildSyntheticOpenAIVideoTaskPayload(task, "failed", "", reason, now)
-	if err != nil {
-		return nil, nil, false, err
-	}
-	return &relaycommon.TaskInfo{
-		Status:   string(model.TaskStatusFailure),
-		Progress: "100%",
-		Reason:   reason,
-	}, payload, true, nil
-}
 
 func relayR2TakeoverEnsureTask(ctx context.Context, taskID string) (*model.Task, error) {
 	workerCtx, cancel := context.WithTimeout(context.Background(), relayR2TakeoverWaitTimeout)

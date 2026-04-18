@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 )
@@ -17,12 +16,7 @@ func relayBuildSoraProtectedContentURL(task *model.Task, channel *model.Channel)
 	if taskID == "" {
 		return ""
 	}
-	baseURL := service.PreferredUpstreamVideoBaseURL(task, channel.GetBaseURL())
-	if baseURL == "" {
-		if channel.Type >= 0 && channel.Type < len(constant.ChannelBaseURLs) {
-			baseURL = service.PreferredUpstreamVideoBaseURL(task, constant.ChannelBaseURLs[channel.Type])
-		}
-	}
+	baseURL := strings.TrimRight(strings.TrimSpace(channel.GetBaseURL()), "/")
 	if baseURL == "" {
 		return ""
 	}
