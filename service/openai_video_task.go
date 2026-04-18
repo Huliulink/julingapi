@@ -187,7 +187,7 @@ func BuildSyntheticOpenAIVideoPendingPayload(task *model.Task) ([]byte, string, 
 		progress = 30
 	}
 
-	if parsedProgress, ok := progressStringToInt(task.Progress); ok {
+	if parsedProgress, ok := parseOpenAIVideoProgressString(task.Progress); ok {
 		if parsedProgress > 0 && parsedProgress < 100 {
 			progress = parsedProgress
 		}
@@ -236,7 +236,7 @@ func ShouldFailOpenAIVideoTaskNotFound(task *model.Task, now int64) bool {
 	return now-baseTime >= int64(openAIVideoTaskNotFoundGrace/time.Second)
 }
 
-func progressStringToInt(progress string) (int, bool) {
+func parseOpenAIVideoProgressString(progress string) (int, bool) {
 	progress = strings.TrimSpace(strings.TrimSuffix(progress, "%"))
 	if progress == "" {
 		return 0, false
