@@ -340,6 +340,10 @@ func looksLikeMissingVideoTaskError(text string) bool {
 	return false
 }
 
+func IsMissingVideoTaskErrorReason(reason string) bool {
+	return looksLikeMissingVideoTaskError(reason)
+}
+
 func chooseUpstreamVideoTaskID(payload map[string]any, localTaskID string) string {
 	localTaskID = strings.TrimSpace(localTaskID)
 	if payload == nil {

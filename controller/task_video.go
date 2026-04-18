@@ -21,6 +21,8 @@ import (
 	"github.com/QuantumNous/new-api/setting/storage_setting"
 )
 
+const transientMissingVideoTaskGracePeriod = 3 * time.Minute
+
 func UpdateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, taskChannelM map[int][]string, taskM map[string]*model.Task) error {
 	for channelId, taskIds := range taskChannelM {
 		if err := updateVideoTaskAll(ctx, platform, channelId, taskIds, taskM); err != nil {
@@ -173,6 +175,14 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		} else {
 			taskResult = relaycommon.FailTaskInfo("upstream returned empty status")
 		}
+	}
+	if shouldRetryMissingVideoTask(task, taskResult, now) {
+		taskResult.Status = string(model.TaskStatusInProgress)
+		taskResult.Reason = ""
+		if strings.TrimSpace(taskResult.Progress) == "" || taskResult.Progress == "100%" {
+			taskResult.Progress = "30%"
+		}
+		logger.LogWarn(ctx, fmt.Sprintf("Task %s upstream returned transient task_not_exist within grace period, keep polling", taskId))
 	}
 
 	shouldRefund := false
@@ -579,4 +589,23 @@ func truncateBase64(s string) string {
 		return s
 	}
 	return s[:maxKeep] + "..."
+}
+
+func shouldRetryMissingVideoTask(task *model.Task, taskResult *relaycommon.TaskInfo, now int64) bool {
+	if task == nil || taskResult == nil {
+		return false
+	}
+	if !service.IsMissingVideoTaskErrorReason(taskResult.Reason) {
+		return false
+	}
+
+	createdAt := task.SubmitTime
+	if createdAt <= 0 {
+		createdAt = task.CreatedAt
+	}
+	if createdAt <= 0 {
+		return false
+	}
+
+	return now-createdAt < int64(transientMissingVideoTaskGracePeriod/time.Second)
 }
