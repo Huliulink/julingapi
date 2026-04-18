@@ -105,6 +105,20 @@ func PreferredUpstreamVideoTaskID(task *model.Task) string {
 	return strings.TrimSpace(task.TaskID)
 }
 
+func PreferredUpstreamVideoBaseURL(task *model.Task, fallback string) string {
+	if task != nil {
+		if baseURL := normalizeUpstreamVideoBaseURL(task.PrivateData.UpstreamBaseURL); baseURL != "" {
+			return baseURL
+		}
+		if len(task.Data) > 0 {
+			if baseURL := ExtractUpstreamVideoBaseURL(task.Data); baseURL != "" {
+				return baseURL
+			}
+		}
+	}
+	return normalizeUpstreamVideoBaseURL(fallback)
+}
+
 func ExtractUpstreamVideoTaskID(respBody []byte, localTaskID string) string {
 	payload, ok, err := compatibleVideoPayload(respBody)
 	if err == nil && ok {
@@ -120,6 +134,25 @@ func ExtractUpstreamVideoTaskID(respBody []byte, localTaskID string) string {
 	}
 	if data, ok := raw["data"].(map[string]any); ok {
 		return chooseUpstreamVideoTaskID(data, localTaskID)
+	}
+	return ""
+}
+
+func ExtractUpstreamVideoBaseURL(respBody []byte) string {
+	payload, ok, err := compatibleVideoPayload(respBody)
+	if err == nil && ok {
+		return chooseUpstreamVideoBaseURL(payload)
+	}
+
+	var raw map[string]any
+	if err := common.Unmarshal(respBody, &raw); err != nil {
+		return ""
+	}
+	if baseURL := chooseUpstreamVideoBaseURL(raw); baseURL != "" {
+		return baseURL
+	}
+	if data, ok := raw["data"].(map[string]any); ok {
+		return chooseUpstreamVideoBaseURL(data)
 	}
 	return ""
 }
@@ -223,6 +256,16 @@ func NormalizeCompatibleVideoPayload(rawPayload map[string]any, taskInfo *relayc
 		rewriteCompatibleNestedTaskFields(child, task, status)
 	}
 
+	if task != nil {
+		metadata := ensurePayloadMap(payload, "metadata")
+		if upstreamTaskID := PreferredUpstreamVideoTaskID(task); upstreamTaskID != "" && upstreamTaskID != strings.TrimSpace(task.TaskID) {
+			metadata["upstream_task_id"] = upstreamTaskID
+		}
+		if upstreamBaseURL := PreferredUpstreamVideoBaseURL(task, ""); upstreamBaseURL != "" {
+			metadata["upstream_base_url"] = upstreamBaseURL
+		}
+	}
+
 	reason := extractCompatibleVideoReason(payload)
 	if reason == "" && taskInfo != nil {
 		reason = strings.TrimSpace(taskInfo.Reason)
@@ -277,12 +320,18 @@ func chooseUpstreamVideoTaskID(payload map[string]any, localTaskID string) strin
 	if payload == nil {
 		return ""
 	}
+	if upstreamTaskID := strings.TrimSpace(firstPayloadString(payload, "upstream_task_id")); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+		return upstreamTaskID
+	}
 	for _, key := range []string{"task_id", "id"} {
 		if upstreamTaskID := strings.TrimSpace(firstPayloadString(payload, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
 			return upstreamTaskID
 		}
 	}
 	if metadata, ok := payload["metadata"].(map[string]any); ok {
+		if upstreamTaskID := strings.TrimSpace(firstPayloadString(metadata, "upstream_task_id")); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+			return upstreamTaskID
+		}
 		for _, key := range []string{"task_id", "id"} {
 			if upstreamTaskID := strings.TrimSpace(firstPayloadString(metadata, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
 				return upstreamTaskID
@@ -290,6 +339,9 @@ func chooseUpstreamVideoTaskID(payload map[string]any, localTaskID string) strin
 		}
 	}
 	if response, ok := payload["response"].(map[string]any); ok {
+		if upstreamTaskID := strings.TrimSpace(firstPayloadString(response, "upstream_task_id")); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+			return upstreamTaskID
+		}
 		for _, key := range []string{"task_id", "id"} {
 			if upstreamTaskID := strings.TrimSpace(firstPayloadString(response, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
 				return upstreamTaskID
@@ -297,10 +349,38 @@ func chooseUpstreamVideoTaskID(payload map[string]any, localTaskID string) strin
 		}
 	}
 	if data, ok := payload["data"].(map[string]any); ok {
+		if upstreamTaskID := strings.TrimSpace(firstPayloadString(data, "upstream_task_id")); upstreamTaskID != "" && upstreamTaskID != localTaskID {
+			return upstreamTaskID
+		}
 		for _, key := range []string{"task_id", "id"} {
 			if upstreamTaskID := strings.TrimSpace(firstPayloadString(data, key)); upstreamTaskID != "" && upstreamTaskID != localTaskID {
 				return upstreamTaskID
 			}
+		}
+	}
+	return ""
+}
+
+func chooseUpstreamVideoBaseURL(payload map[string]any) string {
+	if payload == nil {
+		return ""
+	}
+	if baseURL := normalizeUpstreamVideoBaseURL(firstPayloadString(payload, "upstream_base_url")); baseURL != "" {
+		return baseURL
+	}
+	if metadata, ok := payload["metadata"].(map[string]any); ok {
+		if baseURL := normalizeUpstreamVideoBaseURL(firstPayloadString(metadata, "upstream_base_url")); baseURL != "" {
+			return baseURL
+		}
+	}
+	if response, ok := payload["response"].(map[string]any); ok {
+		if baseURL := normalizeUpstreamVideoBaseURL(firstPayloadString(response, "upstream_base_url")); baseURL != "" {
+			return baseURL
+		}
+	}
+	if data, ok := payload["data"].(map[string]any); ok {
+		if baseURL := normalizeUpstreamVideoBaseURL(firstPayloadString(data, "upstream_base_url")); baseURL != "" {
+			return baseURL
 		}
 	}
 	return ""
@@ -542,6 +622,12 @@ func clampVideoProgress(value int) int {
 		return 100
 	}
 	return value
+}
+
+func normalizeUpstreamVideoBaseURL(baseURL string) string {
+	baseURL = strings.TrimSpace(baseURL)
+	baseURL = strings.TrimRight(baseURL, "/")
+	return baseURL
 }
 
 func firstPayloadString(payload map[string]any, keys ...string) string {

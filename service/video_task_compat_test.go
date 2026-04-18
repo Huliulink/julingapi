@@ -192,3 +192,56 @@ func TestPreferredUpstreamVideoTaskIDFallsBackToTaskData(t *testing.T) {
 		t.Fatalf("unexpected upstream task id: %s", upstreamTaskID)
 	}
 }
+
+func TestPreferredUpstreamVideoBaseURLFallsBackToTaskData(t *testing.T) {
+	task := &model.Task{
+		TaskID: "task_local_123",
+		Data: []byte(`{
+			"id": "task_local_123",
+			"object": "video",
+			"status": "processing",
+			"metadata": {
+				"upstream_base_url": "https://upstream.example.com/"
+			}
+		}`),
+	}
+
+	baseURL := PreferredUpstreamVideoBaseURL(task, "https://fallback.example.com")
+	if baseURL != "https://upstream.example.com" {
+		t.Fatalf("unexpected upstream base url: %s", baseURL)
+	}
+}
+
+func TestNormalizeCompatibleVideoTaskBodyPreservesUpstreamIdentityMetadata(t *testing.T) {
+	body := []byte(`{
+		"id": "task_upstream_123",
+		"task_id": "task_upstream_123",
+		"object": "video",
+		"status": "queued",
+		"progress": 20
+	}`)
+
+	task := &model.Task{
+		TaskID: "task_local_456",
+		PrivateData: model.TaskPrivateData{
+			UpstreamTaskID:  "task_upstream_123",
+			UpstreamBaseURL: "https://upstream.example.com/",
+		},
+	}
+
+	normalized, ok, err := NormalizeCompatibleVideoTaskBody(body, nil, task)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ok {
+		t.Fatalf("expected compatible payload")
+	}
+
+	output := string(normalized)
+	if !strings.Contains(output, `"upstream_task_id":"task_upstream_123"`) {
+		t.Fatalf("normalized payload missing upstream task id: %s", output)
+	}
+	if !strings.Contains(output, `"upstream_base_url":"https://upstream.example.com"`) {
+		t.Fatalf("normalized payload missing upstream base url: %s", output)
+	}
+}

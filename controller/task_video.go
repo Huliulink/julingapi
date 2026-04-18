@@ -66,17 +66,23 @@ func updateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, cha
 }
 
 func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, channel *model.Channel, taskId string, taskM map[string]*model.Task) error {
-	baseURL := constant.ChannelBaseURLs[channel.Type]
-	if channel.GetBaseURL() != "" {
-		baseURL = channel.GetBaseURL()
-	}
-	proxy := channel.GetSetting().Proxy
-
 	task := taskM[taskId]
 	if task == nil {
 		logger.LogError(ctx, fmt.Sprintf("Task %s not found in taskM", taskId))
 		return fmt.Errorf("task %s not found", taskId)
 	}
+
+	baseURL := constant.ChannelBaseURLs[channel.Type]
+	if channel.GetBaseURL() != "" {
+		baseURL = channel.GetBaseURL()
+	}
+	if service.IsOpenAIVideoTaskChannel(channel.Type) {
+		baseURL = service.PreferredUpstreamVideoBaseURL(task, baseURL)
+		if task.PrivateData.UpstreamBaseURL == "" {
+			task.PrivateData.UpstreamBaseURL = baseURL
+		}
+	}
+	proxy := channel.GetSetting().Proxy
 	key := channel.Key
 
 	privateData := task.PrivateData
@@ -145,6 +151,9 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		taskResult.Progress = t.Progress
 		taskResult.Reason = t.FailReason
 		task.Data = t.Data
+		if service.IsOpenAIVideoTaskChannel(channel.Type) && task.PrivateData.UpstreamBaseURL == "" {
+			task.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(task, baseURL)
+		}
 	} else if taskResult.Status == "" {
 		if compatibleTaskResult, normalizedBody, compatible, compatibleErr := service.ParseCompatibleVideoTaskResult(responseBody); compatibleErr != nil {
 			return fmt.Errorf("parse compatible video task result failed for task %s: %w", taskId, compatibleErr)
@@ -153,6 +162,9 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 			if compatibleTaskResult != nil {
 				if upstreamTaskID := strings.TrimSpace(compatibleTaskResult.TaskID); upstreamTaskID != "" && upstreamTaskID != task.TaskID {
 					task.PrivateData.UpstreamTaskID = upstreamTaskID
+				}
+				if service.IsOpenAIVideoTaskChannel(channel.Type) && task.PrivateData.UpstreamBaseURL == "" {
+					task.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(task, baseURL)
 				}
 			}
 			if taskBody, ok, err := service.NormalizeCompatibleVideoTaskBody(responseBody, compatibleTaskResult, task); err != nil {

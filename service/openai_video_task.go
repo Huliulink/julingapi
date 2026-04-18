@@ -147,15 +147,25 @@ func BuildSyntheticOpenAIVideoTaskPayload(task *model.Task, status, videoURL, re
 		payload["model"] = modelName
 	}
 
+	metadata := map[string]any{}
+	if upstreamTaskID := PreferredUpstreamVideoTaskID(task); upstreamTaskID != "" && upstreamTaskID != strings.TrimSpace(task.TaskID) {
+		metadata["upstream_task_id"] = upstreamTaskID
+	}
+	if upstreamBaseURL := PreferredUpstreamVideoBaseURL(task, ""); upstreamBaseURL != "" {
+		metadata["upstream_base_url"] = upstreamBaseURL
+	}
+	if len(metadata) > 0 {
+		payload["metadata"] = metadata
+	}
+
 	if status == "completed" {
 		videoURL = strings.TrimSpace(videoURL)
 		if videoURL != "" {
 			payload["video_url"] = videoURL
 			payload["url"] = videoURL
 			payload["output_url"] = videoURL
-			payload["metadata"] = map[string]any{
-				"url": videoURL,
-			}
+			metadata["url"] = videoURL
+			payload["metadata"] = metadata
 		}
 	}
 
@@ -224,6 +234,17 @@ func BuildSyntheticOpenAIVideoPendingPayload(task *model.Task) ([]byte, string, 
 	}
 	if modelName != "" {
 		payload["model"] = modelName
+	}
+
+	metadata := map[string]any{}
+	if upstreamTaskID := PreferredUpstreamVideoTaskID(task); upstreamTaskID != "" && upstreamTaskID != strings.TrimSpace(task.TaskID) {
+		metadata["upstream_task_id"] = upstreamTaskID
+	}
+	if upstreamBaseURL := PreferredUpstreamVideoBaseURL(task, ""); upstreamBaseURL != "" {
+		metadata["upstream_base_url"] = upstreamBaseURL
+	}
+	if len(metadata) > 0 {
+		payload["metadata"] = metadata
 	}
 
 	body, err := common.Marshal(payload)

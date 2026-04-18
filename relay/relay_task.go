@@ -283,8 +283,18 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (taskErr *dto.
 	task.Quota = quota
 	task.Data = taskData
 	task.Action = info.Action
+	if service.IsOpenAIVideoTaskChannel(info.ChannelType) {
+		if upstreamBaseURL := service.PreferredUpstreamVideoBaseURL(task, info.ChannelBaseUrl); upstreamBaseURL != "" {
+			task.PrivateData.UpstreamBaseURL = upstreamBaseURL
+		}
+	}
 	if upstreamTaskID := service.ExtractUpstreamVideoTaskID(taskData, taskID); upstreamTaskID != "" {
 		task.PrivateData.UpstreamTaskID = upstreamTaskID
+	}
+	if service.IsOpenAIVideoTaskChannel(info.ChannelType) {
+		if normalizedBody, ok, err := service.NormalizeCompatibleVideoTaskBody(taskData, nil, task); err == nil && ok {
+			task.Data = normalizedBody
+		}
 	}
 	err = task.Insert()
 	if err != nil {
@@ -405,6 +415,9 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		if channelModel.GetBaseURL() != "" {
 			baseURL = channelModel.GetBaseURL()
 		}
+		if service.IsOpenAIVideoTaskChannel(channelModel.Type) {
+			baseURL = service.PreferredUpstreamVideoBaseURL(originTask, baseURL)
+		}
 		proxy := channelModel.GetSetting().Proxy
 		adaptor := GetTaskAdaptor(constant.TaskPlatform(strconv.Itoa(channelModel.Type)))
 		if adaptor == nil {
@@ -464,6 +477,9 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 					if upstreamTaskID := strings.TrimSpace(compatibleTi.TaskID); upstreamTaskID != "" && upstreamTaskID != originTask.TaskID {
 						originTask.PrivateData.UpstreamTaskID = upstreamTaskID
 					}
+					if service.IsOpenAIVideoTaskChannel(channelModel.Type) && originTask.PrivateData.UpstreamBaseURL == "" {
+						originTask.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(originTask, baseURL)
+					}
 				}
 				compatibleBody = normalizedBody
 				if taskBody, ok, normErr := service.NormalizeCompatibleVideoTaskBody(body, compatibleTi, originTask); normErr == nil && ok {
@@ -478,6 +494,9 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 			if compatibleErr != nil && (ti == nil || strings.TrimSpace(ti.Status) == "") {
 				ti, err2 = nil, compatibleErr
 			}
+		}
+		if err2 == nil && ti != nil && service.IsOpenAIVideoTaskChannel(channelModel.Type) && originTask.PrivateData.UpstreamBaseURL == "" {
+			originTask.PrivateData.UpstreamBaseURL = service.PreferredUpstreamVideoBaseURL(originTask, baseURL)
 		}
 		if err2 == nil && ti != nil {
 			if ti.Status != "" {

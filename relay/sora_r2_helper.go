@@ -17,10 +17,10 @@ func relayBuildSoraProtectedContentURL(task *model.Task, channel *model.Channel)
 	if taskID == "" {
 		return ""
 	}
-	baseURL := strings.TrimRight(strings.TrimSpace(channel.GetBaseURL()), "/")
+	baseURL := service.PreferredUpstreamVideoBaseURL(task, channel.GetBaseURL())
 	if baseURL == "" {
 		if channel.Type >= 0 && channel.Type < len(constant.ChannelBaseURLs) {
-			baseURL = strings.TrimRight(strings.TrimSpace(constant.ChannelBaseURLs[channel.Type]), "/")
+			baseURL = service.PreferredUpstreamVideoBaseURL(task, constant.ChannelBaseURLs[channel.Type])
 		}
 	}
 	if baseURL == "" {

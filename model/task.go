@@ -97,8 +97,9 @@ func (m Properties) Value() (driver.Value, error) {
 }
 
 type TaskPrivateData struct {
-	Key            string `json:"key,omitempty"`
-	UpstreamTaskID string `json:"upstream_task_id,omitempty"`
+	Key             string `json:"key,omitempty"`
+	UpstreamTaskID  string `json:"upstream_task_id,omitempty"`
+	UpstreamBaseURL string `json:"upstream_base_url,omitempty"`
 }
 
 func (p *TaskPrivateData) Scan(val interface{}) error {
@@ -148,6 +149,10 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 		}
 		if relayInfo.OriginModelName != "" {
 			properties.OriginModelName = relayInfo.OriginModelName
+		}
+		if relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeOpenAI ||
+			relayInfo.ChannelMeta.ChannelType == constant.ChannelTypeSora {
+			privateData.UpstreamBaseURL = relayInfo.ChannelMeta.ChannelBaseUrl
 		}
 	}
 
