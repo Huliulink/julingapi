@@ -39,7 +39,6 @@ func getGeminiVideoURL(channel *model.Channel, task *model.Task, apiKey string) 
 	resp, err := adaptor.FetchTask(baseURL, apiKey, map[string]any{
 		"task_id": task.TaskID,
 		"action":  task.Action,
-		"model":   resolveGeminiTaskQueryModel(task),
 	}, proxy)
 	if err != nil {
 		return "", fmt.Errorf("fetch task failed: %w", err)
@@ -157,17 +156,4 @@ func ensureAPIKey(uri, key string) string {
 		return fmt.Sprintf("%s&key=%s", uri, key)
 	}
 	return fmt.Sprintf("%s?key=%s", uri, key)
-}
-
-func resolveGeminiTaskQueryModel(task *model.Task) string {
-	if task == nil {
-		return ""
-	}
-	if modelName := strings.TrimSpace(task.Properties.UpstreamModelName); modelName != "" {
-		return modelName
-	}
-	if modelName := strings.TrimSpace(task.Properties.OriginModelName); modelName != "" {
-		return modelName
-	}
-	return ""
 }

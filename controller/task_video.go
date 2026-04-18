@@ -19,10 +19,7 @@ import (
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/setting/storage_setting"
-	"github.com/QuantumNous/new-api/types"
 )
-
-const transientMissingVideoTaskGracePeriod = 3 * time.Minute
 
 func UpdateVideoTaskAll(ctx context.Context, platform constant.TaskPlatform, taskChannelM map[int][]string, taskM map[string]*model.Task) error {
 	for channelId, taskIds := range taskChannelM {
@@ -116,10 +113,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 	if err != nil {
 		return fmt.Errorf("fetchTask failed for task %s: %w", taskId, err)
 	}
-	queryKey := key
-	if strings.TrimSpace(usedKey) != "" {
-		queryKey = usedKey
-	}
 	if usedKey != "" && strings.TrimSpace(task.PrivateData.Key) == "" && channel.ChannelInfo.IsMultiKey {
 		task.PrivateData.Key = usedKey
 	}
@@ -166,9 +159,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		if strings.TrimSpace(taskResult.Url) != "" {
 			taskResult.Status = string(model.TaskStatusSuccess)
 			taskResult.Progress = "100%"
-		} else if strings.TrimSpace(taskResult.Reason) != "" {
-			taskResult.Status = string(model.TaskStatusFailure)
-			taskResult.Progress = "100%"
 		} else if taskResult.Code == 0 {
 			// Upstream may not materialize a status immediately for async video tasks.
 			// Keep polling instead of failing the task early.
@@ -180,14 +170,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 		} else {
 			taskResult = relaycommon.FailTaskInfo("upstream returned empty status")
 		}
-	}
-	if shouldRetryMissingVideoTask(task, taskResult, now) {
-		taskResult.Status = string(model.TaskStatusInProgress)
-		taskResult.Reason = ""
-		if strings.TrimSpace(taskResult.Progress) == "" || taskResult.Progress == "100%" {
-			taskResult.Progress = "30%"
-		}
-		logger.LogWarn(ctx, fmt.Sprintf("Task %s upstream returned transient task_not_exist within grace period, keep polling", taskId))
 	}
 
 	shouldRefund := false
@@ -445,16 +427,6 @@ func updateVideoSingleTask(ctx context.Context, adaptor channel.TaskAdaptor, cha
 				logger.LogWarn(ctx, fmt.Sprintf("Task %s already in failure status, skip refund", task.TaskID))
 			}
 		}
-		if preStatus != model.TaskStatusFailure && service.IsMissingVideoTaskErrorReason(task.FailReason) {
-			service.DisableChannel(*types.NewChannelError(
-				channel.Id,
-				channel.Type,
-				channel.Name,
-				channel.ChannelInfo.IsMultiKey,
-				queryKey,
-				channel.GetAutoBan(),
-			), "async task query returned task_not_exist")
-		}
 	default:
 		return fmt.Errorf("unknown task status %s for task %s", taskResult.Status, taskId)
 	}
@@ -604,23 +576,4 @@ func truncateBase64(s string) string {
 		return s
 	}
 	return s[:maxKeep] + "..."
-}
-
-func shouldRetryMissingVideoTask(task *model.Task, taskResult *relaycommon.TaskInfo, now int64) bool {
-	if task == nil || taskResult == nil {
-		return false
-	}
-	if !service.IsMissingVideoTaskErrorReason(taskResult.Reason) {
-		return false
-	}
-
-	createdAt := task.SubmitTime
-	if createdAt <= 0 {
-		createdAt = task.CreatedAt
-	}
-	if createdAt <= 0 {
-		return false
-	}
-
-	return now-createdAt < int64(transientMissingVideoTaskGracePeriod/time.Second)
 }

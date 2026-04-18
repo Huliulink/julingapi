@@ -12,10 +12,6 @@ import (
 )
 
 func ParseCompatibleVideoTaskResult(respBody []byte) (*relaycommon.TaskInfo, []byte, bool, error) {
-	if taskInfo, normalizedBody, compatible, err := parseCompatibleVideoErrorTaskResult(respBody); err != nil || compatible {
-		return taskInfo, normalizedBody, compatible, err
-	}
-
 	payload, ok, err := compatibleVideoPayload(respBody)
 	if err != nil || !ok {
 		return nil, nil, ok, err
@@ -86,31 +82,6 @@ func ParseCompatibleVideoTaskResult(respBody []byte) (*relaycommon.TaskInfo, []b
 			taskInfo.Progress = "100%"
 		}
 	}
-
-	normalizedBody, err := NormalizeCompatibleVideoPayload(payload, taskInfo, nil)
-	if err != nil {
-		return nil, nil, false, err
-	}
-	return taskInfo, normalizedBody, true, nil
-}
-
-func parseCompatibleVideoErrorTaskResult(respBody []byte) (*relaycommon.TaskInfo, []byte, bool, error) {
-	var payload map[string]any
-	if err := common.Unmarshal(respBody, &payload); err != nil {
-		return nil, nil, false, err
-	}
-	if !looksLikeCompatibleVideoErrorPayload(payload) {
-		return nil, nil, false, nil
-	}
-
-	reason := ExtractTaskFailureReason("", respBody)
-	if reason == "" {
-		reason = "task failed"
-	}
-	taskInfo := relaycommon.FailTaskInfo(reason)
-	taskInfo.Code = 1
-	taskInfo.Progress = "100%"
-	taskInfo.TaskID = firstPayloadString(payload, "task_id", "id")
 
 	normalizedBody, err := NormalizeCompatibleVideoPayload(payload, taskInfo, nil)
 	if err != nil {
@@ -294,54 +265,6 @@ func compatibleVideoPayload(respBody []byte) (map[string]any, bool, error) {
 		return data, true, nil
 	}
 	return nil, false, nil
-}
-
-func looksLikeCompatibleVideoErrorPayload(payload map[string]any) bool {
-	if payload == nil {
-		return false
-	}
-
-	code := strings.TrimSpace(firstPayloadString(payload, "code"))
-	if code == "" || strings.EqualFold(code, dto.TaskSuccessCode) {
-		return false
-	}
-
-	if strings.TrimSpace(firstPayloadString(payload, "status")) != "" {
-		return false
-	}
-	if extractCompatibleVideoURL(payload) != "" {
-		return false
-	}
-
-	reason := strings.TrimSpace(extractFailureReasonFromMap(payload))
-	return looksLikeMissingVideoTaskError(code) || looksLikeMissingVideoTaskError(reason)
-}
-
-func looksLikeMissingVideoTaskError(text string) bool {
-	text = strings.ToLower(strings.TrimSpace(text))
-	if text == "" {
-		return false
-	}
-
-	normalized := strings.NewReplacer("_", " ", "-", " ").Replace(text)
-	for _, marker := range []string{
-		"task not exist",
-		"task not found",
-		"task does not exist",
-		"job not exist",
-		"job not found",
-		"video task not exist",
-		"video task not found",
-	} {
-		if strings.Contains(normalized, marker) {
-			return true
-		}
-	}
-	return false
-}
-
-func IsMissingVideoTaskErrorReason(reason string) bool {
-	return looksLikeMissingVideoTaskError(reason)
 }
 
 func chooseUpstreamVideoTaskID(payload map[string]any, localTaskID string) string {
