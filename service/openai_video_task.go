@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -172,6 +173,50 @@ func BuildSyntheticOpenAIVideoTaskPayload(task *model.Task, status, videoURL, re
 	return common.Marshal(payload)
 }
 
+func BuildSyntheticOpenAIVideoPendingPayload(task *model.Task) ([]byte, string, string, error) {
+	if task == nil {
+		return nil, "", "", fmt.Errorf("task is nil")
+	}
+
+	status := "queued"
+	taskStatus := string(model.TaskStatusQueued)
+	progress := 20
+	if task.StartTime > 0 {
+		status = "processing"
+		taskStatus = string(model.TaskStatusInProgress)
+		progress = 30
+	}
+
+	if parsedProgress, ok := progressStringToInt(task.Progress); ok {
+		if parsedProgress > 0 && parsedProgress < 100 {
+			progress = parsedProgress
+		}
+	}
+
+	payload := map[string]any{
+		"id":         task.TaskID,
+		"task_id":    task.TaskID,
+		"object":     "video",
+		"status":     status,
+		"progress":   progress,
+		"created_at": task.CreatedAt,
+	}
+
+	modelName := strings.TrimSpace(task.Properties.OriginModelName)
+	if modelName == "" {
+		modelName = strings.TrimSpace(task.Properties.UpstreamModelName)
+	}
+	if modelName != "" {
+		payload["model"] = modelName
+	}
+
+	body, err := common.Marshal(payload)
+	if err != nil {
+		return nil, "", "", err
+	}
+	return body, taskStatus, fmt.Sprintf("%d%%", progress), nil
+}
+
 func ShouldFailOpenAIVideoTaskNotFound(task *model.Task, now int64) bool {
 	if task == nil {
 		return false
@@ -189,6 +234,24 @@ func ShouldFailOpenAIVideoTaskNotFound(task *model.Task, now int64) bool {
 	}
 
 	return now-baseTime >= int64(openAIVideoTaskNotFoundGrace/time.Second)
+}
+
+func progressStringToInt(progress string) (int, bool) {
+	progress = strings.TrimSpace(strings.TrimSuffix(progress, "%"))
+	if progress == "" {
+		return 0, false
+	}
+	value, err := strconv.Atoi(progress)
+	if err != nil {
+		return 0, false
+	}
+	if value < 0 {
+		value = 0
+	}
+	if value > 100 {
+		value = 100
+	}
+	return value, true
 }
 
 func firstOpenAIVideoString(payload map[string]any, keys ...string) string {

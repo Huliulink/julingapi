@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 )
@@ -17,6 +18,11 @@ func buildSoraProtectedContentURL(task *model.Task, channel *model.Channel) stri
 		return ""
 	}
 	baseURL := strings.TrimRight(strings.TrimSpace(channel.GetBaseURL()), "/")
+	if baseURL == "" {
+		if channel.Type >= 0 && channel.Type < len(constant.ChannelBaseURLs) {
+			baseURL = strings.TrimRight(strings.TrimSpace(constant.ChannelBaseURLs[channel.Type]), "/")
+		}
+	}
 	if baseURL == "" {
 		return ""
 	}

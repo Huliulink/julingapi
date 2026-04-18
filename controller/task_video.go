@@ -622,7 +622,14 @@ func resolveOpenAIVideoTaskNotFound(ctx context.Context, channel *model.Channel,
 	}
 
 	if !service.ShouldFailOpenAIVideoTaskNotFound(task, now) {
-		return nil, nil, false, nil
+		payload, status, progress, err := service.BuildSyntheticOpenAIVideoPendingPayload(task)
+		if err != nil {
+			return nil, nil, false, err
+		}
+		return &relaycommon.TaskInfo{
+			Status:   status,
+			Progress: progress,
+		}, payload, true, nil
 	}
 
 	if reason == "" {
